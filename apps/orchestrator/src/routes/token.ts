@@ -37,7 +37,7 @@ tokenRouter.post('/token', async (_req: Request, res: Response) => {
       });
     }
 
-    const data = await response.json();
+    const data = (await response.json()) as any;
     return res.json({ token: data.token, isDemo: false });
   } catch (err: any) {
     console.error('[Token Route Exception]', err);

@@ -59,7 +59,7 @@ export class DeepSeekService {
         return this.generateFallback(options);
       }
 
-      const data = await response.json();
+      const data = (await response.json()) as any;
       const choice = data.choices[0];
 
       return {
