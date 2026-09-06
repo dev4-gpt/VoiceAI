@@ -1,0 +1,44 @@
+sequenceDiagram
+    autonumber
+    actor User as 👤 Creator / Prospect
+    participant Worklet as 🎙️ Browser AudioWorklet (24kHz Mono)
+    participant Console as 🖥️ Web Console (React)
+    participant Orch as ⚙️ Node.js Orchestrator (:4000)
+    participant AAI as ⚡ AssemblyAI Voice Agent API (universal-3-5-pro)
+    participant Tool as 🛠️ Flat Tool Dispatcher
+
+    Note over Console,Orch: Session Initialization & Ephemeral Token Minting
+    Console->>Orch: POST /api/voice/token
+    Orch->>AAI: GET /v1/token?expires_in_seconds=300
+    AAI-->>Orch: 200 OK (Single-Use JWT)
+    Orch-->>Console: { token: "jwt_...", isDemo: false }
+
+    Note over Console,AAI: WebSocket Handshake & Full-Duplex Audio Stream
+    Console->>AAI: Connect wss://agents.assemblyai.com/v1/ws?token=jwt
+    AAI-->>Console: 101 Switching Protocols (Session Established)
+
+    Note over User,Worklet: User Speaks: "We need high-ticket funnel in 3 weeks, budget 10k"
+    User->>Worklet: Spoken Voice (Acoustic Pressure)
+    Worklet->>Worklet: Downsample to 24,000 Hz Mono PCM16
+    Worklet->>AAI: Binary Audio Frames (Base64 Chunks)
+
+    Note over AAI: Real-Time Universal-3.5 Pro ASR & VAD Turn Detection
+    AAI->>Console: {"type": "transcript", "text": "We need high-ticket funnel..."}
+    AAI->>Console: {"type": "tool_call", "name": "qualify_lead", "args": {"budget": "5k_to_15k", "score": 85}}
+    
+    Console->>Orch: Dispatch Tool Call (qualify_lead)
+    Orch->>Tool: executeTool("qualify_lead", args)
+    Tool-->>Orch: { status: "qualified", bantScore: 85 }
+    Orch-->>Console: Tool Result Synced (Broadcast WS)
+    Console->>AAI: {"type": "tool_response", "call_id": "...", "output": "{score: 85}"}
+
+    Note over AAI,User: Voice Agent TTS Synthesis & Playback
+    AAI-->>Console: Binary Audio PCM16 (Voice: Anna)
+    Console->>User: Spoken Audio: "Fantastic Jason! You're an ideal fit..."
+
+    Note over User,Console: Sub-50ms Barge-In Interruption Event
+    User->>Worklet: User Speaks While Agent Is Talking!
+    Worklet->>AAI: New Audio Frames Detected
+    AAI-->>Console: {"type": "interruption", "timestamp": "..."}
+    Console->>Console: 🛑 Instant AudioContext Buffer Flush (<50ms)
+    Console->>User: Immediate Silence (Zero Agent Over-talk)

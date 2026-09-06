@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GrowthVoice OS — Archify Interactive Architecture</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background-color: #080C14; color: #F1F5F9; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    .node-card { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+    .node-card:hover { transform: translateY(-2px); box-shadow: 0 10px 25px -5px rgba(56, 189, 248, 0.25); }
+    .glow-cyan { box-shadow: 0 0 20px rgba(6, 182, 212, 0.35); }
+    .glow-purple { box-shadow: 0 0 20px rgba(168, 85, 247, 0.35); }
+    .glow-emerald { box-shadow: 0 0 20px rgba(16, 185, 129, 0.35); }
+    .pulse-dot { animation: pulse 2s infinite; }
+    @keyframes pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(1.2); } 100% { opacity: 1; transform: scale(1); } }
+  </style>
+</head>
+<body class="p-6 md:p-10 min-h-screen">
+  <div class="max-w-7xl mx-auto space-y-8">
+    <!-- Header -->
+    <header class="flex flex-col md:flex-row md:items-center justify-between border-b border-slate-800 pb-6 gap-4">
+      <div>
+        <div class="flex items-center space-x-3">
+          <span class="px-3 py-1 text-xs font-mono font-bold bg-cyan-500/20 text-cyan-400 border border-cyan-500/40 rounded-full">
+            Archify IR 1.0.0
+          </span>
+          <span class="px-3 py-1 text-xs font-mono font-bold bg-purple-500/20 text-purple-400 border border-purple-500/40 rounded-full">
+            Synaptic Cognitive Mesh
+          </span>
+        </div>
+        <h1 class="text-3xl font-black text-white tracking-tight mt-2">
+          GrowthVoice OS — Interactive System Architecture
+        </h1>
+        <p class="text-sm text-slate-400 mt-1">
+          AssemblyAI Voice Agent API + DeepSeek-R1 Cognitive Core + Hermes 10-Step Factory + Obsidian Knowledge Graph.
+        </p>
+      </div>
+
+      <div class="flex items-center space-x-3">
+        <a href="README.md" class="px-4 py-2 text-xs font-semibold bg-slate-900 text-slate-300 border border-slate-700 hover:bg-slate-800 rounded-xl transition">
+          View All 9 Diagrams
+        </a>
+        <a href="archify-spec.json" target="_blank" class="px-4 py-2 text-xs font-semibold bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl shadow-lg shadow-cyan-600/30 transition">
+          Download Archify JSON
+        </a>
+      </div>
+    </header>
+
+    <!-- Top Architecture Metrics Strip -->
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div class="p-4 bg-slate-900/90 border border-slate-800 rounded-xl">
+        <div class="text-xs text-slate-400 font-mono">Audio Stream</div>
+        <div class="text-lg font-bold text-cyan-400 mt-1">24,000 Hz Mono</div>
+        <div class="text-[11px] text-slate-500">PCM16 AudioWorklet</div>
+      </div>
+      <div class="p-4 bg-slate-900/90 border border-slate-800 rounded-xl">
+        <div class="text-xs text-slate-400 font-mono">Turn Latency (TTFA)</div>
+        <div class="text-lg font-bold text-emerald-400 mt-1">410 ms</div>
+        <div class="text-[11px] text-slate-500">Universal-3.5 Pro ASR</div>
+      </div>
+      <div class="p-4 bg-slate-900/90 border border-slate-800 rounded-xl">
+        <div class="text-xs text-slate-400 font-mono">Barge-in Abort Delay</div>
+        <div class="text-lg font-bold text-yellow-400 mt-1">&lt; 50 ms</div>
+        <div class="text-[11px] text-slate-500">Instant Queue Flush</div>
+      </div>
+      <div class="p-4 bg-slate-900/90 border border-slate-800 rounded-xl">
+        <div class="text-xs text-slate-400 font-mono">pass@5 Reliability</div>
+        <div class="text-lg font-bold text-purple-400 mt-1">100.0%</div>
+        <div class="text-[11px] text-slate-500">20 Monte Carlo Trials</div>
+      </div>
+      <div class="p-4 bg-slate-900/90 border border-slate-800 rounded-xl">
+        <div class="text-xs text-slate-400 font-mono">Knowledge Graph</div>
+        <div class="text-lg font-bold text-sky-400 mt-1">18 Nodes / 15 Edges</div>
+        <div class="text-[11px] text-slate-500">Obsidian &amp; Cypher Ready</div>
+      </div>
+    </div>
+
+    <!-- Interactive Layer Columns (Archify Standard) -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      
+      <!-- Column 1: Sensory & Voice Ingestion -->
+      <div class="space-y-4 bg-slate-950/60 p-5 rounded-2xl border border-slate-800">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <span class="text-xs font-bold text-cyan-400 tracking-wider uppercase flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-cyan-400 pulse-dot"></span>
+            1. Sensory &amp; Voice Layer
+          </span>
+          <span class="text-[11px] font-mono text-slate-500">Client / Edge</span>
+        </div>
+
+        <div class="node-card p-4 bg-slate-900 border border-slate-800 rounded-xl glow-cyan">
+          <div class="flex items-center justify-between">
+            <h3 class="font-bold text-white text-sm">Web Command Console</h3>
+            <span class="text-[10px] font-mono px-2 py-0.5 bg-cyan-500/10 text-cyan-400 rounded">Port 3000</span>
+          </div>
+          <p class="text-xs text-slate-400 mt-1">
+            React 18 + Vite SPA featuring the 60 FPS Canvas AudioWaveform, Live Transcript HUD, CRM Kanban, and Knowledge Graph.
+          </p>
+        </div>
+
+        <div class="node-card p-4 bg-slate-900 border border-slate-800 rounded-xl">
+          <div class="flex items-center justify-between">
+            <h3 class="font-bold text-white text-sm">AudioWorklet Pipeline</h3>
+            <span class="text-[10px] font-mono px-2 py-0.5 bg-slate-800 text-slate-400 rounded">24 kHz</span>
+          </div>
+          <p class="text-xs text-slate-400 mt-1">
+            Hardware-level downsampling, continuous binary frame streaming, and instant buffer purge on barge-in.
+          </p>
+        </div>
+
+        <div class="node-card p-4 bg-slate-900 border border-slate-800 rounded-xl">
+          <div class="flex items-center justify-between">
+            <h3 class="font-bold text-white text-sm">AssemblyAI Universal-3.5 Pro</h3>
+            <span class="text-[10px] font-mono px-2 py-0.5 bg-emerald-500/10 text-emerald-400 rounded">Voice Agent API</span>
+          </div>
+          <p class="text-xs text-slate-400 mt-1">
+            Full-duplex WebSocket speech recognition, phonetic VAD, single-use JWT minting, and streaming TTS voice "Anna".
+          </p>
+        </div>
+      </div>
+
+      <!-- Column 2: Cognitive Reasoning & Orchestration -->
+      <div class="space-y-4 bg-slate-950/60 p-5 rounded-2xl border border-slate-800">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <span class="text-xs font-bold text-purple-400 tracking-wider uppercase flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-purple-400 pulse-dot"></span>
+            2. Cognitive Core &amp; Guardrails
+          </span>
+          <span class="text-[11px] font-mono text-slate-500">Orchestration</span>
+        </div>
+
+        <div class="node-card p-4 bg-slate-900 border border-slate-800 rounded-xl glow-purple">
+          <div class="flex items-center justify-between">
+            <h3 class="font-bold text-white text-sm">Node.js Orchestrator</h3>
+            <span class="text-[10px] font-mono px-2 py-0.5 bg-purple-500/10 text-purple-400 rounded">Port 4000</span>
+          </div>
+          <p class="text-xs text-slate-400 mt-1">
+            Express API, flat tool calling dispatcher, telemetry WebSocket server (/ws/telemetry), and session lifecycle manager.
+          </p>
+        </div>
+
+        <div class="node-card p-4 bg-slate-900 border border-slate-800 rounded-xl">
+          <div class="flex items-center justify-between">
+            <h3 class="font-bold text-white text-sm">Deterministic Policy Clamping</h3>
+            <span class="text-[10px] font-mono px-2 py-0.5 bg-red-500/10 text-red-400 rounded">15% Max Hard Limit</span>
+          </div>
+          <p class="text-xs text-slate-400 mt-1">
+            "Model proposes, application enforces." Automatically clamps discount requests to 15% and injects a 1-on-1 Growth Audit.
+          </p>
+        </div>
+
+        <div class="node-card p-4 bg-slate-900 border border-slate-800 rounded-xl">
+          <div class="flex items-center justify-between">
+            <h3 class="font-bold text-white text-sm">DeepSeek-R1 Cognitive Harness</h3>
+            <span class="text-[10px] font-mono px-2 py-0.5 bg-cyan-500/10 text-cyan-400 rounded">Chain-of-Thought</span>
+          </div>
+          <p class="text-xs text-slate-400 mt-1">
+            Dual-model routing with deepseek-chat for semantic extractions and deepseek-reasoner for 10-step synthesis and evals.
+          </p>
+        </div>
+      </div>
+
+      <!-- Column 3: Synaptic Memory & Syndication -->
+      <div class="space-y-4 bg-slate-950/60 p-5 rounded-2xl border border-slate-800">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <span class="text-xs font-bold text-emerald-400 tracking-wider uppercase flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 pulse-dot"></span>
+            3. Memory Mesh &amp; Syndication
+          </span>
+          <span class="text-[11px] font-mono text-slate-500">Persistence</span>
+        </div>
+
+        <div class="node-card p-4 bg-slate-900 border border-slate-800 rounded-xl glow-emerald">
+          <div class="flex items-center justify-between">
+            <h3 class="font-bold text-white text-sm">Knowledge Graph Service</h3>
+            <span class="text-[10px] font-mono px-2 py-0.5 bg-emerald-500/10 text-emerald-400 rounded">Graph Store</span>
+          </div>
+          <p class="text-xs text-slate-400 mt-1">
+            18 nodes, 15 typed edges, persisted to data/knowledge_graph.json with live sync to Obsidian Vault (/vault/).
+          </p>
+        </div>
+
+        <div class="node-card p-4 bg-slate-900 border border-slate-800 rounded-xl">
+          <div class="flex items-center justify-between">
+            <h3 class="font-bold text-white text-sm">Hermes Content Factory</h3>
+            <span class="text-[10px] font-mono px-2 py-0.5 bg-purple-500/10 text-purple-400 rounded">10-Step Flow</span>
+          </div>
+          <p class="text-xs text-slate-400 mt-1">
+            3 parallel research lanes (Creator RAG, Market Trends, Objections) synthesized into X threads, newsletters, and webinar scripts.
+          </p>
+        </div>
+
+        <div class="node-card p-4 bg-slate-900 border border-slate-800 rounded-xl">
+          <div class="flex items-center justify-between">
+            <h3 class="font-bold text-white text-sm">Self-Healing Reflex Gate</h3>
+            <span class="text-[10px] font-mono px-2 py-0.5 bg-yellow-500/10 text-yellow-400 rounded">Step 08</span>
+          </div>
+          <p class="text-xs text-slate-400 mt-1">
+            Autonomous character constraint validation (&le;280 chars) with prompt mutation repairing over-length tweets down to 234 chars.
+          </p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Footer Documentation Banner -->
+    <footer class="p-6 bg-slate-900/70 border border-slate-800 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400 font-mono">
+      <div>
+        <span>Built with Archify &amp; Synaptic Standards</span>
+        <span class="mx-2">•</span>
+        <span>Repository: <a href="https://github.com/dev4-gpt/VoiceAI" target="_blank" class="text-cyan-400 hover:underline">dev4-gpt/VoiceAI</a></span>
+      </div>
+      <div>AssemblyAI Voice Agent Hackathon (lablab.ai) • $10,000 Prize Submission</div>
+    </footer>
+  </div>
+</body>
+</html>

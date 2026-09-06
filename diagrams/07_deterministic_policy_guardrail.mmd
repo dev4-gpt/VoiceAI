@@ -1,0 +1,20 @@
+stateDiagram-v2
+    [*] --> InboundDemand: Member demands "35% Discount or Cancel"
+    
+    state "Autonomous SDR Analysis" as SDR {
+        InboundDemand --> SentimentAnalysis: Detect Churn Risk
+        SentimentAnalysis --> LLMProposal: Model Proposes 35% Concession
+    }
+
+    state "Deterministic Guardrail Interceptor" as Guardrail {
+        LLMProposal --> CheckPolicyCeiling: evaluate(requestedDiscount > MAX_DISCOUNT_15)
+        CheckPolicyCeiling --> ClampEnforced: Clamp discount to 15.0%
+        ClampEnforced --> AddValueBonus: Inject "1-on-1 Growth Audit Call"
+    }
+
+    state "CRM & Verbal Response" as Output {
+        AddValueBonus --> SpokenOffer: Voice Agent delivers empathetic clamped offer
+        SpokenOffer --> CRMUpdate: Member marked "active_retained" with 15% discount
+    }
+
+    CRMUpdate --> [*]: Revenue Protected & Churn Averted

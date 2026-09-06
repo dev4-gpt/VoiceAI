@@ -1,0 +1,55 @@
+graph TD
+    subgraph SENSORY_AFFERENT["Sensory & Perceptual Cortex"]
+        ACOUSTIC["🎙️ 24kHz Mono PCM16 Stream"]
+        ASR_PERCEPT["⚡ AssemblyAI Universal-3.5 Pro<br/>• Real-Time Tokenized Transcripts<br/>• Phonetic Turn Boundary Detection"]
+        ACOUSTIC --> ASR_PERCEPT
+    end
+
+    subgraph SYNAPTIC_CORE["Central Cognitive Synapse Router"]
+        ROUTER["🧠 Central Synaptic Orchestrator"]
+        REASONER["🔬 DeepSeek-R1 Cognitive Core<br/>• Chain-of-Thought Reflection<br/>• Intent Disambiguation<br/>• Safety & Policy Arbitration"]
+        ROUTER <--> REASONER
+    end
+
+    ASR_PERCEPT -->|Sensory Ingestion| ROUTER
+
+    subgraph MEMORY_FABRIC["Synaptic Memory & Association Mesh"]
+        ST_MEM[("⚡ Short-Term Working Memory<br/>(Redis 7 Ephemeral Session Cache)")]
+        LT_MEM[("🌐 Long-Term Associative Graph<br/>(18-Node Knowledge Graph & Obsidian Vault)<br/>• [[Leads]] • [[Objections]] • [[Content-Packs]]")]
+        ROUTER <--> ST_MEM
+        ROUTER <--> LT_MEM
+    end
+
+    subgraph EFFERENT_MOTOR["Effector & Actuator Motor Layer"]
+        TOOL_CRM["💼 CRM Tool Actuator<br/>create_or_update_lead & qualify_lead"]
+        TOOL_CAL["📅 Calendar Actuator<br/>schedule_growth_consultation"]
+        TOOL_GUARD["🛡️ Guardrail Clamping Actuator<br/>process_retention_offer (≤15%)"]
+        ROUTER --> TOOL_CRM
+        ROUTER --> TOOL_CAL
+        ROUTER --> TOOL_GUARD
+    end
+
+    subgraph GENERATIVE_CORTEX["Generative Syndication Cortex (Hermes Engine)"]
+        FACTORY["⚙️ Hermes Autonomous Content Factory"]
+        LANE_RAG["Creator Offer RAG"]
+        LANE_TRENDS["Market Trends"]
+        LANE_OBJ["Community Analytics"]
+        HEAL_REFLEX["🔄 Self-Healing Reflex Loop (≤280 Chars)"]
+        SYNDICATE["📣 Multi-Channel Output<br/>• X Thread • Newsletter • Webinar"]
+
+        ROUTER -->|Async Trigger| FACTORY
+        FACTORY --> LANE_RAG & LANE_TRENDS & LANE_OBJ
+        LANE_RAG & LANE_TRENDS & LANE_OBJ --> HEAL_REFLEX --> SYNDICATE
+    end
+
+    classDef sensory fill:#0f172a,stroke:#38bdf8,stroke-width:2px,color:#fff;
+    classDef core fill:#3b0764,stroke:#c084fc,stroke-width:2px,color:#fff;
+    classDef memory fill:#1e1b4b,stroke:#818cf8,stroke-width:2px,color:#fff;
+    classDef effector fill:#064e3b,stroke:#34d399,stroke-width:2px,color:#fff;
+    classDef gen fill:#701a75,stroke:#f43f5e,stroke-width:2px,color:#fff;
+
+    class ACOUSTIC,ASR_PERCEPT sensory;
+    class ROUTER,REASONER core;
+    class ST_MEM,LT_MEM memory;
+    class TOOL_CRM,TOOL_CAL,TOOL_GUARD effector;
+    class FACTORY,LANE_RAG,LANE_TRENDS,LANE_OBJ,HEAL_REFLEX,SYNDICATE gen;

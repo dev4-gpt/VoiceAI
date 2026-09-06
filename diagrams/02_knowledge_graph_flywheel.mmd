@@ -1,0 +1,72 @@
+graph TD
+    subgraph INBOUND_SESSIONS["Spoken Voice Sessions"]
+        VS1["🎙️ Voice Session: Jason Miller<br/>(After-Hours Inbound SDR)"]
+        VS2["🎙️ Voice Session: Sarah Jenkins<br/>(Retention & Churn Save)"]
+    end
+
+    subgraph REVENUE_PIPELINE["CRM & Revenue Tier"]
+        LEAD["👤 Lead: Jason Miller<br/>• Budget: $5k-$15k<br/>• BANT Score: 85<br/>• Status: Call Scheduled"]
+        OFFER["💼 Offer: Pro Mentorship<br/>• Price: $2,997 ($497/mo)<br/>• Format: Cohort + 1-on-1"]
+        MEMBER["👤 Member: Sarah Jenkins<br/>• Tier: VIP Mastermind ($997/mo)<br/>• Status: Retained"]
+    end
+
+    subgraph GUARDRAIL_POLICIES["Deterministic Business Guardrails"]
+        POLICY1["🛡️ Guardrail: 15% Max Discount<br/>(Deterministic Code Clamp)"]
+        POLICY2["🛡️ Guardrail: Real-Time PII Masking"]
+    end
+
+    subgraph OBJECTIONS_CAPTURED["Voice-Captured Objections"]
+        OBJ1["⚠️ Objection: Price vs Risk<br/>'Will this work with zero audience?'"]
+        OBJ2["⚠️ Objection: Cash Flow Tight<br/>'Can I get 35% discount or cancel?'"]
+    end
+
+    subgraph RESEARCH_LANES["Hermes 3 Parallel Research Lanes"]
+        RL1["🔬 Lane 1: Creator RAG (0.96)<br/>Internal Offer Tiers & Pricing Sprints"]
+        RL2["🔬 Lane 2: Market Trends (0.89)<br/>Action Guarantee 4.2x Completion Benchmark"]
+        RL3["🔬 Lane 3: Community Analytics (0.94)<br/>Student Voice Calls: Zero Audience Fear"]
+    end
+
+    subgraph CONTENT_SYNTHESIS["Hermes Content Pack & Self-Healing"]
+        PACK["📦 Content Pack: 14-Day Guarantee (job_cf_101)<br/>Thesis: 'Buyers buy risk removal and speed'"]
+        A_TWITTER["🐦 X Thread (5 Tweets)<br/>Constraint: ≤280 chars per tweet"]
+        A_EMAIL["📧 Newsletter<br/>'The 3-Sentence Reframe ($42k Closed)'"]
+        A_WEBINAR["🎬 Webinar Pitch Script<br/>14-Day Action Guarantee Close"]
+        HEAL["🔄 Self-Healing Loop<br/>Tweet #3: 312 chars ➔ 234 chars (Healed)"]
+    end
+
+    %% Relationships
+    VS1 -->|QUALIFIED_AS| LEAD
+    LEAD -->|ASSOCIATED_WITH| OFFER
+    VS2 -->|RAISED_OBJECTION| OBJ2
+    VS2 -->|TRIGGERED_POLICY| POLICY1
+    OBJ2 -->|ASSOCIATED_WITH| MEMBER
+
+    VS1 -->|RAISED_OBJECTION| OBJ1
+    OBJ1 -->|RESEARCHED_IN| RL1
+    OBJ1 -->|RESEARCHED_IN| RL2
+    OBJ1 -->|RESEARCHED_IN| RL3
+
+    RL1 -->|SYNTHESIZED_INTO| PACK
+    RL2 -->|SYNTHESIZED_INTO| PACK
+    RL3 -->|SYNTHESIZED_INTO| PACK
+
+    PACK -->|CONTAINS_ASSET| A_TWITTER
+    PACK -->|CONTAINS_ASSET| A_EMAIL
+    PACK -->|CONTAINS_ASSET| A_WEBINAR
+    A_TWITTER -->|HEALED_BY| HEAL
+
+    classDef session fill:#0f172a,stroke:#38bdf8,stroke-width:2px,color:#fff;
+    classDef rev fill:#064e3b,stroke:#34d399,stroke-width:2px,color:#fff;
+    classDef guard fill:#7f1d1d,stroke:#f87171,stroke-width:2px,color:#fff;
+    classDef obj fill:#78350f,stroke:#fbbf24,stroke-width:2px,color:#fff;
+    classDef lane fill:#312e81,stroke:#818cf8,stroke-width:2px,color:#fff;
+    classDef pack fill:#4c1d95,stroke:#c084fc,stroke-width:2px,color:#fff;
+    classDef heal fill:#047857,stroke:#10b981,stroke-width:2px,color:#fff;
+
+    class VS1,VS2 session;
+    class LEAD,OFFER,MEMBER rev;
+    class POLICY1,POLICY2 guard;
+    class OBJ1,OBJ2 obj;
+    class RL1,RL2,RL3 lane;
+    class PACK,A_TWITTER,A_EMAIL,A_WEBINAR pack;
+    class HEAL heal;

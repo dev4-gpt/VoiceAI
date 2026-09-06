@@ -1,0 +1,53 @@
+flowchart TD
+    STEP1["Step 01: Voice Objection Captured<br/><i>'Will this work with zero audience?'</i>"] --> STEP2["Step 02: Instant Spoken Voice Ack (<1s)<br/><i>'Queued Hermes Content Factory. 3 lanes active.'</i>"]
+    
+    STEP2 --> PARALLEL{"Step 03-05: 3 Parallel Research Lanes"}
+
+    subgraph THREE_LANES["Parallel Background Research Execution"]
+        LANE1["🔬 Lane 1: Creator RAG (0.96)<br/>Internal Offer Sprints & Pricing"]
+        LANE2["🔬 Lane 2: Market Trends (0.89)<br/>Action Guarantee 4.2x Completion Rate"]
+        LANE3["🔬 Lane 3: Community Objections (0.94)<br/>90-Day Voice Call Objection Analytics"]
+    end
+
+    PARALLEL --> LANE1
+    PARALLEL --> LANE2
+    PARALLEL --> LANE3
+
+    LANE1 --> STEP6["Step 06: Synthesis with DeepSeek-R1<br/>Generate 5-Tweet Thread, Newsletter, Webinar Script"]
+    LANE2 --> STEP6
+    LANE3 --> STEP6
+
+    STEP6 --> STEP7["Step 07: Multi-Asset Draft Assembly"]
+
+    STEP7 --> GATE8{"Step 08: Autonomous Self-Healing Gate"}
+
+    subgraph HEALING_LOOP["Self-Healing Validation Rules"]
+        CHECK1{"Rule 1: Tweet ≤ 280 chars?"}
+        CHECK2{"Rule 2: Refund Guarantee Cited?"}
+        CHECK3{"Rule 3: PII Redacted?"}
+
+        CHECK1 -- No (e.g. 312 chars) --> MUTATE["DeepSeek-R1 Prompt Mutation<br/>Condense syntax & adjectives"]
+        MUTATE --> RE_EVAL["Re-evaluate Length: 234 chars (PASS)"]
+        RE_EVAL --> PASS["All Quality Gates Passed ✅"]
+        CHECK1 -- Yes --> PASS
+        CHECK2 -- Verified --> PASS
+        CHECK3 -- Scrubbed --> PASS
+    end
+
+    GATE8 --> HEALING_LOOP
+
+    PASS --> STEP9["Step 09: Creator Human Approval Boundary Gate<br/>Status: needs_approval (Pulsing Amber)"]
+    
+    STEP9 -->|Creator Clicks 'Approve & Publish'| STEP10["Step 10: Multi-Channel Syndication & Graph Commit<br/>• Published to X, Substack, Zoom<br/>• Saved to Obsidian Vault & Knowledge Graph"]
+
+    classDef initial fill:#0f172a,stroke:#38bdf8,stroke-width:2px,color:#fff;
+    classDef lanes fill:#1e1b4b,stroke:#818cf8,stroke-width:2px,color:#fff;
+    classDef synth fill:#3b0764,stroke:#c084fc,stroke-width:2px,color:#fff;
+    classDef heal fill:#78350f,stroke:#fbbf24,stroke-width:2px,color:#fff;
+    classDef final fill:#064e3b,stroke:#34d399,stroke-width:2px,color:#fff;
+
+    class STEP1,STEP2 initial;
+    class LANE1,LANE2,LANE3 lanes;
+    class STEP6,STEP7 synth;
+    class GATE8,CHECK1,CHECK2,CHECK3,MUTATE,RE_EVAL,PASS heal;
+    class STEP9,STEP10 final;

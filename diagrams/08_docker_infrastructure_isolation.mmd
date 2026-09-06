@@ -1,0 +1,56 @@
+graph TD
+    subgraph HOST_MACHINE["Host Machine (macOS / Linux)"]
+        BROWSER["Web Browser (:3000)"]
+        LOCAL_VAULT["Local Obsidian Vault (./vault)"]
+        LOCAL_DATA["Local Graph Store (./data)"]
+        LOCAL_GFY["Graphify Reports (./graphify-out)"]
+    end
+
+    subgraph DOCKER_ENGINE["Docker Daemon Substrate"]
+        subgraph BRIDGE_NET["Isolated Docker Bridge Network: voice-net"]
+            
+            subgraph WEB_CONTAINER["Container: voice-web-console (:3000)"]
+                NGINX["Nginx Alpine Engine"]
+                STATIC["Pre-built React 18 SPA (Vite)"]
+                NGINX --- STATIC
+            end
+
+            subgraph ORCH_CONTAINER["Container: voice-orchestrator (:4000)"]
+                NODE["Node.js 20 LTS Runtime"]
+                EXPRESS["Express REST Engine"]
+                WSS["WebSocket Server (/ws/telemetry)"]
+                GRAPH_SVC["GraphDatabaseService"]
+                NODE --- EXPRESS
+                NODE --- WSS
+                NODE --- GRAPH_SVC
+            end
+
+            subgraph REDIS_CONTAINER["Container: voice-redis-cache (:6379)"]
+                REDIS["Redis 7 Alpine Engine"]
+                R_VOL[("Internal Volume: redis-data")]
+                REDIS --- R_VOL
+            end
+
+        end
+    end
+
+    %% Port Mappings
+    BROWSER -->|HTTP / WS :3000| NGINX
+    NGINX -->|Reverse Proxy /api| EXPRESS
+    NGINX -->|Reverse Proxy /ws| WSS
+    EXPRESS <-->|ioredis :6379| REDIS
+
+    %% Volume Mappings
+    LOCAL_DATA <-->|Bind Mount| ORCH_CONTAINER
+    LOCAL_VAULT <-->|Bind Mount| ORCH_CONTAINER
+    LOCAL_GFY <-->|Bind Mount| ORCH_CONTAINER
+
+    classDef host fill:#0f172a,stroke:#38bdf8,stroke-width:2px,color:#fff;
+    classDef container fill:#1e1b4b,stroke:#818cf8,stroke-width:2px,color:#fff;
+    classDef runtime fill:#064e3b,stroke:#34d399,stroke-width:2px,color:#fff;
+    classDef cache fill:#3b0764,stroke:#c084fc,stroke-width:2px,color:#fff;
+
+    class BROWSER,LOCAL_VAULT,LOCAL_DATA,LOCAL_GFY host;
+    class NGINX,STATIC,EXPRESS,WSS,GRAPH_SVC container;
+    class NODE runtime;
+    class REDIS,R_VOL cache;

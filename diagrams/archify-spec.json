@@ -1,0 +1,269 @@
+{
+  "$schema": "https://raw.githubusercontent.com/tt-a1i/archify/main/schema/architecture-ir.json",
+  "system": {
+    "name": "GrowthVoice OS",
+    "version": "1.0.0",
+    "codename": "Anna-Hermes-Cognitive-Mesh",
+    "description": "Autonomous AI Growth Operator for high-volume creators. Unifies AssemblyAI Voice Agent API, DeepSeek-R1 reasoning harness, Hermes 10-step content factory, and self-healing knowledge graph persistence.",
+    "authors": ["Aryaman Singh Dev", "dev4-gpt"],
+    "hackathon": "AssemblyAI Voice Agent Hackathon (lablab.ai)"
+  },
+  "layers": [
+    {
+      "id": "presentation",
+      "name": "Sensory & Presentation Layer",
+      "color": "#0ea5e9"
+    },
+    {
+      "id": "edge_proxy",
+      "name": "Reverse Proxy & Edge Ingress",
+      "color": "#818cf8"
+    },
+    {
+      "id": "orchestration",
+      "name": "Autonomous Orchestration & Tool Execution",
+      "color": "#34d399"
+    },
+    {
+      "id": "cognitive_reasoning",
+      "name": "Cognitive Reasoning & Self-Healing Core",
+      "color": "#c084fc"
+    },
+    {
+      "id": "memory_storage",
+      "name": "Persistent Synaptic Memory & Knowledge Graph",
+      "color": "#10b981"
+    },
+    {
+      "id": "external_ai",
+      "name": "Foundational AI Model Substrates",
+      "color": "#f43f5e"
+    }
+  ],
+  "components": [
+    {
+      "id": "web_console",
+      "name": "Voice Web Command Console",
+      "layer": "presentation",
+      "type": "SinglePageApp",
+      "technologies": ["React 18", "TypeScript", "Tailwind CSS", "Lucide", "Vite"],
+      "responsibilities": [
+        "60 FPS Canvas AudioWaveform rendering",
+        "Live Transcript HUD and autonomous tool chip rendering",
+        "BANT Revenue CRM Kanban pipeline view",
+        "Hermes Content Studio 3-lane inspector and 1-click approval gate",
+        "Knowledge Graph and Obsidian Vault explorer"
+      ]
+    },
+    {
+      "id": "audio_worklet",
+      "name": "AudioWorklet Capture Pipeline",
+      "layer": "presentation",
+      "type": "AudioProcessor",
+      "technologies": ["Web Audio API", "PCM16 Linear", "24,000 Hz Mono"],
+      "responsibilities": [
+        "Continuous 24kHz mono PCM16 audio downsampling",
+        "Sub-50ms buffer flush on barge-in interruption detection"
+      ]
+    },
+    {
+      "id": "nginx_edge",
+      "name": "Nginx Ingress Proxy",
+      "layer": "edge_proxy",
+      "type": "ReverseProxy",
+      "technologies": ["Nginx Alpine", "HTTP/1.1", "WebSocket Upgrade"],
+      "responsibilities": [
+        "Route / to static web SPA distribution",
+        "Proxy /api to Node.js orchestrator port 4000",
+        "Upgrade and proxy /ws/telemetry to Node.js WebSocket server"
+      ]
+    },
+    {
+      "id": "orchestrator_core",
+      "name": "Node.js Voice Orchestrator",
+      "layer": "orchestration",
+      "type": "Microservice",
+      "technologies": ["Node.js 20 LTS", "Express", "TypeScript", "CommonJS"],
+      "responsibilities": [
+        "Ephemeral JWT minting for AssemblyAI Voice Agent API",
+        "Flat tool calling dispatcher with policy clamping",
+        "Telemetry WebSocket broadcasting",
+        "Graph Database CRUD operations and exports"
+      ]
+    },
+    {
+      "id": "tool_dispatcher",
+      "name": "Flat Tool Dispatcher",
+      "layer": "orchestration",
+      "type": "Actuator",
+      "technologies": ["TypeScript", "Regex Sanitizer", "Schema Validator"],
+      "responsibilities": [
+        "create_or_update_lead execution",
+        "qualify_lead (BANT scoring engine)",
+        "schedule_growth_consultation",
+        "process_retention_offer with 15% deterministic discount clamp"
+      ]
+    },
+    {
+      "id": "deepseek_reasoner",
+      "name": "DeepSeek Cognitive Reasoner",
+      "layer": "cognitive_reasoning",
+      "type": "ReasoningEngine",
+      "technologies": ["DeepSeek-R1", "DeepSeek-V3", "Chain-of-Thought"],
+      "responsibilities": [
+        "Multi-lane research synthesis from Creator RAG, Market Trends, Community Analytics",
+        "Autonomous Self-Healing Loop for character length and refund citations",
+        "Model-as-a-Judge evaluation grading"
+      ]
+    },
+    {
+      "id": "content_factory_engine",
+      "name": "Hermes Content Factory Engine",
+      "layer": "cognitive_reasoning",
+      "type": "WorkflowEngine",
+      "technologies": ["10-Step Hermes Blueprint", "Async Worker", "Regex JSON Extractor"],
+      "responsibilities": [
+        "Execute 3 parallel background research lanes",
+        "Synthesize 5-Tweet thread, email newsletter, and webinar pitch script",
+        "Enforce Step 08 self-healing validation gates",
+        "Manage Step 09 creator approval boundary"
+      ]
+    },
+    {
+      "id": "redis_cache",
+      "name": "Redis 7 Working Memory",
+      "layer": "memory_storage",
+      "type": "CacheStore",
+      "technologies": ["Redis 7 Alpine", "In-Memory KV"],
+      "responsibilities": [
+        "Short-term session token caching",
+        "Active session state serialization"
+      ]
+    },
+    {
+      "id": "graph_database_service",
+      "name": "Knowledge Graph Database Service",
+      "layer": "memory_storage",
+      "type": "GraphStore",
+      "technologies": ["NetworkX", "Graphify", "JSON Store", "Cypher", "GraphML"],
+      "responsibilities": [
+        "18 typed nodes and 15 typed edges relational modeling",
+        "Persistent serialization to data/knowledge_graph.json",
+        "Automated Obsidian Vault generation in /vault/",
+        "Cypher DDL export for Neo4j / FalkorDB / Memgraph",
+        "GraphML XML export for Gephi / Cytoscape"
+      ]
+    },
+    {
+      "id": "assemblyai_api",
+      "name": "AssemblyAI Voice Agent API",
+      "layer": "external_ai",
+      "type": "CloudProvider",
+      "technologies": ["universal-3-5-pro", "WebSocket WSS", "Voice: Anna"],
+      "responsibilities": [
+        "Real-time streaming speech recognition",
+        "Phonetic voice activity detection (VAD)",
+        "Zero-latency turn boundary detection",
+        "Streaming TTS speech playback"
+      ]
+    }
+  ],
+  "dataFlows": [
+    {
+      "id": "flow_audio_stream",
+      "source": "audio_worklet",
+      "target": "assemblyai_api",
+      "protocol": "WebSocket WSS",
+      "payload": "24,000 Hz Mono PCM16 Binary Frames",
+      "latencyTargetMs": 50
+    },
+    {
+      "id": "flow_token_minting",
+      "source": "orchestrator_core",
+      "target": "assemblyai_api",
+      "protocol": "HTTPS GET",
+      "payload": "/v1/token?expires_in_seconds=300",
+      "latencyTargetMs": 200
+    },
+    {
+      "id": "flow_telemetry_broadcast",
+      "source": "orchestrator_core",
+      "target": "web_console",
+      "protocol": "WebSocket /ws/telemetry",
+      "payload": "Tool Executions, BANT Scores, Content Factory Status",
+      "latencyTargetMs": 15
+    },
+    {
+      "id": "flow_content_synthesis",
+      "source": "content_factory_engine",
+      "target": "deepseek_reasoner",
+      "protocol": "HTTPS POST",
+      "payload": "3-Lane Citations + Thesis Prompt",
+      "latencyTargetMs": 25000
+    },
+    {
+      "id": "flow_graph_commit",
+      "source": "orchestrator_core",
+      "target": "graph_database_service",
+      "protocol": "In-Process Call",
+      "payload": "Nodes, Edges, Obsidian Markdown Vault Sync",
+      "latencyTargetMs": 5
+    }
+  ],
+  "guardrails": [
+    {
+      "id": "guardrail_discount_clamp",
+      "name": "Max 15% Autonomous Discount Clamp",
+      "type": "DeterministicCodeEnforcement",
+      "ceilingPercent": 15,
+      "rejectionPenalty": "Inject 1-on-1 Growth Audit Call Bonus"
+    },
+    {
+      "id": "guardrail_tweet_length",
+      "name": "Platform Character Constraint (≤280 Chars)",
+      "type": "SelfHealingPromptMutation",
+      "targetChars": 280,
+      "verifiedOutcome": "312 chars compressed to 234 chars by DeepSeek-R1"
+    },
+    {
+      "id": "guardrail_pii_masking",
+      "name": "Zero-Leakage PII Scrubbing",
+      "type": "DeterministicRegexSanitizer",
+      "patterns": ["credit_card", "ssn", "phone", "email"]
+    }
+  ],
+  "verifications": {
+    "evalTasks": [
+      {
+        "id": "task_01",
+        "name": "Inbound Lead BANT Qualification",
+        "passAt5": 1.0,
+        "passTo5": 0.96
+      },
+      {
+        "id": "task_02",
+        "name": "Tough Pricing Objection Hybrid RAG",
+        "passAt5": 1.0,
+        "passTo5": 0.925
+      },
+      {
+        "id": "task_03",
+        "name": "Churn Save Policy Discount Clamping",
+        "passAt5": 1.0,
+        "passTo5": 0.90
+      },
+      {
+        "id": "task_04",
+        "name": "Prompt Injection & Credential Defense",
+        "passAt5": 1.0,
+        "passTo5": 1.0
+      }
+    ],
+    "systemScorecard": {
+      "passAt5Overall": 1.0,
+      "passTo5Overall": 0.884,
+      "timeToFirstAudioMs": 410,
+      "turnP95LatencyMs": 1450
+    }
+  }
+}

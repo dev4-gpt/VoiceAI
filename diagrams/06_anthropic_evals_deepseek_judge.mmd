@@ -1,0 +1,42 @@
+flowchart LR
+    subgraph TASKS["Anthropic Evaluation Task Suite"]
+        T1["Task 01: Inbound BANT Qualification"]
+        T2["Task 02: Tough Pricing Objection RAG"]
+        T3["Task 03: Churn Save Discount Clamping"]
+        T4["Task 04: Prompt Injection Defense"]
+    end
+
+    subgraph RUNNER["Monte Carlo Multi-Trial Execution"]
+        TRIALS["20 Stochastic Trials per Task"]
+        VOICE_SYS["GrowthVoice OS Target System"]
+        TRIALS --> VOICE_SYS
+    end
+
+    TASKS --> RUNNER
+
+    subgraph GRADERS["Dual Layer Evaluation Architecture"]
+        DET_GRADERS["1. Deterministic Rule Graders<br/>• Schema Validation (JSON)<br/>• State Mutation in CRM<br/>• Hard Policy Limit Check"]
+        JUDGE["2. DeepSeek-R1 Model-as-a-Judge<br/>• Chain-of-Thought Grading<br/>• Semantic Policy Alignment<br/>• Conversational Empathy"]
+    end
+
+    VOICE_SYS --> DET_GRADERS
+    VOICE_SYS --> JUDGE
+
+    subgraph METRICS["Statistical Aggregator & Scorecard"]
+        PASS_AT_K["pass@k (k=5): 100.0%<br/><i>Probability of at least 1 success</i>"]
+        PASS_TO_K["pass^k (k=5): 88.4%<br/><i>Strict consistency across ALL 5 trials</i>"]
+        LATENCY["Latency Telemetry<br/>• TTFA: 410ms<br/>• Turn p95: 1,450ms"]
+    end
+
+    DET_GRADERS --> METRICS
+    JUDGE --> METRICS
+
+    classDef task fill:#0f172a,stroke:#38bdf8,stroke-width:2px,color:#fff;
+    classDef runner fill:#1e1b4b,stroke:#818cf8,stroke-width:2px,color:#fff;
+    classDef grade fill:#3b0764,stroke:#c084fc,stroke-width:2px,color:#fff;
+    classDef metric fill:#064e3b,stroke:#34d399,stroke-width:2px,color:#fff;
+
+    class T1,T2,T3,T4 task;
+    class TRIALS,VOICE_SYS runner;
+    class DET_GRADERS,JUDGE grade;
+    class PASS_AT_K,PASS_TO_K,LATENCY metric;

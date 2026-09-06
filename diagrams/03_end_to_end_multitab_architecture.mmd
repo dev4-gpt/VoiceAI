@@ -1,0 +1,65 @@
+graph TD
+    subgraph TAB1["1. Voice Console (Isolated Voice Runtime)"]
+        MIC["🎙️ Web AudioWorklet (24kHz Mono)"]
+        WAVE["🌊 60 FPS Canvas Visualizer"]
+        HUD["💬 Live Transcript HUD"]
+        PERS["🎭 Persona Switcher (Inbound / Outbound / Churn)"]
+        SIM["⚡ 1-Click Interactive Demo Buttons"]
+        MIC --- WAVE
+        MIC --- HUD
+        PERS --- HUD
+        SIM --- HUD
+    end
+
+    subgraph TAB2["2. Revenue CRM Pipeline"]
+        STAGE1["Stage: New Leads"]
+        STAGE2["Stage: BANT Qualified (≥60)"]
+        STAGE3["Stage: Strategy Call Booked"]
+        STAGE4["Stage: Enrolled / Closed"]
+        ROSTER["👥 Retained Members Roster"]
+        STAGE1 --> STAGE2 --> STAGE3 --> STAGE4
+    end
+
+    subgraph TAB3["3. Hermes Content Studio"]
+        L1["Creator RAG Lane"]
+        L2["Market Trends Lane"]
+        L3["Community Objections Lane"]
+        REPAIR["🛡️ Self-Healing Rule Gate (≤280 chars)"]
+        ASSETS["📦 Verified Multi-Channel Asset Drafts"]
+        GATE["🟢 Creator 1-Click Approval Gate"]
+        L1 & L2 & L3 --> REPAIR --> ASSETS --> GATE
+    end
+
+    subgraph TAB4["4. Anthropic Evals Suite"]
+        TRIALS["20 Stochastic Voice Trials"]
+        METRICS["pass@k (100%) & pass^k (88.4%)"]
+        JUDGE["DeepSeek-R1 Model-as-a-Judge"]
+        TASKS["4 Production Task Benches"]
+        TRIALS --> TASKS --> JUDGE --> METRICS
+    end
+
+    subgraph TAB5["5. Knowledge Graph & Vault"]
+        NODES["18 Graph Nodes & 15 Typed Edges"]
+        SEARCH["Node Search & Type Filters"]
+        OBS_PREV["Obsidian [[Wikilink]] Preview"]
+        EXPORTS["1-Click Sync: Obsidian / Cypher / GraphML"]
+        NODES --- SEARCH --- OBS_PREV --- EXPORTS
+    end
+
+    %% Cross-Tab Signals
+    SIM -->|qualify_lead| STAGE3
+    SIM -->|process_retention_offer| ROSTER
+    SIM -->|run_content_factory| L1 & L2 & L3
+    GATE -->|publish_pack| NODES
+
+    classDef tab1 fill:#082f49,stroke:#0ea5e9,stroke-width:2px,color:#fff;
+    classDef tab2 fill:#064e3b,stroke:#10b981,stroke-width:2px,color:#fff;
+    classDef tab3 fill:#4c1d95,stroke:#a855f7,stroke-width:2px,color:#fff;
+    classDef tab4 fill:#701a75,stroke:#d946ef,stroke-width:2px,color:#fff;
+    classDef tab5 fill:#1e1b4b,stroke:#6366f1,stroke-width:2px,color:#fff;
+
+    class MIC,WAVE,HUD,PERS,SIM tab1;
+    class STAGE1,STAGE2,STAGE3,STAGE4,ROSTER tab2;
+    class L1,L2,L3,REPAIR,ASSETS,GATE tab3;
+    class TRIALS,METRICS,JUDGE,TASKS tab4;
+    class NODES,SEARCH,OBS_PREV,EXPORTS tab5;

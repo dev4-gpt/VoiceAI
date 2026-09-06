@@ -1,0 +1,67 @@
+graph TD
+    subgraph CLIENT["Frontend Layer (Port 3000)"]
+        UI["Voice Web Console (React 18 + Vite)"]
+        AUDIO["AudioWorklet (24kHz Mono PCM16)"]
+        HUD["Live Transcript HUD & Tool Chips"]
+        UI --- AUDIO
+        UI --- HUD
+    end
+
+    subgraph PROXY["Reverse Proxy & Edge"]
+        NGINX["Nginx Container (:3000)"]
+        NGINX -->|/api REST| ORCH
+        NGINX -->|/ws Telemetry WS| WS
+        UI --> NGINX
+    end
+
+    subgraph ORCHESTRATOR["Node.js Orchestrator Layer (Port 4000)"]
+        WS["Telemetry WebSocket Server (/ws/telemetry)"]
+        ORCH["Express API Engine"]
+        DISPATCH["Flat Tool Dispatcher"]
+        G_SVC["GraphDatabaseService"]
+        CF_ENG["Hermes Content Factory Engine"]
+        ORCH --- WS
+        ORCH --- DISPATCH
+        ORCH --- G_SVC
+        ORCH --- CF_ENG
+    end
+
+    subgraph REDIS_LAYER["Ephemeral Cache Layer"]
+        REDIS[("Redis 7 Cache (:6379)")]
+        ORCH <-->|Session JWTs & Telemetry| REDIS
+    end
+
+    subgraph PERSISTENCE["Persistent Knowledge Graph & Vault Storage"]
+        JSON_DB[("knowledge_graph.json (18 Nodes, 15 Edges)")]
+        VAULT["Obsidian Markdown Vault (/vault/)"]
+        CYPHER["Cypher DDL Export (/data/knowledge_graph.cypher)"]
+        GRAPHML["GraphML XML Export (/data/knowledge_graph.graphml)"]
+        GRAPHIFY["Graphify D3 Knowledge Graph (/graphify-out/)"]
+
+        G_SVC -->|Auto-Persist| JSON_DB
+        G_SVC -->|1-Click Sync| VAULT
+        G_SVC -->|Export| CYPHER
+        G_SVC -->|Export| GRAPHML
+        JSON_DB -->|Extract & Cluster| GRAPHIFY
+    end
+
+    subgraph EXTERNAL["External AI APIs"]
+        AAI["AssemblyAI Voice Agent API (universal-3-5-pro)"]
+        DS["DeepSeek API (R1 Reasoner & V3 Chat)"]
+        ORCH <-->|Mint Token & Full-Duplex Audio| AAI
+        CF_ENG <-->|Reasoning & Self-Healing| DS
+    end
+
+    classDef client fill:#0f172a,stroke:#38bdf8,stroke-width:2px,color:#fff;
+    classDef proxy fill:#1e1b4b,stroke:#818cf8,stroke-width:2px,color:#fff;
+    classDef orch fill:#1e293b,stroke:#34d399,stroke-width:2px,color:#fff;
+    classDef redis fill:#312e81,stroke:#a78bfa,stroke-width:2px,color:#fff;
+    classDef persist fill:#064e3b,stroke:#10b981,stroke-width:2px,color:#fff;
+    classDef external fill:#4c0519,stroke:#f43f5e,stroke-width:2px,color:#fff;
+
+    class UI,AUDIO,HUD client;
+    class NGINX proxy;
+    class WS,ORCH,DISPATCH,G_SVC,CF_ENG orch;
+    class REDIS redis;
+    class JSON_DB,VAULT,CYPHER,GRAPHML,GRAPHIFY persist;
+    class AAI,DS external;
