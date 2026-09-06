@@ -2,13 +2,16 @@ import express from 'express';
 import cors from 'cors';
 import http from 'http';
 import { WebSocketServer, WebSocket } from 'ws';
-import { tokenRouter } from './routes/token.ts';
-import { crmRouter } from './routes/crm.ts';
-import { contentRouter } from './routes/content.ts';
-import { VOICE_AGENT_TOOLS } from './tools/registry.ts';
-import { toolDispatcher } from './tools/dispatcher.ts';
-import { crmStore } from './services/crmStore.ts';
-import { contentFactoryEngine } from './services/contentFactoryEngine.ts';
+import dotenv from 'dotenv';
+dotenv.config();
+
+import { tokenRouter } from './routes/token';
+import { crmRouter } from './routes/crm';
+import { contentRouter } from './routes/content';
+import { VOICE_AGENT_TOOLS } from './tools/registry';
+import { toolDispatcher } from './tools/dispatcher';
+import { crmStore } from './services/crmStore';
+import { contentFactoryEngine } from './services/contentFactoryEngine';
 
 if (typeof (process as any).loadEnvFile === 'function') {
   try {

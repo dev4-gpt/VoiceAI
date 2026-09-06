@@ -5,8 +5,8 @@ import type {
   SelfHealingAttempt,
   GeneratedContentPack
 } from '@voice-os/shared';
-import { ragEngine } from './ragEngine.ts';
-import { deepseekService } from './deepseekService.ts';
+import { ragEngine } from './ragEngine';
+import { deepseekService } from './deepseekService';
 
 export class ContentFactoryEngine {
   private jobs: Map<string, ContentFactoryJob> = new Map();

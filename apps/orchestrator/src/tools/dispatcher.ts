@@ -1,7 +1,7 @@
-import { crmStore } from '../services/crmStore.ts';
-import { ragEngine } from '../services/ragEngine.ts';
-import { cacheEngine } from '../services/cacheEngine.ts';
-import { contentFactoryEngine } from '../services/contentFactoryEngine.ts';
+import { crmStore } from '../services/crmStore';
+import { ragEngine } from '../services/ragEngine';
+import { cacheEngine } from '../services/cacheEngine';
+import { contentFactoryEngine } from '../services/contentFactoryEngine';
 
 export class ToolDispatcher {
   public async dispatch(name: string, args: Record<string, any>): Promise<Record<string, any>> {

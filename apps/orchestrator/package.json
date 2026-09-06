@@ -2,7 +2,6 @@
   "name": "@voice-os/orchestrator",
   "version": "1.0.0",
   "description": "Backend voice agent orchestrator, token gateway, and tool dispatcher",
-  "type": "module",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
