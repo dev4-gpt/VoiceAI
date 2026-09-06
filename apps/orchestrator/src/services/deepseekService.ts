@@ -47,9 +47,9 @@ export class DeepSeekService {
         body: JSON.stringify({
           model,
           messages: options.messages,
-          temperature: options.temperature ?? 0.3,
           max_tokens: options.max_tokens ?? 2000,
-          response_format: options.response_format
+          ...(model !== 'deepseek-reasoner' ? { temperature: options.temperature ?? 0.3 } : {}),
+          ...(model !== 'deepseek-reasoner' && options.response_format ? { response_format: options.response_format } : {})
         })
       });
 
