@@ -33,6 +33,27 @@ app.use('/api/crm', crmRouter);
 app.use('/api/content', contentRouter);
 app.use('/api/graph', graphRouter);
 
+// Root landing info
+app.get('/', (_req, res) => {
+  res.json({
+    service: 'GrowthVoice OS — Voice Orchestrator API',
+    status: 'operational',
+    backendPort: 4000,
+    webConsoleUrl: 'http://localhost:3000',
+    endpoints: {
+      health: '/api/health',
+      voiceConfig: '/api/voice/config',
+      crmLeads: '/api/crm/leads',
+      crmMembers: '/api/crm/members',
+      contentJobs: '/api/content/jobs',
+      graphStats: '/api/graph/stats',
+      graphNodes: '/api/graph/nodes',
+      graphEdges: '/api/graph/edges',
+      telemetryWs: 'ws://localhost:4000/ws/telemetry'
+    }
+  });
+});
+
 // Health check and session info
 app.get('/api/health', (_req, res) => {
   res.json({
