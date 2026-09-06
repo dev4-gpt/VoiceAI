@@ -1,0 +1,20 @@
+{
+  "name": "@voice-os/evals",
+  "version": "1.0.0",
+  "description": "Anthropic-standard evaluation suite and test harness for Voice OS",
+  "type": "module",
+  "main": "dist/runner.js",
+  "scripts": {
+    "build": "tsc",
+    "test": "ts-node src/runner.ts",
+    "start": "node dist/runner.js"
+  },
+  "dependencies": {
+    "@voice-os/shared": "file:../shared"
+  },
+  "devDependencies": {
+    "@types/node": "^20.12.12",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.5"
+  }
+}

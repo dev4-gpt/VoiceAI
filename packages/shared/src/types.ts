@@ -1,0 +1,285 @@
+// ============================================================================
+// AssemblyAI Voice Agent API Types (Speech-in / Speech-out)
+// ============================================================================
+
+export type AssemblyAIVoice =
+  | 'anna'
+  | 'alba'
+  | 'jane'
+  | 'michael'
+  | 'charles'
+  | 'paul'
+  | 'vera'
+  | 'lola'
+  | 'estelle'
+  | 'juergen'
+  | 'giovanni'
+  | 'rafael';
+
+export interface FlatToolParameterProperty {
+  type: string;
+  description?: string;
+  enum?: string[];
+  items?: { type: string };
+}
+
+export interface FlatToolDefinition {
+  type: 'function';
+  name: string;
+  description: string;
+  parameters: {
+    type: 'object';
+    properties: Record<string, FlatToolParameterProperty>;
+    required?: string[];
+  };
+}
+
+export interface SessionUpdateMessage {
+  type: 'session.update';
+  session: {
+    system_prompt: string;
+    greeting?: string;
+    input?: {
+      format: { encoding: 'audio/pcm' | 'audio/pcmu' | 'audio/pcma' };
+      keyterms?: string[];
+      turn_detection?: {
+        vad_threshold?: number;
+        min_silence?: number;
+        max_silence?: number;
+        interrupt_response?: boolean;
+      };
+    };
+    output?: {
+      voice: AssemblyAIVoice | string;
+      format: { encoding: 'audio/pcm' | 'audio/pcmu' | 'audio/pcma' };
+    };
+    tools?: FlatToolDefinition[];
+  };
+}
+
+export interface InputAudioMessage {
+  type: 'input.audio';
+  audio: string; // base64 encoded PCM16 24kHz mono
+}
+
+export interface TerminateMessage {
+  type: 'Terminate';
+}
+
+export interface SessionReadyEvent {
+  type: 'session.ready';
+  session_id: string;
+}
+
+export interface TranscriptUserEvent {
+  type: 'transcript.user';
+  transcript: string;
+  end_of_turn: boolean;
+}
+
+export interface TranscriptAgentEvent {
+  type: 'transcript.agent';
+  transcript: string;
+}
+
+export interface ReplyAudioEvent {
+  type: 'reply.audio';
+  data: string; // base64 encoded PCM16 24kHz
+}
+
+export interface ReplyDoneEvent {
+  type: 'reply.done';
+  status: 'completed' | 'interrupted';
+}
+
+export interface ToolCallEvent {
+  type: 'tool.call';
+  call_id: string;
+  name: string;
+  arguments: Record<string, any>;
+}
+
+export interface ToolResultEvent {
+  type: 'tool.result';
+  call_id: string;
+  result: Record<string, any> | string;
+}
+
+// ============================================================================
+// Hermes Content Factory & Self-Healing Loop Types
+// ============================================================================
+
+export type ContentChannel = 'twitter_thread' | 'newsletter' | 'webinar_script' | 'social_carousel';
+
+export type JobStatus =
+  | 'queued'
+  | 'researching_lanes'
+  | 'synthesizing'
+  | 'self_healing_verification'
+  | 'needs_approval'
+  | 'approved'
+  | 'published'
+  | 'failed';
+
+export interface ResearchSnippet {
+  sourceTitle: string;
+  sourceUrl?: string;
+  excerpt: string;
+  relevanceScore: number;
+  lane: 'creator_rag' | 'market_trends' | 'community_objections';
+}
+
+export interface ResearchLaneResult {
+  lane: 'creator_rag' | 'market_trends' | 'community_objections';
+  title: string;
+  status: 'completed' | 'timeout' | 'failed';
+  snippets: ResearchSnippet[];
+}
+
+export interface SelfHealingAttempt {
+  attemptNumber: number;
+  issueDetected: string;
+  ruleBroken: string; // e.g. "tweet_length_exceeded_280", "unsupported_refund_claim", "missing_citation"
+  repairApplied: string;
+  healedSuccessfully: boolean;
+  timestamp: string;
+}
+
+export interface GeneratedContentPack {
+  thesis: string;
+  targetAudience: string;
+  twitterThread: string[]; // 5-7 tweets, each verified <= 280 chars
+  newsletter: {
+    subjectLine: string;
+    previewText: string;
+    bodyMarkdown: string;
+    callToAction: string;
+  };
+  webinarScript: {
+    hook: string;
+    coreProblem: string;
+    valueProposition: string;
+    offerClose: string;
+  };
+}
+
+export interface ContentFactoryJob {
+  id: string;
+  topic: string;
+  requestedBySpeaker: 'creator' | 'voice_agent_inbound';
+  status: JobStatus;
+  researchLanes: ResearchLaneResult[];
+  contentPack?: GeneratedContentPack;
+  selfHealingLogs: SelfHealingAttempt[];
+  verificationScore: number; // 0 - 100
+  humanApproved: boolean;
+  approvedAt?: string;
+  createdAt: string;
+  completedAt?: string;
+  modelRouting: {
+    researchModel: string;
+    synthesisModel: string;
+    verifierModel: string;
+  };
+  costUsd: number;
+}
+
+// ============================================================================
+// Revenue OS Domain Types
+// ============================================================================
+
+export type LeadStatus =
+  | 'new'
+  | 'inbound_qualified'
+  | 'call_scheduled'
+  | 'negotiating'
+  | 'enrolled'
+  | 'disqualified';
+
+export interface CRMLead {
+  id: string;
+  fullName: string;
+  email: string;
+  phone?: string;
+  source: 'after_hours_inbound' | 'outbound_campaign' | 'web_callback';
+  budgetRange?: string;
+  coreNeed?: string;
+  authority?: string;
+  timelineWeeks?: number;
+  qualificationScore: number; // 0 - 100
+  status: LeadStatus;
+  scheduledCallTime?: string;
+  notes: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ChurnRiskMember {
+  memberId: string;
+  fullName: string;
+  email: string;
+  tier: 'starter' | 'pro' | 'vip_mastermind';
+  monthlyFee: number;
+  churnReason?: string;
+  status: 'active' | 'retention_offered' | 'saved' | 'cancelled';
+  appliedDiscountPct?: number;
+  bonusOffer?: string;
+  requiresManagerReview: boolean;
+}
+
+// ============================================================================
+// Production GenAI Systems: Evals & Observability
+// ============================================================================
+
+export interface TurnTelemetry {
+  turnId: string;
+  turnOrder: number;
+  speaker: 'user' | 'agent';
+  transcript: string;
+  ttfaMs?: number; // Time to first audio
+  turnDurationMs: number;
+  toolInvocations: string[];
+  tokensEstimated: number;
+  costEstimatedUsd: number;
+  timestamp: string;
+}
+
+export interface EvalTask {
+  id: string;
+  name: string;
+  description: string;
+  userTurns: string[];
+  expectedTools: string[];
+  successCriteria: {
+    requiredFields?: string[];
+    maxAutonomousDiscountPct?: number;
+    mustScheduleMeeting?: boolean;
+    forbiddenTerms?: string[];
+  };
+}
+
+export interface EvalGraderResult {
+  graderName: string;
+  passed: boolean;
+  score: number; // 0.0 - 1.0
+  reason: string;
+}
+
+export interface EvalTrialOutcome {
+  taskId: string;
+  trialNumber: number;
+  allPassed: boolean;
+  graderResults: EvalGraderResult[];
+  transcriptTurns: TurnTelemetry[];
+  completedAt: string;
+}
+
+export interface EvalSuiteReport {
+  suiteName: string;
+  totalTasks: number;
+  kTrials: number;
+  passAtK: number; // pass@k probability (at least 1 success)
+  passPowerK: number; // pass^k probability (all k trials succeed)
+  outcomes: EvalTrialOutcome[];
+  timestamp: string;
+}
