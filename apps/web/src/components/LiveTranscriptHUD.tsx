@@ -1,5 +1,5 @@
 import React from 'react';
-import { User, Bot, Wrench, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { User, Bot, Wrench, CheckCircle2 } from 'lucide-react';
 
 export interface MessageItem {
   id: string;

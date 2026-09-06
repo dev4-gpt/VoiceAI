@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Activity, ShieldCheck, CheckCircle, XCircle, Play, Cpu, DollarSign, Clock } from 'lucide-react';
+import { ShieldCheck, CheckCircle, Play, Cpu, DollarSign, Clock } from 'lucide-react';
 
 export const EvalsDashboard: React.FC = () => {
   const [isRunning, setIsRunning] = useState(false);

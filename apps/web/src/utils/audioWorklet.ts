@@ -8,8 +8,6 @@ export class AudioPipeline {
   private processorNode: ScriptProcessorNode | null = null;
   private sourceNode: MediaStreamAudioSourceNode | null = null;
   private isRecording: boolean = false;
-  private playbackQueue: Float32Array[] = [];
-  private isPlaying: boolean = false;
   private scheduledTime: number = 0;
 
   constructor(private onAudioChunk: (base64Pcm16: string) => void) {}

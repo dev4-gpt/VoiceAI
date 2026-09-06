@@ -1,9 +1,10 @@
 import React from 'react';
-import { CRMLead, LeadStatus } from '@voice-os/shared';
-import { Users, Calendar, Award, PhoneIncoming } from 'lucide-react';
+import { CRMLead, ChurnRiskMember, LeadStatus } from '@voice-os/shared';
+import { Users, Calendar, Award } from 'lucide-react';
 
 interface CrmKanbanProps {
   leads: CRMLead[];
+  members?: ChurnRiskMember[];
 }
 
 const COLUMNS: Array<{ key: LeadStatus; label: string; color: string }> = [
@@ -13,7 +14,7 @@ const COLUMNS: Array<{ key: LeadStatus; label: string; color: string }> = [
   { key: 'enrolled', label: 'Enrolled / Closed', color: 'border-purple-500/40 bg-purple-950/30 text-purple-300' }
 ];
 
-export const CrmKanban: React.FC<CrmKanbanProps> = ({ leads }) => {
+export const CrmKanban: React.FC<CrmKanbanProps> = ({ leads, members = [] }) => {
   return (
     <div className="flex flex-col h-full bg-slate-900/60 rounded-2xl border border-slate-800/80 backdrop-blur-xl p-5 shadow-2xl">
       <div className="flex items-center justify-between mb-4">
@@ -24,7 +25,7 @@ export const CrmKanban: React.FC<CrmKanbanProps> = ({ leads }) => {
           </h3>
         </div>
         <span className="text-xs font-mono text-slate-400">
-          Total Captured: {leads.length} Contacts
+          {leads.length} Leads • {members.length} Retained Members
         </span>
       </div>
 

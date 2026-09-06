@@ -1,11 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Mic,
-  MicOff,
   PhoneCall,
   PhoneOff,
-  Activity,
-  Layers,
   ShieldAlert,
   Zap,
   Sparkles,
@@ -308,7 +305,9 @@ export const App: React.FC = () => {
   };
 
   // Quick Scenario Simulation Trigger for Hackathon Demo Recording
-  const triggerSimulationStep = async (type: 'lead_inbound' | 'objection_rag' | 'churn_clamp') => {
+  const triggerSimulationStep = async (
+    type: 'lead_inbound' | 'objection_rag' | 'churn_clamp' | 'content_factory_spoken'
+  ) => {
     if (type === 'lead_inbound') {
       setMessages((prev) => [
         ...prev,
@@ -680,7 +679,7 @@ export const App: React.FC = () => {
           </div>
         )}
 
-        {activeTab === 'crm' && <CrmKanban leads={leads} />}
+        {activeTab === 'crm' && <CrmKanban leads={leads} members={members} />}
 
         {activeTab === 'content' && (
           <ContentFactoryStudio

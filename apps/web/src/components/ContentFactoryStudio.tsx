@@ -1,12 +1,9 @@
 import React, { useState } from 'react';
 import { ContentFactoryJob } from '@voice-os/shared';
 import {
-  Sparkles,
   Search,
   Cpu,
-  ShieldCheck,
   CheckCircle2,
-  Clock,
   Send,
   Copy,
   Check,
@@ -14,8 +11,7 @@ import {
   Mail,
   Video,
   AlertTriangle,
-  Flame,
-  ArrowRight
+  Flame
 } from 'lucide-react';
 
 interface ContentFactoryStudioProps {
@@ -36,6 +32,7 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const selectedJob = jobs.find((j) => j.id === selectedJobId) || jobs[0];
+  const pack = selectedJob?.contentPack;
 
   const handleCopy = (text: string, index: number) => {
     navigator.clipboard.writeText(text);
@@ -183,14 +180,14 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
 
         {/* Right Column: Verified Content Pack & Approval Gate */}
         <div className="lg:col-span-7 flex flex-col space-y-4">
-          {selectedJob?.contentPack ? (
+          {pack ? (
             <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-xl flex flex-col flex-1 shadow-2xl space-y-4">
               {/* Header & Approval Boundary */}
               <div className="flex items-center justify-between border-b border-slate-800 pb-3.5">
                 <div>
                   <div className="text-xs font-mono uppercase text-slate-400">Verified Thesis:</div>
                   <h3 className="text-sm font-bold text-slate-100 mt-0.5">
-                    {selectedJob.contentPack.thesis}
+                    {pack.thesis}
                   </h3>
                 </div>
 
@@ -222,7 +219,7 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
                   }`}
                 >
                   <Twitter className="w-3.5 h-3.5" />
-                  <span>X Thread ({selectedJob.contentPack.twitterThread?.length || 5} Tweets)</span>
+                  <span>X Thread ({pack.twitterThread?.length || 5} Tweets)</span>
                 </button>
 
                 <button
@@ -254,14 +251,14 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
               <div className="flex-1 overflow-y-auto space-y-3 max-h-[380px] pr-2">
                 {activeAssetTab === 'twitter' && (
                   <div className="space-y-3">
-                    {selectedJob.contentPack.twitterThread.map((tweet, tIdx) => (
+                    {pack.twitterThread.map((tweet, tIdx) => (
                       <div
                         key={tIdx}
                         className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800/80 flex items-start justify-between space-x-3 text-xs"
                       >
                         <div className="space-y-1 flex-1">
                           <div className="text-[11px] font-mono text-cyan-400 font-semibold">
-                            Tweet {tIdx + 1} / {selectedJob.contentPack.twitterThread.length}
+                            Tweet {tIdx + 1} / {pack.twitterThread.length}
                           </div>
                           <p className="text-slate-200 leading-relaxed font-sans">{tweet}</p>
                           <div className="text-[10px] font-mono text-slate-500">
@@ -288,16 +285,16 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
                   <div className="space-y-3 text-xs">
                     <div className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800 space-y-2">
                       <div className="font-mono text-purple-400 text-[11px]">
-                        Subject: {selectedJob.contentPack.newsletter.subjectLine}
+                        Subject: {pack.newsletter.subjectLine}
                       </div>
                       <div className="font-mono text-slate-400 text-[11px]">
-                        Preview: {selectedJob.contentPack.newsletter.previewText}
+                        Preview: {pack.newsletter.previewText}
                       </div>
                       <div className="border-t border-slate-800 pt-2 text-slate-200 leading-relaxed whitespace-pre-line font-sans">
-                        {selectedJob.contentPack.newsletter.bodyMarkdown}
+                        {pack.newsletter.bodyMarkdown}
                       </div>
                       <div className="p-2.5 rounded-lg bg-purple-950/40 border border-purple-800/40 text-purple-300 font-mono text-[11px]">
-                        Call to Action: {selectedJob.contentPack.newsletter.callToAction}
+                        Call to Action: {pack.newsletter.callToAction}
                       </div>
                     </div>
                   </div>
@@ -307,16 +304,16 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
                   <div className="space-y-3 text-xs">
                     <div className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800 space-y-2">
                       <div className="font-mono text-emerald-400 text-[11px]">
-                        Spoken Hook: "{selectedJob.contentPack.webinarScript.hook}"
+                        Spoken Hook: "{pack.webinarScript.hook}"
                       </div>
                       <div className="text-slate-300 leading-relaxed">
-                        <strong className="text-slate-400">Core Problem:</strong> {selectedJob.contentPack.webinarScript.coreProblem}
+                        <strong className="text-slate-400">Core Problem:</strong> {pack.webinarScript.coreProblem}
                       </div>
                       <div className="text-slate-300 leading-relaxed">
-                        <strong className="text-slate-400">Value Proposition:</strong> {selectedJob.contentPack.webinarScript.valueProposition}
+                        <strong className="text-slate-400">Value Proposition:</strong> {pack.webinarScript.valueProposition}
                       </div>
                       <div className="p-2.5 rounded-lg bg-emerald-950/40 border border-emerald-800/40 text-emerald-300 font-mono text-[11px]">
-                        Close & Guarantee: {selectedJob.contentPack.webinarScript.offerClose}
+                        Close & Guarantee: {pack.webinarScript.offerClose}
                       </div>
                     </div>
                   </div>
