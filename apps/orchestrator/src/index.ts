@@ -8,10 +8,12 @@ dotenv.config();
 import { tokenRouter } from './routes/token';
 import { crmRouter } from './routes/crm';
 import { contentRouter } from './routes/content';
+import { graphRouter } from './routes/graph';
 import { VOICE_AGENT_TOOLS } from './tools/registry';
 import { toolDispatcher } from './tools/dispatcher';
 import { crmStore } from './services/crmStore';
 import { contentFactoryEngine } from './services/contentFactoryEngine';
+import { graphDatabaseService } from './services/graphDatabaseService';
 
 if (typeof (process as any).loadEnvFile === 'function') {
   try {
@@ -29,6 +31,7 @@ app.use(express.json());
 app.use('/api/voice', tokenRouter);
 app.use('/api/crm', crmRouter);
 app.use('/api/content', contentRouter);
+app.use('/api/graph', graphRouter);
 
 // Health check and session info
 app.get('/api/health', (_req, res) => {

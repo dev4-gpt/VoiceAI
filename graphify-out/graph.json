@@ -1,0 +1,290 @@
+{
+  "directed": true,
+  "multigraph": false,
+  "graph": {},
+  "nodes": [
+    {
+      "id": "vault_asset_asset_newsletter",
+      "label": "Newsletter: The 3-Sentence Reframe",
+      "community": 0,
+      "file_type": "concept",
+      "norm_label": "newsletter: the 3-sentence reframe",
+      "source_file": "vault/Asset/asset_newsletter.md"
+    },
+    {
+      "id": "vault_asset_asset_webinar_script",
+      "label": "Webinar Pitch Script & Risk Reversal",
+      "community": 0,
+      "file_type": "concept",
+      "norm_label": "webinar pitch script & risk reversal",
+      "source_file": "vault/Asset/asset_webinar_script.md"
+    },
+    {
+      "id": "vault_contentpack_pack_cf_101",
+      "label": "Content Pack: Tough Pricing Objections & 14-Day Guarantee",
+      "community": 0,
+      "file_type": "concept",
+      "norm_label": "content pack: tough pricing objections & 14-day guarantee",
+      "source_file": "vault/ContentPack/pack_cf_101.md"
+    },
+    {
+      "id": "vault_objection_obj_pricing_guarantee",
+      "label": "Objection: Price vs Risk (Zero Audience Fear)",
+      "community": 0,
+      "file_type": "concept",
+      "norm_label": "objection: price vs risk (zero audience fear)",
+      "source_file": "vault/Objection/obj_pricing_guarantee.md"
+    },
+    {
+      "id": "vault_researchlane_lane_community_objections",
+      "label": "Research Lane: Student Voice Call Analytics",
+      "community": 0,
+      "file_type": "concept",
+      "norm_label": "research lane: student voice call analytics",
+      "source_file": "vault/ResearchLane/lane_community_objections.md"
+    },
+    {
+      "id": "vault_researchlane_lane_creator_rag",
+      "label": "Research Lane: Creator Internal Offer RAG",
+      "community": 0,
+      "file_type": "concept",
+      "norm_label": "research lane: creator internal offer rag",
+      "source_file": "vault/ResearchLane/lane_creator_rag.md"
+    },
+    {
+      "id": "vault_researchlane_lane_market_trends",
+      "label": "Research Lane: Industry Benchmarks & Funnels",
+      "community": 0,
+      "file_type": "concept",
+      "norm_label": "research lane: industry benchmarks & funnels",
+      "source_file": "vault/ResearchLane/lane_market_trends.md"
+    },
+    {
+      "id": "vault_guardrailpolicy_policy_max_discount_15",
+      "label": "Guardrail: Max 15% Autonomous Discount",
+      "community": 1,
+      "file_type": "concept",
+      "norm_label": "guardrail: max 15% autonomous discount",
+      "source_file": "vault/GuardrailPolicy/policy_max_discount_15.md"
+    },
+    {
+      "id": "vault_member_member_sarah_jenkins",
+      "label": "Member: Sarah Jenkins",
+      "community": 1,
+      "file_type": "concept",
+      "norm_label": "member: sarah jenkins",
+      "source_file": "vault/Member/member_sarah_jenkins.md"
+    },
+    {
+      "id": "vault_objection_obj_cashflow_tight",
+      "label": "Objection: Cash Flow Tight (35% Discount Requested)",
+      "community": 1,
+      "file_type": "concept",
+      "norm_label": "objection: cash flow tight (35% discount requested)",
+      "source_file": "vault/Objection/obj_cashflow_tight.md"
+    },
+    {
+      "id": "vault_voicesession_session_retention_sarah",
+      "label": "Voice Call: Sarah Jenkins (Churn Save & Retention)",
+      "community": 1,
+      "file_type": "concept",
+      "norm_label": "voice call: sarah jenkins (churn save & retention)",
+      "source_file": "vault/VoiceSession/session_retention_sarah.md"
+    },
+    {
+      "id": "vault_lead_lead_jason_miller",
+      "label": "Lead: Jason Miller",
+      "community": 2,
+      "file_type": "concept",
+      "norm_label": "lead: jason miller",
+      "source_file": "vault/Lead/lead_jason_miller.md"
+    },
+    {
+      "id": "vault_offer_offer_pro_mentorship",
+      "label": "Pro Mentorship ($2,997)",
+      "community": 2,
+      "file_type": "concept",
+      "norm_label": "pro mentorship ($2,997)",
+      "source_file": "vault/Offer/offer_pro_mentorship.md"
+    },
+    {
+      "id": "vault_voicesession_session_inbound_jason",
+      "label": "Voice Call: Jason Miller (After-Hours Inbound SDR)",
+      "community": 2,
+      "file_type": "concept",
+      "norm_label": "voice call: jason miller (after-hours inbound sdr)",
+      "source_file": "vault/VoiceSession/session_inbound_jason.md"
+    },
+    {
+      "id": "vault_asset_asset_x_thread",
+      "label": "X Thread (5 Tweets)",
+      "community": 3,
+      "file_type": "concept",
+      "norm_label": "x thread (5 tweets)",
+      "source_file": "vault/Asset/asset_x_thread.md"
+    },
+    {
+      "id": "vault_selfhealingevent_heal_tweet_3_length",
+      "label": "Self-Healing Event: Tweet #3 Length Truncation",
+      "community": 3,
+      "file_type": "concept",
+      "norm_label": "self-healing event: tweet #3 length truncation",
+      "source_file": "vault/SelfHealingEvent/heal_tweet_3_length.md"
+    },
+    {
+      "id": "vault_guardrailpolicy_policy_pii_redaction",
+      "label": "Guardrail: Real-Time PII Masking",
+      "community": 4,
+      "file_type": "concept",
+      "norm_label": "guardrail: real-time pii masking",
+      "source_file": "vault/GuardrailPolicy/policy_pii_redaction.md"
+    },
+    {
+      "id": "vault_offer_offer_vip_mastermind",
+      "label": "VIP Mastermind ($7,500)",
+      "community": 5,
+      "file_type": "concept",
+      "norm_label": "vip mastermind ($7,500)",
+      "source_file": "vault/Offer/offer_vip_mastermind.md"
+    }
+  ],
+  "links": [
+    {
+      "source": "vault_lead_lead_jason_miller",
+      "target": "vault_offer_offer_pro_mentorship",
+      "relation": "ASSOCIATED_WITH",
+      "confidence": "INFERRED",
+      "confidence_score": 1.0,
+      "source_file": "vault/lead_jason_miller.md",
+      "source_location": "vault/lead_jason_miller.md"
+    },
+    {
+      "source": "vault_objection_obj_cashflow_tight",
+      "target": "vault_member_member_sarah_jenkins",
+      "relation": "ASSOCIATED_WITH",
+      "confidence": "INFERRED",
+      "confidence_score": 1.0,
+      "source_file": "vault/obj_cashflow_tight.md",
+      "source_location": "vault/obj_cashflow_tight.md"
+    },
+    {
+      "source": "vault_contentpack_pack_cf_101",
+      "target": "vault_asset_asset_newsletter",
+      "relation": "CONTAINS_ASSET",
+      "confidence": "INFERRED",
+      "confidence_score": 1.0,
+      "source_file": "vault/pack_cf_101.md",
+      "source_location": "vault/pack_cf_101.md"
+    },
+    {
+      "source": "vault_contentpack_pack_cf_101",
+      "target": "vault_asset_asset_webinar_script",
+      "relation": "CONTAINS_ASSET",
+      "confidence": "INFERRED",
+      "confidence_score": 1.0,
+      "source_file": "vault/pack_cf_101.md",
+      "source_location": "vault/pack_cf_101.md"
+    },
+    {
+      "source": "vault_contentpack_pack_cf_101",
+      "target": "vault_asset_asset_x_thread",
+      "relation": "CONTAINS_ASSET",
+      "confidence": "INFERRED",
+      "confidence_score": 1.0,
+      "source_file": "vault/pack_cf_101.md",
+      "source_location": "vault/pack_cf_101.md"
+    },
+    {
+      "source": "vault_asset_asset_x_thread",
+      "target": "vault_selfhealingevent_heal_tweet_3_length",
+      "relation": "HEALED_BY",
+      "confidence": "INFERRED",
+      "confidence_score": 1.0,
+      "source_file": "vault/asset_x_thread.md",
+      "source_location": "vault/asset_x_thread.md"
+    },
+    {
+      "source": "vault_voicesession_session_inbound_jason",
+      "target": "vault_lead_lead_jason_miller",
+      "relation": "QUALIFIED_AS",
+      "confidence": "INFERRED",
+      "confidence_score": 1.0,
+      "source_file": "vault/session_inbound_jason.md",
+      "source_location": "vault/session_inbound_jason.md"
+    },
+    {
+      "source": "vault_voicesession_session_retention_sarah",
+      "target": "vault_objection_obj_cashflow_tight",
+      "relation": "RAISED_OBJECTION",
+      "confidence": "INFERRED",
+      "confidence_score": 1.0,
+      "source_file": "vault/session_retention_sarah.md",
+      "source_location": "vault/session_retention_sarah.md"
+    },
+    {
+      "source": "vault_objection_obj_pricing_guarantee",
+      "target": "vault_researchlane_lane_community_objections",
+      "relation": "RESEARCHED_IN",
+      "confidence": "INFERRED",
+      "confidence_score": 1.0,
+      "source_file": "vault/obj_pricing_guarantee.md",
+      "source_location": "vault/obj_pricing_guarantee.md"
+    },
+    {
+      "source": "vault_objection_obj_pricing_guarantee",
+      "target": "vault_researchlane_lane_creator_rag",
+      "relation": "RESEARCHED_IN",
+      "confidence": "INFERRED",
+      "confidence_score": 1.0,
+      "source_file": "vault/obj_pricing_guarantee.md",
+      "source_location": "vault/obj_pricing_guarantee.md"
+    },
+    {
+      "source": "vault_objection_obj_pricing_guarantee",
+      "target": "vault_researchlane_lane_market_trends",
+      "relation": "RESEARCHED_IN",
+      "confidence": "INFERRED",
+      "confidence_score": 1.0,
+      "source_file": "vault/obj_pricing_guarantee.md",
+      "source_location": "vault/obj_pricing_guarantee.md"
+    },
+    {
+      "source": "vault_researchlane_lane_community_objections",
+      "target": "vault_contentpack_pack_cf_101",
+      "relation": "SYNTHESIZED_INTO",
+      "confidence": "INFERRED",
+      "confidence_score": 1.0,
+      "source_file": "vault/lane_community_objections.md",
+      "source_location": "vault/lane_community_objections.md"
+    },
+    {
+      "source": "vault_researchlane_lane_creator_rag",
+      "target": "vault_contentpack_pack_cf_101",
+      "relation": "SYNTHESIZED_INTO",
+      "confidence": "INFERRED",
+      "confidence_score": 1.0,
+      "source_file": "vault/lane_creator_rag.md",
+      "source_location": "vault/lane_creator_rag.md"
+    },
+    {
+      "source": "vault_researchlane_lane_market_trends",
+      "target": "vault_contentpack_pack_cf_101",
+      "relation": "SYNTHESIZED_INTO",
+      "confidence": "INFERRED",
+      "confidence_score": 1.0,
+      "source_file": "vault/lane_market_trends.md",
+      "source_location": "vault/lane_market_trends.md"
+    },
+    {
+      "source": "vault_voicesession_session_retention_sarah",
+      "target": "vault_guardrailpolicy_policy_max_discount_15",
+      "relation": "TRIGGERED_POLICY",
+      "confidence": "INFERRED",
+      "confidence_score": 1.0,
+      "source_file": "vault/session_retention_sarah.md",
+      "source_location": "vault/session_retention_sarah.md"
+    }
+  ],
+  "hyperedges": [],
+  "built_at_commit": "dab99964ada05662bcf88f97b9533572195ac912"
+}

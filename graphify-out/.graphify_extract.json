@@ -1,0 +1,219 @@
+{
+  "nodes": [
+    {
+      "id": "offer_pro_mentorship",
+      "label": "Pro Mentorship ($2,997)",
+      "source_file": "vault/Offer/offer_pro_mentorship.md"
+    },
+    {
+      "id": "offer_vip_mastermind",
+      "label": "VIP Mastermind ($7,500)",
+      "source_file": "vault/Offer/offer_vip_mastermind.md"
+    },
+    {
+      "id": "policy_max_discount_15",
+      "label": "Guardrail: Max 15% Autonomous Discount",
+      "source_file": "vault/GuardrailPolicy/policy_max_discount_15.md"
+    },
+    {
+      "id": "policy_pii_redaction",
+      "label": "Guardrail: Real-Time PII Masking",
+      "source_file": "vault/GuardrailPolicy/policy_pii_redaction.md"
+    },
+    {
+      "id": "session_inbound_jason",
+      "label": "Voice Call: Jason Miller (After-Hours Inbound SDR)",
+      "source_file": "vault/VoiceSession/session_inbound_jason.md"
+    },
+    {
+      "id": "session_retention_sarah",
+      "label": "Voice Call: Sarah Jenkins (Churn Save & Retention)",
+      "source_file": "vault/VoiceSession/session_retention_sarah.md"
+    },
+    {
+      "id": "lead_jason_miller",
+      "label": "Lead: Jason Miller",
+      "source_file": "vault/Lead/lead_jason_miller.md"
+    },
+    {
+      "id": "member_sarah_jenkins",
+      "label": "Member: Sarah Jenkins",
+      "source_file": "vault/Member/member_sarah_jenkins.md"
+    },
+    {
+      "id": "obj_cashflow_tight",
+      "label": "Objection: Cash Flow Tight (35% Discount Requested)",
+      "source_file": "vault/Objection/obj_cashflow_tight.md"
+    },
+    {
+      "id": "obj_pricing_guarantee",
+      "label": "Objection: Price vs Risk (Zero Audience Fear)",
+      "source_file": "vault/Objection/obj_pricing_guarantee.md"
+    },
+    {
+      "id": "lane_creator_rag",
+      "label": "Research Lane: Creator Internal Offer RAG",
+      "source_file": "vault/ResearchLane/lane_creator_rag.md"
+    },
+    {
+      "id": "lane_market_trends",
+      "label": "Research Lane: Industry Benchmarks & Funnels",
+      "source_file": "vault/ResearchLane/lane_market_trends.md"
+    },
+    {
+      "id": "lane_community_objections",
+      "label": "Research Lane: Student Voice Call Analytics",
+      "source_file": "vault/ResearchLane/lane_community_objections.md"
+    },
+    {
+      "id": "pack_cf_101",
+      "label": "Content Pack: Tough Pricing Objections & 14-Day Guarantee",
+      "source_file": "vault/ContentPack/pack_cf_101.md"
+    },
+    {
+      "id": "asset_x_thread",
+      "label": "X Thread (5 Tweets)",
+      "source_file": "vault/Asset/asset_x_thread.md"
+    },
+    {
+      "id": "asset_newsletter",
+      "label": "Newsletter: The 3-Sentence Reframe",
+      "source_file": "vault/Asset/asset_newsletter.md"
+    },
+    {
+      "id": "asset_webinar_script",
+      "label": "Webinar Pitch Script & Risk Reversal",
+      "source_file": "vault/Asset/asset_webinar_script.md"
+    },
+    {
+      "id": "heal_tweet_3_length",
+      "label": "Self-Healing Event: Tweet #3 Length Truncation",
+      "source_file": "vault/SelfHealingEvent/heal_tweet_3_length.md"
+    }
+  ],
+  "edges": [
+    {
+      "source": "session_inbound_jason",
+      "target": "lead_jason_miller",
+      "relation": "QUALIFIED_AS",
+      "confidence": 1,
+      "source_file": "vault/session_inbound_jason.md",
+      "source_location": "vault/session_inbound_jason.md"
+    },
+    {
+      "source": "lead_jason_miller",
+      "target": "offer_pro_mentorship",
+      "relation": "ASSOCIATED_WITH",
+      "confidence": 1,
+      "source_file": "vault/lead_jason_miller.md",
+      "source_location": "vault/lead_jason_miller.md"
+    },
+    {
+      "source": "session_retention_sarah",
+      "target": "obj_cashflow_tight",
+      "relation": "RAISED_OBJECTION",
+      "confidence": 1,
+      "source_file": "vault/session_retention_sarah.md",
+      "source_location": "vault/session_retention_sarah.md"
+    },
+    {
+      "source": "session_retention_sarah",
+      "target": "policy_max_discount_15",
+      "relation": "TRIGGERED_POLICY",
+      "confidence": 1,
+      "source_file": "vault/session_retention_sarah.md",
+      "source_location": "vault/session_retention_sarah.md"
+    },
+    {
+      "source": "obj_cashflow_tight",
+      "target": "member_sarah_jenkins",
+      "relation": "ASSOCIATED_WITH",
+      "confidence": 1,
+      "source_file": "vault/obj_cashflow_tight.md",
+      "source_location": "vault/obj_cashflow_tight.md"
+    },
+    {
+      "source": "obj_pricing_guarantee",
+      "target": "lane_creator_rag",
+      "relation": "RESEARCHED_IN",
+      "confidence": 1,
+      "source_file": "vault/obj_pricing_guarantee.md",
+      "source_location": "vault/obj_pricing_guarantee.md"
+    },
+    {
+      "source": "obj_pricing_guarantee",
+      "target": "lane_market_trends",
+      "relation": "RESEARCHED_IN",
+      "confidence": 1,
+      "source_file": "vault/obj_pricing_guarantee.md",
+      "source_location": "vault/obj_pricing_guarantee.md"
+    },
+    {
+      "source": "obj_pricing_guarantee",
+      "target": "lane_community_objections",
+      "relation": "RESEARCHED_IN",
+      "confidence": 1,
+      "source_file": "vault/obj_pricing_guarantee.md",
+      "source_location": "vault/obj_pricing_guarantee.md"
+    },
+    {
+      "source": "lane_creator_rag",
+      "target": "pack_cf_101",
+      "relation": "SYNTHESIZED_INTO",
+      "confidence": 1,
+      "source_file": "vault/lane_creator_rag.md",
+      "source_location": "vault/lane_creator_rag.md"
+    },
+    {
+      "source": "lane_market_trends",
+      "target": "pack_cf_101",
+      "relation": "SYNTHESIZED_INTO",
+      "confidence": 1,
+      "source_file": "vault/lane_market_trends.md",
+      "source_location": "vault/lane_market_trends.md"
+    },
+    {
+      "source": "lane_community_objections",
+      "target": "pack_cf_101",
+      "relation": "SYNTHESIZED_INTO",
+      "confidence": 1,
+      "source_file": "vault/lane_community_objections.md",
+      "source_location": "vault/lane_community_objections.md"
+    },
+    {
+      "source": "pack_cf_101",
+      "target": "asset_x_thread",
+      "relation": "CONTAINS_ASSET",
+      "confidence": 1,
+      "source_file": "vault/pack_cf_101.md",
+      "source_location": "vault/pack_cf_101.md"
+    },
+    {
+      "source": "pack_cf_101",
+      "target": "asset_newsletter",
+      "relation": "CONTAINS_ASSET",
+      "confidence": 1,
+      "source_file": "vault/pack_cf_101.md",
+      "source_location": "vault/pack_cf_101.md"
+    },
+    {
+      "source": "pack_cf_101",
+      "target": "asset_webinar_script",
+      "relation": "CONTAINS_ASSET",
+      "confidence": 1,
+      "source_file": "vault/pack_cf_101.md",
+      "source_location": "vault/pack_cf_101.md"
+    },
+    {
+      "source": "asset_x_thread",
+      "target": "heal_tweet_3_length",
+      "relation": "HEALED_BY",
+      "confidence": 1,
+      "source_file": "vault/asset_x_thread.md",
+      "source_location": "vault/asset_x_thread.md"
+    }
+  ],
+  "hyperedges": [],
+  "input_tokens": 0,
+  "output_tokens": 0
+}

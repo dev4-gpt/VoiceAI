@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<graphml xmlns="http://graphml.graphdrawing.org/xmlns"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://graphml.graphdrawing.org/xmlns http://graphml.graphdrawing.org/xmlns/1.0/graphml.xsd">
+  <key id="label" for="node" attr.name="label" attr.type="string"/>
+  <key id="type" for="node" attr.name="type" attr.type="string"/>
+  <key id="edge_type" for="edge" attr.name="edge_type" attr.type="string"/>
+  <graph id="GrowthVoiceOS_KnowledgeGraph" edgedefault="directed">
+    <node id="offer_pro_mentorship">
+      <data key="label">Pro Mentorship ($2,997)</data>
+      <data key="type">Offer</data>
+    </node>
+    <node id="offer_vip_mastermind">
+      <data key="label">VIP Mastermind ($7,500)</data>
+      <data key="type">Offer</data>
+    </node>
+    <node id="policy_max_discount_15">
+      <data key="label">Guardrail: Max 15% Autonomous Discount</data>
+      <data key="type">GuardrailPolicy</data>
+    </node>
+    <node id="policy_pii_redaction">
+      <data key="label">Guardrail: Real-Time PII Masking</data>
+      <data key="type">GuardrailPolicy</data>
+    </node>
+    <node id="session_inbound_jason">
+      <data key="label">Voice Call: Jason Miller (After-Hours Inbound SDR)</data>
+      <data key="type">VoiceSession</data>
+    </node>
+    <node id="session_retention_sarah">
+      <data key="label">Voice Call: Sarah Jenkins (Churn Save &amp; Retention)</data>
+      <data key="type">VoiceSession</data>
+    </node>
+    <node id="lead_jason_miller">
+      <data key="label">Lead: Jason Miller</data>
+      <data key="type">Lead</data>
+    </node>
+    <node id="member_sarah_jenkins">
+      <data key="label">Member: Sarah Jenkins</data>
+      <data key="type">Member</data>
+    </node>
+    <node id="obj_cashflow_tight">
+      <data key="label">Objection: Cash Flow Tight (35% Discount Requested)</data>
+      <data key="type">Objection</data>
+    </node>
+    <node id="obj_pricing_guarantee">
+      <data key="label">Objection: Price vs Risk (Zero Audience Fear)</data>
+      <data key="type">Objection</data>
+    </node>
+    <node id="lane_creator_rag">
+      <data key="label">Research Lane: Creator Internal Offer RAG</data>
+      <data key="type">ResearchLane</data>
+    </node>
+    <node id="lane_market_trends">
+      <data key="label">Research Lane: Industry Benchmarks &amp; Funnels</data>
+      <data key="type">ResearchLane</data>
+    </node>
+    <node id="lane_community_objections">
+      <data key="label">Research Lane: Student Voice Call Analytics</data>
+      <data key="type">ResearchLane</data>
+    </node>
+    <node id="pack_cf_101">
+      <data key="label">Content Pack: Tough Pricing Objections &amp; 14-Day Guarantee</data>
+      <data key="type">ContentPack</data>
+    </node>
+    <node id="asset_x_thread">
+      <data key="label">X Thread (5 Tweets)</data>
+      <data key="type">Asset</data>
+    </node>
+    <node id="asset_newsletter">
+      <data key="label">Newsletter: The 3-Sentence Reframe</data>
+      <data key="type">Asset</data>
+    </node>
+    <node id="asset_webinar_script">
+      <data key="label">Webinar Pitch Script &amp; Risk Reversal</data>
+      <data key="type">Asset</data>
+    </node>
+    <node id="heal_tweet_3_length">
+      <data key="label">Self-Healing Event: Tweet #3 Length Truncation</data>
+      <data key="type">SelfHealingEvent</data>
+    </node>
+    <edge id="e1" source="session_inbound_jason" target="lead_jason_miller">
+      <data key="edge_type">QUALIFIED_AS</data>
+    </edge>
+    <edge id="e2" source="lead_jason_miller" target="offer_pro_mentorship">
+      <data key="edge_type">ASSOCIATED_WITH</data>
+    </edge>
+    <edge id="e3" source="session_retention_sarah" target="obj_cashflow_tight">
+      <data key="edge_type">RAISED_OBJECTION</data>
+    </edge>
+    <edge id="e4" source="session_retention_sarah" target="policy_max_discount_15">
+      <data key="edge_type">TRIGGERED_POLICY</data>
+    </edge>
+    <edge id="e5" source="obj_cashflow_tight" target="member_sarah_jenkins">
+      <data key="edge_type">ASSOCIATED_WITH</data>
+    </edge>
+    <edge id="e6" source="obj_pricing_guarantee" target="lane_creator_rag">
+      <data key="edge_type">RESEARCHED_IN</data>
+    </edge>
+    <edge id="e7" source="obj_pricing_guarantee" target="lane_market_trends">
+      <data key="edge_type">RESEARCHED_IN</data>
+    </edge>
+    <edge id="e8" source="obj_pricing_guarantee" target="lane_community_objections">
+      <data key="edge_type">RESEARCHED_IN</data>
+    </edge>
+    <edge id="e9" source="lane_creator_rag" target="pack_cf_101">
+      <data key="edge_type">SYNTHESIZED_INTO</data>
+    </edge>
+    <edge id="e10" source="lane_market_trends" target="pack_cf_101">
+      <data key="edge_type">SYNTHESIZED_INTO</data>
+    </edge>
+    <edge id="e11" source="lane_community_objections" target="pack_cf_101">
+      <data key="edge_type">SYNTHESIZED_INTO</data>
+    </edge>
+    <edge id="e12" source="pack_cf_101" target="asset_x_thread">
+      <data key="edge_type">CONTAINS_ASSET</data>
+    </edge>
+    <edge id="e13" source="pack_cf_101" target="asset_newsletter">
+      <data key="edge_type">CONTAINS_ASSET</data>
+    </edge>
+    <edge id="e14" source="pack_cf_101" target="asset_webinar_script">
+      <data key="edge_type">CONTAINS_ASSET</data>
+    </edge>
+    <edge id="e15" source="asset_x_thread" target="heal_tweet_3_length">
+      <data key="edge_type">HEALED_BY</data>
+    </edge>
+  </graph>
+</graphml>

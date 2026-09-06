@@ -1,0 +1,319 @@
+{
+  "updatedAt": "2026-09-06T23:28:24.119Z",
+  "nodes": [
+    {
+      "id": "offer_pro_mentorship",
+      "label": "Pro Mentorship ($2,997)",
+      "type": "Offer",
+      "properties": {
+        "price": 2997,
+        "paymentPlan": "497/mo",
+        "format": "Cohort + 1-on-1 Mentorship",
+        "tier": "growth"
+      }
+    },
+    {
+      "id": "offer_vip_mastermind",
+      "label": "VIP Mastermind ($7,500)",
+      "type": "Offer",
+      "properties": {
+        "price": 7500,
+        "monthlyFee": 997,
+        "format": "Private 1-on-1 + Retreats",
+        "tier": "executive"
+      }
+    },
+    {
+      "id": "policy_max_discount_15",
+      "label": "Guardrail: Max 15% Autonomous Discount",
+      "type": "GuardrailPolicy",
+      "properties": {
+        "maxDiscountPercent": 15,
+        "enforcement": "deterministic_clamp",
+        "description": "Enforces hard ceiling on autonomous discount concession during retention negotiations."
+      }
+    },
+    {
+      "id": "policy_pii_redaction",
+      "label": "Guardrail: Real-Time PII Masking",
+      "type": "GuardrailPolicy",
+      "properties": {
+        "rules": [
+          "credit_card_masking",
+          "ssn_masking",
+          "phone_masking"
+        ],
+        "active": true
+      }
+    },
+    {
+      "id": "session_inbound_jason",
+      "label": "Voice Call: Jason Miller (After-Hours Inbound SDR)",
+      "type": "VoiceSession",
+      "properties": {
+        "persona": "inbound_sdr",
+        "durationSeconds": 142,
+        "sentiment": "high_intent",
+        "audioFormat": "24kHz_mono_pcm16",
+        "asrEngine": "universal-3-5-pro",
+        "vadBargeInDelayMs": 45
+      }
+    },
+    {
+      "id": "session_retention_sarah",
+      "label": "Voice Call: Sarah Jenkins (Churn Save & Retention)",
+      "type": "VoiceSession",
+      "properties": {
+        "persona": "churn_retention",
+        "durationSeconds": 198,
+        "sentiment": "retained",
+        "audioFormat": "24kHz_mono_pcm16",
+        "asrEngine": "universal-3-5-pro",
+        "outcome": "retained_clamped_15_percent"
+      }
+    },
+    {
+      "id": "lead_jason_miller",
+      "label": "Lead: Jason Miller",
+      "type": "Lead",
+      "properties": {
+        "email": "jason.m@designacademy.io",
+        "communitySize": 15000,
+        "budget": "5k_to_15k",
+        "bantScore": 85,
+        "stage": "call_scheduled",
+        "consultationSlot": "Tomorrow at 2:00 PM EST",
+        "bookingCode": "GROWTH-8271"
+      }
+    },
+    {
+      "id": "member_sarah_jenkins",
+      "label": "Member: Sarah Jenkins",
+      "type": "Member",
+      "properties": {
+        "memberId": "mem_101",
+        "email": "sarah.j@example.com",
+        "tier": "vip_mastermind",
+        "monthlyFee": 997,
+        "status": "active_retained",
+        "discountGrantedPercent": 15,
+        "bonusGranted": "1-on-1 Growth Audit Call"
+      }
+    },
+    {
+      "id": "obj_cashflow_tight",
+      "label": "Objection: Cash Flow Tight (35% Discount Requested)",
+      "type": "Objection",
+      "properties": {
+        "category": "pricing_cashflow",
+        "verbatim": "I love the mastermind, but my cash flow is tight this month. Can you give me a 35% discount or I will have to cancel?",
+        "resolutionPolicy": "policy_max_discount_15"
+      }
+    },
+    {
+      "id": "obj_pricing_guarantee",
+      "label": "Objection: Price vs Risk (Zero Audience Fear)",
+      "type": "Objection",
+      "properties": {
+        "category": "risk_reversal",
+        "verbatim": "Will this work if I am starting from zero audience and haven’t launched high-ticket before?",
+        "resolution": "14_day_action_guarantee"
+      }
+    },
+    {
+      "id": "lane_creator_rag",
+      "label": "Research Lane: Creator Internal Offer RAG",
+      "type": "ResearchLane",
+      "properties": {
+        "lane": "creator_rag",
+        "sourceTitle": "Creator Accelerator Pricing Tiers",
+        "relevanceScore": 0.96,
+        "excerpt": "Self-Paced Sprint at $997, Pro Mentorship at $2,997 ($497/mo), Elite Mastermind at $7,500."
+      }
+    },
+    {
+      "id": "lane_market_trends",
+      "label": "Research Lane: Industry Benchmarks & Funnels",
+      "type": "ResearchLane",
+      "properties": {
+        "lane": "market_trends",
+        "sourceTitle": "State of Digital Education 2026",
+        "relevanceScore": 0.89,
+        "excerpt": "Action-based refund guarantees achieve 4.2x higher course completion rates."
+      }
+    },
+    {
+      "id": "lane_community_objections",
+      "label": "Research Lane: Student Voice Call Analytics",
+      "type": "ResearchLane",
+      "properties": {
+        "lane": "community_objections",
+        "sourceTitle": "Student Inbound Voice Call Analytics (Last 90 Days)",
+        "relevanceScore": 0.94,
+        "excerpt": "Top objection: Will this work if I am starting from zero audience?"
+      }
+    },
+    {
+      "id": "pack_cf_101",
+      "label": "Content Pack: Tough Pricing Objections & 14-Day Guarantee",
+      "type": "ContentPack",
+      "properties": {
+        "jobId": "job_cf_101",
+        "thesis": "High-ticket buyers do not buy information; they buy risk removal and speed of implementation.",
+        "status": "needs_approval",
+        "synthesisModel": "DeepSeek-R1",
+        "tokenCost": 0.032,
+        "inputTokens": 1420,
+        "outputTokens": 890
+      }
+    },
+    {
+      "id": "asset_x_thread",
+      "label": "X Thread (5 Tweets)",
+      "type": "Asset",
+      "properties": {
+        "channel": "twitter",
+        "tweetCount": 5,
+        "maxLengthConstraint": 280,
+        "verifiedLength": true,
+        "hook": "Most creators fail at high-ticket because they sell knowledge, not risk reversal."
+      }
+    },
+    {
+      "id": "asset_newsletter",
+      "label": "Newsletter: The 3-Sentence Reframe",
+      "type": "Asset",
+      "properties": {
+        "channel": "email",
+        "subject": "The 3-Sentence Reframe That Closed $42,000 in Digital Products",
+        "cta": "Book your 1-on-1 Growth Audit Call",
+        "status": "ready"
+      }
+    },
+    {
+      "id": "asset_webinar_script",
+      "label": "Webinar Pitch Script & Risk Reversal",
+      "type": "Asset",
+      "properties": {
+        "channel": "webinar_pitch",
+        "targetDurationMinutes": 15,
+        "coreGuarantee": "14-day action-based refund guarantee",
+        "status": "ready"
+      }
+    },
+    {
+      "id": "heal_tweet_3_length",
+      "label": "Self-Healing Event: Tweet #3 Length Truncation",
+      "type": "SelfHealingEvent",
+      "properties": {
+        "rule": "tweet_length_exceeded_280",
+        "initialLength": 312,
+        "healedLength": 234,
+        "healedSuccessfully": true,
+        "reasoningEngine": "DeepSeek-R1",
+        "summary": "Autonomous prompt mutation tightened redundant adjectives down to 234 chars."
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e1",
+      "source": "session_inbound_jason",
+      "target": "lead_jason_miller",
+      "type": "QUALIFIED_AS",
+      "label": "BANT Score 85"
+    },
+    {
+      "id": "e2",
+      "source": "lead_jason_miller",
+      "target": "offer_pro_mentorship",
+      "type": "ASSOCIATED_WITH",
+      "label": "Matched Tier"
+    },
+    {
+      "id": "e3",
+      "source": "session_retention_sarah",
+      "target": "obj_cashflow_tight",
+      "type": "RAISED_OBJECTION",
+      "label": "Cash Flow Tight"
+    },
+    {
+      "id": "e4",
+      "source": "session_retention_sarah",
+      "target": "policy_max_discount_15",
+      "type": "TRIGGERED_POLICY",
+      "label": "Clamped 35% to 15%"
+    },
+    {
+      "id": "e5",
+      "source": "obj_cashflow_tight",
+      "target": "member_sarah_jenkins",
+      "type": "ASSOCIATED_WITH",
+      "label": "Member Retained"
+    },
+    {
+      "id": "e6",
+      "source": "obj_pricing_guarantee",
+      "target": "lane_creator_rag",
+      "type": "RESEARCHED_IN",
+      "label": "Relevance 0.96"
+    },
+    {
+      "id": "e7",
+      "source": "obj_pricing_guarantee",
+      "target": "lane_market_trends",
+      "type": "RESEARCHED_IN",
+      "label": "Relevance 0.89"
+    },
+    {
+      "id": "e8",
+      "source": "obj_pricing_guarantee",
+      "target": "lane_community_objections",
+      "type": "RESEARCHED_IN",
+      "label": "Relevance 0.94"
+    },
+    {
+      "id": "e9",
+      "source": "lane_creator_rag",
+      "target": "pack_cf_101",
+      "type": "SYNTHESIZED_INTO"
+    },
+    {
+      "id": "e10",
+      "source": "lane_market_trends",
+      "target": "pack_cf_101",
+      "type": "SYNTHESIZED_INTO"
+    },
+    {
+      "id": "e11",
+      "source": "lane_community_objections",
+      "target": "pack_cf_101",
+      "type": "SYNTHESIZED_INTO"
+    },
+    {
+      "id": "e12",
+      "source": "pack_cf_101",
+      "target": "asset_x_thread",
+      "type": "CONTAINS_ASSET"
+    },
+    {
+      "id": "e13",
+      "source": "pack_cf_101",
+      "target": "asset_newsletter",
+      "type": "CONTAINS_ASSET"
+    },
+    {
+      "id": "e14",
+      "source": "pack_cf_101",
+      "target": "asset_webinar_script",
+      "type": "CONTAINS_ASSET"
+    },
+    {
+      "id": "e15",
+      "source": "asset_x_thread",
+      "target": "heal_tweet_3_length",
+      "type": "HEALED_BY",
+      "label": "312 -> 234 chars"
+    }
+  ]
+}

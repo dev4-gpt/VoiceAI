@@ -7,18 +7,20 @@ import {
   Zap,
   Sparkles,
   Database,
-  BarChart3
+  BarChart3,
+  GitFork
 } from 'lucide-react';
 import { AudioWaveform } from './components/AudioWaveform';
 import { LiveTranscriptHUD, MessageItem, ActiveToolItem } from './components/LiveTranscriptHUD';
 import { CrmKanban } from './components/CrmKanban';
 import { EvalsDashboard } from './components/EvalsDashboard';
 import { ContentFactoryStudio } from './components/ContentFactoryStudio';
+import { GraphViewHUD } from './components/GraphViewHUD';
 import { AudioPipeline } from './utils/audioWorklet';
 import { CRMLead, ChurnRiskMember, ContentFactoryJob } from '@voice-os/shared';
 
 export const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'console' | 'crm' | 'evals' | 'content'>('console');
+  const [activeTab, setActiveTab] = useState<'console' | 'crm' | 'evals' | 'content' | 'graph'>('console');
   const [isCalling, setIsCalling] = useState(false);
   const [isAgentSpeaking, setIsAgentSpeaking] = useState(false);
   const [isUserSpeaking, setIsUserSpeaking] = useState(false);
@@ -535,6 +537,17 @@ export const App: React.FC = () => {
             <BarChart3 className="w-3.5 h-3.5" />
             <span>Anthropic Evals</span>
           </button>
+          <button
+            onClick={() => setActiveTab('graph')}
+            className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              activeTab === 'graph'
+                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            <GitFork className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Knowledge Graph & Vault</span>
+          </button>
         </div>
       </header>
 
@@ -690,6 +703,7 @@ export const App: React.FC = () => {
         )}
 
         {activeTab === 'evals' && <EvalsDashboard />}
+        {activeTab === 'graph' && <GraphViewHUD />}
       </main>
 
       {/* Footer Status Bar */}
