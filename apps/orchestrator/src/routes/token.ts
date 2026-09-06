@@ -20,10 +20,9 @@ tokenRouter.post('/token', async (_req: Request, res: Response) => {
     const response = await fetch(
       'https://agents.assemblyai.com/v1/token?expires_in_seconds=300&max_session_duration_seconds=3600',
       {
-        method: 'POST',
+        method: 'GET',
         headers: {
-          Authorization: `Bearer ${apiKey}`,
-          'Content-Type': 'application/json'
+          Authorization: `Bearer ${apiKey}`
         }
       }
     );
