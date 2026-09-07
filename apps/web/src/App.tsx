@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
+  Compass,
+  Sliders,
   Mic,
   PhoneCall,
   PhoneOff,
@@ -38,6 +40,7 @@ import { CrmKanban } from './components/CrmKanban';
 import { EvalsDashboard } from './components/EvalsDashboard';
 import { ContentFactoryStudio } from './components/ContentFactoryStudio';
 import { GraphViewHUD } from './components/GraphViewHUD';
+import { Spatial3DOdyssey } from './components/Spatial3DOdyssey';
 import { AudioPipeline } from './utils/audioWorklet';
 import { CRMLead, ChurnRiskMember, ContentFactoryJob } from '@voice-os/shared';
 
@@ -134,6 +137,7 @@ export const BUILT_IN_PRESETS: DossierPreset[] = [
 
 export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'console' | 'crm' | 'evals' | 'content' | 'graph'>('console');
+  const [viewMode, setViewMode] = useState<'odyssey' | 'tactical'>('odyssey');
   const [isCalling, setIsCalling] = useState(false);
   const [isAgentSpeaking, setIsAgentSpeaking] = useState(false);
   const [isUserSpeaking, setIsUserSpeaking] = useState(false);
@@ -1182,119 +1186,8 @@ export const App: React.FC = () => {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-[#05070f] text-slate-100 flex flex-col relative overflow-x-hidden">
-      {/* Vercel-Grade Ambient GPU Background Shader Canvas */}
-      <AmbientVercelShader />
-
-      {/* Top Navigation Bar */}
-      <header className="border-b border-slate-800/80 bg-slate-950/70 backdrop-blur-xl px-6 py-4 flex flex-wrap items-center justify-between gap-4 sticky top-0 z-50">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-purple-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
-            <Zap className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <div className="flex items-center space-x-2">
-              <h1 className="text-lg font-bold tracking-tight text-white">GrowthVoice OS</h1>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-950/80 text-cyan-400 border border-cyan-800/60 font-semibold">
-                AssemblyAI Universal-3.5 Pro
-              </span>
-            </div>
-            <p className="text-xs text-slate-400">Autonomous AI Growth Operator for Creators & High-Ticket Programs</p>
-          </div>
-        </div>
-
-        {/* Tab Switcher & 3D Spatial Controls */}
-        <div className="flex items-center space-x-2">
-          <button
-            onClick={() => setIs3DSpatialMode(!is3DSpatialMode)}
-            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-mono font-semibold transition-all border ${
-              is3DSpatialMode
-                ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 shadow-[0_0_15px_rgba(6,182,212,0.4)]'
-                : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
-            }`}
-            title="Toggle 3D Spatial Depth Perspective (Cindy Zhu Scrollytelling Depth)"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-            <span>{is3DSpatialMode ? '3D Depth: ON' : '3D Depth: OFF'}</span>
-          </button>
-
-          <div className="flex items-center space-x-1 bg-slate-900/90 p-1 rounded-xl border border-slate-800">
-            <button
-              onClick={() => setActiveTab('console')}
-              className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                activeTab === 'console'
-                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <Mic className="w-3.5 h-3.5" />
-              <span>Voice Console</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('crm')}
-              className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                activeTab === 'crm'
-                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <Database className="w-3.5 h-3.5" />
-              <span>Revenue CRM ({leads.length})</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('content')}
-              className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                activeTab === 'content'
-                  ? 'bg-purple-500/20 text-purple-300 border border-purple-500/40 shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <Sparkles className="w-3.5 h-3.5 text-purple-400" />
-              <span>Hermes Content Studio ({jobs.length})</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('evals')}
-              className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                activeTab === 'evals'
-                  ? 'bg-purple-500/20 text-purple-300 border border-purple-500/40 shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <BarChart3 className="w-3.5 h-3.5" />
-              <span>Anthropic Evals</span>
-            </button>
-            <button
-              onClick={() => setActiveTab('graph')}
-              className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                activeTab === 'graph'
-                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              <GitFork className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Knowledge Graph & Vault</span>
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Workspace Body with Optional 3D Spatial Depth Perspective */}
-      <main
-        className="flex-1 p-6 max-w-7xl w-full mx-auto space-y-6 relative z-10 transition-all duration-700"
-        style={
-          is3DSpatialMode
-            ? {
-                perspective: '1400px',
-                transformStyle: 'preserve-3d',
-                transform: 'rotateX(3.5deg) scale(0.985)',
-                boxShadow: '0 30px 80px rgba(0,0,0,0.8)'
-              }
-            : {}
-        }
-      >
-        {activeTab === 'console' && (
-          <div className="space-y-6">
+  const renderConsoleContent = () => (
+    <div className="space-y-6">
             {/* Explainer & Mental Model Banner */}
             <div className="p-4.5 rounded-2xl bg-gradient-to-r from-blue-950/40 via-slate-900/60 to-purple-950/40 border border-blue-800/40 backdrop-blur-xl flex flex-col xl:flex-row xl:items-center justify-between gap-4 shadow-xl">
               <div className="flex items-start space-x-3.5 max-w-3xl">
@@ -1753,28 +1646,188 @@ export const App: React.FC = () => {
               </div>
             </div>
           </div>
-        )}
+  );
 
-        {activeTab === 'crm' && (
-          <CrmKanban
-            leads={leads}
-            members={members}
-            onSimulateLead={() => triggerSimulationStep('lead_inbound')}
-          />
-        )}
+  return (
+    <div className="min-h-screen bg-[#05070f] text-slate-100 flex flex-col relative overflow-x-hidden">
+      {/* Vercel-Grade Ambient GPU Background Shader Canvas */}
+      <AmbientVercelShader />
 
-        {activeTab === 'content' && (
-          <ContentFactoryStudio
-            jobs={jobs}
-            onTriggerJob={handleTriggerContentJob}
-            onTriggerAudit={handleTriggerAuditJob}
-            onApproveJob={handleApproveContentJob}
-          />
-        )}
+      {/* Top Navigation Bar */}
+      <header className="border-b border-slate-800/80 bg-slate-950/70 backdrop-blur-xl px-6 py-4 flex flex-wrap items-center justify-between gap-4 sticky top-0 z-50">
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-purple-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+            <Zap className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <div className="flex items-center space-x-2">
+              <h1 className="text-lg font-bold tracking-tight text-white">GrowthVoice OS</h1>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-950/80 text-cyan-400 border border-cyan-800/60 font-semibold">
+                AssemblyAI Universal-3.5 Pro
+              </span>
+            </div>
+            <p className="text-xs text-slate-400">Autonomous AI Growth Operator for Creators & High-Ticket Programs</p>
+          </div>
+        </div>
 
-        {activeTab === 'evals' && <EvalsDashboard />}
-        {activeTab === 'graph' && <GraphViewHUD />}
-      </main>
+        {/* View Engine Switcher & Tab Navigation */}
+        <div className="flex items-center space-x-2.5">
+          {/* Odyssey Mode vs Tactical Console Switcher */}
+          <div className="flex items-center space-x-1 bg-slate-900/90 p-1 rounded-2xl border border-cyan-800/60 shadow-inner">
+            <button
+              onClick={() => setViewMode('odyssey')}
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-mono font-semibold transition-all ${
+                viewMode === 'odyssey'
+                  ? 'bg-gradient-to-r from-cyan-500/30 to-purple-500/30 border border-cyan-400 text-cyan-200 shadow-[0_0_15px_rgba(6,182,212,0.4)]'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+              title="3D Spatial Z-Depth Odyssey Mode (Continuous Camera Dive into AI Core)"
+            >
+              <Compass className="w-3.5 h-3.5 text-cyan-400" />
+              <span>3D Odyssey</span>
+            </button>
+            <button
+              onClick={() => setViewMode('tactical')}
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-mono font-semibold transition-all ${
+                viewMode === 'tactical'
+                  ? 'bg-slate-800 border border-slate-700 text-slate-100 shadow-sm'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+              title="Tactical Flat Console Workstation"
+            >
+              <Sliders className="w-3.5 h-3.5 text-slate-400" />
+              <span>Tactical</span>
+            </button>
+          </div>
+          <button
+            onClick={() => setIs3DSpatialMode(!is3DSpatialMode)}
+            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-mono font-semibold transition-all border ${
+              is3DSpatialMode
+                ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 shadow-[0_0_15px_rgba(6,182,212,0.4)]'
+                : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
+            }`}
+            title="Toggle 3D Spatial Depth Perspective (Cindy Zhu Scrollytelling Depth)"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+            <span>{is3DSpatialMode ? '3D Depth: ON' : '3D Depth: OFF'}</span>
+          </button>
+
+          <div className="flex items-center space-x-1 bg-slate-900/90 p-1 rounded-xl border border-slate-800">
+            <button
+              onClick={() => setActiveTab('console')}
+              className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                activeTab === 'console'
+                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <Mic className="w-3.5 h-3.5" />
+              <span>Voice Console</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('crm')}
+              className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                activeTab === 'crm'
+                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <Database className="w-3.5 h-3.5" />
+              <span>Revenue CRM ({leads.length})</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('content')}
+              className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                activeTab === 'content'
+                  ? 'bg-purple-500/20 text-purple-300 border border-purple-500/40 shadow-sm'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+              <span>Hermes Content Studio ({jobs.length})</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('evals')}
+              className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                activeTab === 'evals'
+                  ? 'bg-purple-500/20 text-purple-300 border border-purple-500/40 shadow-sm'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <BarChart3 className="w-3.5 h-3.5" />
+              <span>Anthropic Evals</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('graph')}
+              className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                activeTab === 'graph'
+                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <GitFork className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Knowledge Graph & Vault</span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {viewMode === 'odyssey' ? (
+        <Spatial3DOdyssey
+          consoleContent={renderConsoleContent()}
+          crmContent={
+            <CrmKanban
+              leads={leads}
+              members={members}
+              onSimulateLead={() => triggerSimulationStep('lead_inbound')}
+            />
+          }
+          contentStudioContent={
+            <ContentFactoryStudio
+              jobs={jobs}
+              onTriggerJob={handleTriggerContentJob}
+              onTriggerAudit={handleTriggerAuditJob}
+              onApproveJob={handleApproveContentJob}
+            />
+          }
+          evalsContent={<EvalsDashboard />}
+          graphContent={<GraphViewHUD />}
+          onExitOdyssey={() => setViewMode('tactical')}
+        />
+      ) : (
+        <main
+          className="flex-1 p-6 max-w-7xl w-full mx-auto space-y-6 relative z-10 transition-all duration-700"
+          style={
+            is3DSpatialMode
+              ? {
+                  perspective: '1400px',
+                  transformStyle: 'preserve-3d',
+                  transform: 'rotateX(3.5deg) scale(0.985)',
+                  boxShadow: '0 30px 80px rgba(0,0,0,0.8)'
+                }
+              : {}
+          }
+        >
+          {activeTab === 'console' && renderConsoleContent()}
+          {activeTab === 'crm' && (
+            <CrmKanban
+              leads={leads}
+              members={members}
+              onSimulateLead={() => triggerSimulationStep('lead_inbound')}
+            />
+          )}
+          {activeTab === 'content' && (
+            <ContentFactoryStudio
+              jobs={jobs}
+              onTriggerJob={handleTriggerContentJob}
+              onTriggerAudit={handleTriggerAuditJob}
+              onApproveJob={handleApproveContentJob}
+            />
+          )}
+          {activeTab === 'evals' && <EvalsDashboard />}
+          {activeTab === 'graph' && <GraphViewHUD />}
+        </main>
+      )}
 
       {/* Prospect Dossier Enrichment Modal */}
       {isEnrichModalOpen && (
