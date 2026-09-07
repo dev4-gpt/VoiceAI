@@ -38,7 +38,8 @@ import {
   Download,
   Timer,
   Activity,
-  CheckCircle2
+  CheckCircle2,
+  Key
 } from 'lucide-react';
 import { speechSynth } from './utils/speechSynth';
 import { AudioWaveform } from './components/AudioWaveform';
@@ -48,6 +49,7 @@ import { LiveTranscriptHUD, MessageItem, ActiveToolItem } from './components/Liv
 import { CrmKanban } from './components/CrmKanban';
 import { EvalsDashboard } from './components/EvalsDashboard';
 import { ContentFactoryStudio } from './components/ContentFactoryStudio';
+import { ClientCredentialsModal } from './components/ClientCredentialsModal';
 import { GraphViewHUD } from './components/GraphViewHUD';
 import { Spatial3DOdyssey } from './components/Spatial3DOdyssey';
 import { AudioPipeline } from './utils/audioWorklet';
@@ -184,6 +186,7 @@ export const App: React.FC = () => {
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [is3DSpatialMode, setIs3DSpatialMode] = useState(false);
   const [audioVisualizerType, setAudioVisualizerType] = useState<VisualizerMode | 'waveform'>('cymatic');
+  const [isCredentialsModalOpen, setIsCredentialsModalOpen] = useState(false);
   const [activeSimulationKey, setActiveSimulationKey] = useState<string | null>(null);
 
   // Voice Pacing & Silence Threshold Tuning
@@ -1689,6 +1692,21 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
                   >
                     <Minus className="w-3.5 h-3.5" />
                   </button>
+
+                  {/* [🔑] Connected Platforms & Cloud Credentials Button */}
+                  <button
+                    type="button"
+                    onClick={() => setIsCredentialsModalOpen(true)}
+                    title="Connected Platforms & Cloud API Keys for this client"
+                    className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all shadow-sm border ${
+                      isGlass
+                        ? 'bg-amber-50 hover:bg-amber-100 border-amber-300 text-amber-900'
+                        : 'bg-amber-950/40 hover:bg-amber-900/60 border-amber-700/60 text-amber-300'
+                    }`}
+                  >
+                    <Key className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                    <span>Keys</span>
+                  </button>
                 </div>
 
                 {/* Voice Pacing & Silence Threshold Controller */}
@@ -2453,6 +2471,8 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
               onTriggerJob={handleTriggerContentJob}
               onTriggerAudit={handleTriggerAuditJob}
               onApproveJob={handleApproveContentJob}
+              activeCompanyName={prospectCompany || 'DesignAcademy Studio'}
+              onOpenCredentialsModal={() => setIsCredentialsModalOpen(true)}
             />
           }
           evalsContent={<EvalsDashboard theme={theme} />}
@@ -2489,6 +2509,8 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
               onTriggerJob={handleTriggerContentJob}
               onTriggerAudit={handleTriggerAuditJob}
               onApproveJob={handleApproveContentJob}
+              activeCompanyName={prospectCompany || 'DesignAcademy Studio'}
+              onOpenCredentialsModal={() => setIsCredentialsModalOpen(true)}
             />
           )}
           {activeTab === 'evals' && <EvalsDashboard theme={theme} />}
@@ -3019,6 +3041,14 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
           </div>
         </div>
       )}
+
+      {/* Client Connected Platforms & Cloud Credentials Modal */}
+      <ClientCredentialsModal
+        isOpen={isCredentialsModalOpen}
+        onClose={() => setIsCredentialsModalOpen(false)}
+        companyName={prospectCompany || 'DesignAcademy Studio'}
+        theme={theme}
+      />
 
       {/* Footer Status Bar */}
       <footer className={`border-t px-6 py-3 text-xs font-mono flex items-center justify-between ${

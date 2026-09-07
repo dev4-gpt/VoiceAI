@@ -1,3 +1,6 @@
+import { socialPublishingService } from '../services/socialPublishingService';
+import * as fs from 'fs';
+import * as path from 'path';
 import { Router, Request, Response } from 'express';
 import { contentFactoryEngine } from '../services/contentFactoryEngine';
 import { outreachDispatcherService } from '../services/outreachDispatcherService';
@@ -101,4 +104,58 @@ contentRouter.post('/jobs/:id/reject', (req: Request, res: Response) => {
   const job = contentFactoryEngine.rejectJob(req.params.id);
   if (!job) return res.status(404).json({ error: 'Job not found' });
   res.json({ status: 'rejected', job });
+});
+
+// Automated Social Publishing Across Connected Platforms
+contentRouter.post('/publish', async (req: Request, res: Response) => {
+  const { companyName, platforms, content, source } = req.body;
+  if (!companyName || !platforms || !Array.isArray(platforms) || platforms.length === 0) {
+    return res.status(400).json({ error: 'Company name and target platforms array are required' });
+  }
+
+  try {
+    const result = await socialPublishingService.publishToConnectedPlatforms({
+      companyName,
+      platforms,
+      content: content || { thesis: 'Autonomous Growth Architecture' },
+      source: source || 'content_factory_studio'
+    });
+    res.json({ status: 'success', result });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Publishing failed', message: err.message });
+  }
+});
+
+// Autonomous End-to-End Social Pipeline: Research -> Anna Voice -> Create -> Publish
+contentRouter.post('/auto-pipeline', async (req: Request, res: Response) => {
+  const { companyName, transcriptExcerpt, coreInsight, platforms } = req.body;
+  if (!companyName) {
+    return res.status(400).json({ error: 'Company name is required' });
+  }
+
+  try {
+    const result = await socialPublishingService.runEndToEndPipeline({
+      companyName,
+      transcriptExcerpt,
+      coreInsight,
+      platforms
+    });
+    res.json({ status: 'success', result });
+  } catch (err: any) {
+    res.status(500).json({ error: 'Auto-pipeline failed', message: err.message });
+  }
+});
+
+// Get publication history and Obsidian SocialFeed.md for client
+contentRouter.get('/publications/:companyName', (req: Request, res: Response) => {
+  const { companyName } = req.params;
+  const safeName = companyName.replace(/[^a-zA-Z0-9_-]/g, '_');
+  const feedPath = path.resolve(process.cwd(), 'vault', 'Clients', safeName, 'SocialFeed.md');
+
+  if (fs.existsSync(feedPath)) {
+    const content = fs.readFileSync(feedPath, 'utf-8');
+    res.json({ companyName, exists: true, feedMarkdown: content, vaultPath: `vault/Clients/${safeName}/SocialFeed.md` });
+  } else {
+    res.json({ companyName, exists: false, feedMarkdown: '', message: 'No publications recorded yet.' });
+  }
 });

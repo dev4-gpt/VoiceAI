@@ -9,6 +9,7 @@ import { tokenRouter } from './routes/token';
 import { crmRouter } from './routes/crm';
 import { contentRouter } from './routes/content';
 import { graphRouter } from './routes/graph';
+import { credentialsRouter } from './routes/credentials';
 import { VOICE_AGENT_TOOLS } from './tools/registry';
 import { toolDispatcher } from './tools/dispatcher';
 import { crmStore } from './services/crmStore';
@@ -32,6 +33,7 @@ app.use('/api/voice', tokenRouter);
 app.use('/api/crm', crmRouter);
 app.use('/api/content', contentRouter);
 app.use('/api/graph', graphRouter);
+app.use('/api/credentials', credentialsRouter);
 
 // Root landing info
 app.get('/', (_req, res) => {
@@ -49,6 +51,7 @@ app.get('/', (_req, res) => {
       graphStats: '/api/graph/stats',
       graphNodes: '/api/graph/nodes',
       graphEdges: '/api/graph/edges',
+      credentials: '/api/credentials/:clientId',
       telemetryWs: 'ws://localhost:4000/ws/telemetry'
     }
   });

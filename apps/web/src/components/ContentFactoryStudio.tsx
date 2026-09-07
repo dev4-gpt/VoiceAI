@@ -26,8 +26,13 @@ import {
   Mic,
   PlusCircle,
   X,
-  Share2
+  Share2,
+  Key,
+  Radio,
+  Zap,
+  Globe
 } from 'lucide-react';
+import { ClientCredentialsModal } from './ClientCredentialsModal';
 
 interface ContentFactoryStudioProps {
   jobs: ContentFactoryJob[];
@@ -41,6 +46,8 @@ interface ContentFactoryStudioProps {
   }) => Promise<void>;
   onApproveJob: (id: string) => Promise<void>;
   theme?: 'glass' | 'cyber';
+  activeCompanyName?: string;
+  onOpenCredentialsModal?: () => void;
 }
 
 export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
@@ -48,8 +55,79 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
   onTriggerJob,
   onTriggerAudit,
   onApproveJob,
-  theme = 'glass'
+  theme = 'glass',
+  activeCompanyName = 'DesignAcademy Studio',
+  onOpenCredentialsModal
 }) => {
+  const [isCredentialsModalOpen, setIsCredentialsModalOpen] = useState(false);
+  const [isPublishingSocial, setIsPublishingSocial] = useState(false);
+  const [publishReceipts, setPublishReceipts] = useState<any[] | null>(null);
+  const [isAutoPipelineRunning, setIsAutoPipelineRunning] = useState(false);
+  const [autoPipelineResult, setAutoPipelineResult] = useState<any | null>(null);
+
+  const handlePublishToSocial = async (target: 'twitter' | 'linkedin' | 'substack' | 'all') => {
+    try {
+      setIsPublishingSocial(true);
+      setPublishReceipts(null);
+      const platforms = target === 'all' ? ['twitter', 'linkedin', 'substack'] : [target];
+
+      const res = await fetch('/api/content/publish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          companyName: activeCompanyName,
+          platforms,
+          content: {
+            thesis: pack?.thesis || 'Autonomous Inbound Scaling',
+            twitterThread: pack?.twitterThread,
+            linkedInPost: pack?.linkedInPost ? `${pack.linkedInPost.hook}\n\n${pack.linkedInPost.bodyMarkdown}\n\n${pack.linkedInPost.takeaways.map(t => '• ' + t).join('\n')}` : undefined,
+            newsletterMarkdown: pack?.newsletter?.bodyMarkdown
+          },
+          source: 'content_factory_studio'
+        })
+      });
+
+      const data = await res.json();
+      if (data.status === 'success') {
+        setPublishReceipts(data.result?.receipts || []);
+      } else {
+        alert(data.error || 'Failed to publish');
+      }
+    } catch (e: any) {
+      alert('Publishing error: ' + e.message);
+    } finally {
+      setIsPublishingSocial(false);
+    }
+  };
+
+  const handleRunAutonomousPipeline = async () => {
+    try {
+      setIsAutoPipelineRunning(true);
+      setAutoPipelineResult(null);
+
+      const res = await fetch('/api/content/auto-pipeline', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          companyName: activeCompanyName,
+          transcriptExcerpt: selectedJob?.contentPack?.thesis || selectedJob?.leadMagnetAudit?.leadMagnetTitle || 'Automated high-ticket inbound funnel qualification',
+          platforms: ['twitter', 'linkedin', 'substack']
+        })
+      });
+
+      const data = await res.json();
+      if (data.status === 'success') {
+        setAutoPipelineResult(data.result);
+        setPublishReceipts(data.result?.publishBatch?.receipts || []);
+      } else {
+        alert(data.error || 'Pipeline execution failed');
+      }
+    } catch (e: any) {
+      alert('Pipeline error: ' + e.message);
+    } finally {
+      setIsAutoPipelineRunning(false);
+    }
+  };
   const isGlass = theme === 'glass';
   const [selectedJobId, setSelectedJobId] = useState<string>(jobs[0]?.id || '');
   const [activeAssetTab, setActiveAssetTab] = useState<'twitter' | 'linkedin' | 'instagram' | 'newsletter' | 'webinar'>('twitter');
@@ -157,7 +235,20 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
         </div>
 
         {/* Action Controls: New SOP Audit or Spoken Content Trigger */}
-        <div className="flex items-center space-x-2.5">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => onOpenCredentialsModal ? onOpenCredentialsModal() : setIsCredentialsModalOpen(true)}
+            className={`flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all border shadow-sm ${
+              isGlass
+                ? 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100'
+                : 'bg-amber-950/40 text-amber-300 border-amber-700/60 hover:bg-amber-900/50'
+            }`}
+            title="Manage isolated cloud API keys & webhooks for this client"
+          >
+            <Key className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+            <span>Connected Platforms & Keys</span>
+          </button>
+
           <button
             onClick={() => setIsAuditModalOpen(true)}
             className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 text-xs font-bold shadow-lg shadow-cyan-500/20 transition-all"
@@ -190,6 +281,89 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
           </form>
         </div>
       </div>
+
+      {/* Autonomous Social Pipeline & Cloud Dispatch Ribbon */}
+      <div className={`p-4 rounded-2xl border backdrop-blur-xl transition-all flex flex-col md:flex-row items-start md:items-center justify-between gap-3 ${
+        isGlass
+          ? 'bg-[#fdfcf9]/85 border-[#e8e4dc]/90 shadow-[0_8px_30px_rgba(40,30,20,0.03)] text-slate-800'
+          : 'bg-slate-900/80 border-slate-800/80 text-slate-100'
+      }`}>
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <span className="font-bold text-slate-900 dark:text-white flex items-center space-x-1.5">
+            <Radio className="w-4 h-4 text-emerald-500 animate-pulse" />
+            <span>Autonomous Pipeline:</span>
+          </span>
+
+          <div className="flex flex-wrap items-center gap-1 font-mono text-[11px] text-slate-600 dark:text-slate-400">
+            <span className="px-2 py-0.5 rounded bg-sky-100 dark:bg-sky-950/80 text-sky-800 dark:text-sky-300 font-semibold border border-sky-300 dark:border-sky-800">
+              1. Research Vault
+            </span>
+            <span>➔</span>
+            <span className="px-2 py-0.5 rounded bg-purple-100 dark:bg-purple-950/80 text-purple-800 dark:text-purple-300 font-semibold border border-purple-300 dark:border-purple-800">
+              2. Anna Voice Consult
+            </span>
+            <span>➔</span>
+            <span className="px-2 py-0.5 rounded bg-indigo-100 dark:bg-indigo-950/80 text-indigo-800 dark:text-indigo-300 font-semibold border border-indigo-300 dark:border-indigo-800">
+              3. Omnichannel Studio
+            </span>
+            <span>➔</span>
+            <span className="px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 font-semibold border border-emerald-300 dark:border-emerald-800">
+              4. Cloud Social Dispatch
+            </span>
+          </div>
+
+          <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full font-bold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 ml-1">
+            Client: {activeCompanyName}
+          </span>
+        </div>
+
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={handleRunAutonomousPipeline}
+            disabled={isAutoPipelineRunning}
+            className="flex items-center space-x-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 text-xs font-bold shadow-md shadow-emerald-500/20 transition-all disabled:opacity-50 cursor-pointer"
+          >
+            <Zap className={`w-3.5 h-3.5 ${isAutoPipelineRunning ? 'animate-spin' : ''}`} />
+            <span>{isAutoPipelineRunning ? 'Running Pipeline...' : 'Run Autonomous Sync'}</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Live Social Publication Notification Banner */}
+      {publishReceipts && publishReceipts.length > 0 && (
+        <div className="p-4 rounded-2xl bg-emerald-50/90 border border-emerald-300 dark:bg-emerald-950/50 dark:border-emerald-800 text-emerald-950 dark:text-emerald-100 shadow-md space-y-2 animate-in fade-in duration-200">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <CheckCircle2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+              <span className="text-xs font-bold font-mono">
+                Dispatched {publishReceipts.filter(r => r.status === 'published').length}/{publishReceipts.length} Posts to Connected Platforms ({activeCompanyName}):
+              </span>
+            </div>
+            <button
+              onClick={() => setPublishReceipts(null)}
+              className="text-xs text-emerald-700 hover:text-emerald-900 dark:text-emerald-300 hover:underline"
+            >
+              Dismiss
+            </button>
+          </div>
+
+          <div className="flex flex-wrap gap-2 pt-1">
+            {publishReceipts.map((r, idx) => (
+              <a
+                key={idx}
+                href={r.postUrl || '#'}
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center space-x-1.5 px-3 py-1 rounded-xl bg-white dark:bg-slate-900 border border-emerald-300 dark:border-emerald-700 text-xs font-mono font-semibold shadow-xs hover:border-emerald-500 transition-all"
+              >
+                <Globe className="w-3.5 h-3.5 text-emerald-600" />
+                <span>{r.platform.toUpperCase()} ({r.accountHandle}) — {r.status.toUpperCase()}</span>
+                <ExternalLink className="w-3 h-3 text-slate-400 ml-1" />
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Main Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1">
@@ -845,14 +1019,25 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
                   </h3>
                 </div>
 
-                {!selectedJob.humanApproved ? (
+                <div className="flex items-center space-x-2">
                   <button
-                    onClick={() => onApproveJob(selectedJob.id)}
-                    className="flex items-center space-x-2 px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-bold text-xs shadow-lg shadow-emerald-500/20 transition-all"
+                    onClick={() => handlePublishToSocial('all')}
+                    disabled={isPublishingSocial}
+                    className="flex items-center space-x-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white font-bold text-xs shadow-md shadow-sky-500/20 transition-all disabled:opacity-50 cursor-pointer"
+                    title="Publish directly to connected X, LinkedIn & Substack"
                   >
-                    <CheckCircle2 className="w-4 h-4" />
-                    <span>Approve & Publish Pack</span>
+                    <Globe className="w-3.5 h-3.5" />
+                    <span>{isPublishingSocial ? 'Publishing...' : 'Broadcast to Connected Platforms'}</span>
                   </button>
+
+                  {!selectedJob.humanApproved ? (
+                    <button
+                      onClick={() => onApproveJob(selectedJob.id)}
+                      className="flex items-center space-x-2 px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-bold text-xs shadow-lg shadow-emerald-500/20 transition-all"
+                    >
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>Approve Pack</span>
+                    </button>
                 ) : (
                   <div className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl border text-xs font-mono font-semibold ${
                     isGlass ? 'bg-emerald-50 border-emerald-300 text-emerald-700' : 'bg-emerald-950/60 border-emerald-500/40 text-emerald-400'
@@ -861,6 +1046,7 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
                     <span>Approved & Dispatched</span>
                   </div>
                 )}
+                </div>
               </div>
 
               {/* 5-Channel Platform Switcher */}
@@ -932,13 +1118,23 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
                   <div className="space-y-3">
                     <div className={`flex items-center justify-between text-xs font-mono ${isGlass ? 'text-slate-600 font-semibold' : 'text-slate-400'}`}>
                       <span>Twitter / X Thread (Strictly &lt;= 280 Chars per Tweet)</span>
-                      <button
-                        onClick={() => handleCopy(pack.twitterThread.join('\n\n'), 'all_tweets')}
-                        className={`flex items-center space-x-1 ${isGlass ? 'text-cyan-700 hover:underline font-semibold' : 'text-cyan-400 hover:underline'}`}
-                      >
-                        {copiedIndex === 'all_tweets' ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
-                        <span>Copy Full Thread</span>
-                      </button>
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => handlePublishToSocial('twitter')}
+                          disabled={isPublishingSocial}
+                          className="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-[11px] shadow-xs transition-all disabled:opacity-50 cursor-pointer"
+                        >
+                          <Twitter className="w-3 h-3" />
+                          <span>Publish Thread to X</span>
+                        </button>
+                        <button
+                          onClick={() => handleCopy(pack.twitterThread.join('\n\n'), 'all_tweets')}
+                          className={`flex items-center space-x-1 ${isGlass ? 'text-cyan-700 hover:underline font-semibold' : 'text-cyan-400 hover:underline'}`}
+                        >
+                          {copiedIndex === 'all_tweets' ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                          <span>Copy Full Thread</span>
+                        </button>
+                      </div>
                     </div>
 
                     {pack.twitterThread.map((tweet, idx) => (
@@ -961,7 +1157,16 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
                   <div className="space-y-3">
                     <div className={`flex items-center justify-between text-xs font-mono ${isGlass ? 'text-slate-600 font-semibold' : 'text-slate-400'}`}>
                       <span>LinkedIn Long-Form Post & Action Framework</span>
-                      <button
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => handlePublishToSocial('linkedin')}
+                          disabled={isPublishingSocial}
+                          className="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-[11px] shadow-xs transition-all disabled:opacity-50"
+                        >
+                          <Linkedin className="w-3 h-3" />
+                          <span>Publish to LinkedIn</span>
+                        </button>
+                        <button
                         onClick={() =>
                           handleCopy(
                             `${pack.linkedInPost?.hook}\n\n${pack.linkedInPost?.bodyMarkdown}\n\nTakeaways:\n${pack.linkedInPost?.takeaways.map(t => '• ' + t).join('\n')}\n\n${pack.linkedInPost?.hashtags.join(' ')}`,
@@ -972,7 +1177,8 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
                       >
                         {copiedIndex === 'linkedin_post' ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
                         <span>Copy Post</span>
-                      </button>
+                        </button>
+                      </div>
                     </div>
 
                     <div className={`p-4 rounded-xl border space-y-3 text-xs leading-relaxed font-sans ${
@@ -1047,6 +1253,14 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
                         <span>Word count: {wordCount} words (~{readTimeMin} min read)</span>
                       </div>
                       <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => handlePublishToSocial('substack')}
+                          disabled={isPublishingSocial}
+                          className="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold shadow-xs transition-all disabled:opacity-50 cursor-pointer"
+                        >
+                          <Globe className="w-3 h-3" />
+                          <span>Broadcast to Substack/Webhook</span>
+                        </button>
                         <a
                           href={mailtoUrl}
                           className="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold"
@@ -1321,6 +1535,13 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
           </div>
         </div>
       )}
+      {/* Client Credentials Modal */}
+      <ClientCredentialsModal
+        isOpen={isCredentialsModalOpen}
+        onClose={() => setIsCredentialsModalOpen(false)}
+        companyName={activeCompanyName}
+        theme={theme}
+      />
     </div>
   );
 };
