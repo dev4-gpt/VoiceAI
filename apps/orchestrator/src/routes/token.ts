@@ -51,7 +51,7 @@ tokenRouter.post('/token', async (req: Request, res: Response) => {
 
 // Interactive Text & Keyboard Conversation Route
 tokenRouter.post('/chat', async (req: Request, res: Response) => {
-  const { text, persona, prospect } = req.body;
+  const { text, persona, prospect, history } = req.body;
   if (!text) {
     return res.status(400).json({ error: 'Text input is required' });
   }
@@ -108,17 +108,36 @@ Rules for Voice Conversation:
 3. Write for natural spoken voice: do NOT output raw URLs, markdown bullets, hashtags, or bracketed text.
 4. Always end your reply with a sharp, natural qualifying question to move the conversation forward.`;
 
-  // Build multi-turn context from lead interaction history
+  // Build multi-turn context from client history or lead interaction history
   const recentTurns: Array<{ role: 'user' | 'assistant'; content: string }> = [];
-  const interactionNotes = (updatedLead.notes || []).filter((n) => n.startsWith('[Typed Interaction'));
-  const recentHistory = interactionNotes.slice(-5);
-  for (const n of recentHistory) {
-    const match = n.match(/\]: "(.*)"$/);
-    if (match && match[1] && match[1] !== text) {
-      recentTurns.push({ role: 'user', content: match[1] });
+
+  if (Array.isArray(history) && history.length > 0) {
+    for (const turn of history.slice(-8)) {
+      if (turn.role && turn.content) {
+        recentTurns.push({
+          role: turn.role === 'assistant' ? 'assistant' : 'user',
+          content: turn.content
+        });
+      }
+    }
+  } else {
+    const interactionNotes = (updatedLead.notes || []).filter(
+      (n) => n.startsWith('[Typed Interaction') || n.startsWith('[Agent Reply')
+    );
+    const recentHistory = interactionNotes.slice(-6);
+    for (const n of recentHistory) {
+      const match = n.match(/\]: "(.*)"$/);
+      if (match && match[1]) {
+        const role = n.startsWith('[Agent Reply') ? 'assistant' : 'user';
+        recentTurns.push({ role, content: match[1] });
+      }
     }
   }
-  recentTurns.push({ role: 'user', content: text });
+
+  // Ensure current user message is at the end of the history
+  if (recentTurns.length === 0 || recentTurns[recentTurns.length - 1].content !== text) {
+    recentTurns.push({ role: 'user', content: text });
+  }
 
   let reply = '';
 
@@ -151,6 +170,9 @@ Rules for Voice Conversation:
       reply = `Understood! For ${companyName}, our system automates inbound qualification and retention so you can scale hands-off. What is the biggest bottleneck you'd like us to tackle first?`;
     }
   }
+
+  updatedLead.notes.push(`[Agent Reply ${new Date().toLocaleTimeString()}]: "${reply}"`);
+  crmStore.syncLeadToVault(updatedLead);
 
   res.json({
     reply,

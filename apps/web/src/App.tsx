@@ -1140,12 +1140,22 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
     ]);
 
     try {
-      // 2. Call backend endpoint POST /api/voice/chat
+      // 2. Format recent conversation history so LLM has full multi-turn context
+      const history = messages
+        .filter((m) => m.speaker === 'user' || m.speaker === 'agent')
+        .slice(-8)
+        .map((m) => ({
+          role: m.speaker === 'user' ? ('user' as const) : ('assistant' as const),
+          content: m.text
+        }));
+
+      // 3. Call backend endpoint POST /api/voice/chat
       const res = await fetch('/api/voice/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           text,
+          history,
           prospect: {
             name: prospectName,
             email: prospectEmail,
