@@ -40,14 +40,17 @@ interface ContentFactoryStudioProps {
     socialBioText?: string;
   }) => Promise<void>;
   onApproveJob: (id: string) => Promise<void>;
+  theme?: 'glass' | 'cyber';
 }
 
 export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
   jobs,
   onTriggerJob,
   onTriggerAudit,
-  onApproveJob
+  onApproveJob,
+  theme = 'glass'
 }) => {
+  const isGlass = theme === 'glass';
   const [selectedJobId, setSelectedJobId] = useState<string>(jobs[0]?.id || '');
   const [activeAssetTab, setActiveAssetTab] = useState<'twitter' | 'linkedin' | 'instagram' | 'newsletter' | 'webinar'>('twitter');
   const [activeOutreachTab, setActiveOutreachTab] = useState<'voice_script' | 'email' | 'linkedin' | 'lead_magnet'>('voice_script');
@@ -131,18 +134,24 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
   return (
     <div className="flex flex-col h-full space-y-6">
       {/* Top Banner: Dual Engine Switcher & Quick Launch */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between p-5 rounded-2xl bg-gradient-to-r from-purple-950/40 via-slate-900/60 to-cyan-950/40 border border-purple-800/40 backdrop-blur-xl shadow-2xl gap-4">
+      <div className={`flex flex-col md:flex-row items-start md:items-center justify-between p-5 rounded-2xl border backdrop-blur-xl shadow-2xl gap-4 transition-all ${
+        isGlass
+          ? 'bg-white/80 border-slate-200/90 shadow-[0_10px_35px_rgba(0,0,0,0.04)] text-slate-800'
+          : 'bg-gradient-to-r from-purple-950/40 via-slate-900/60 to-cyan-950/40 border-purple-800/40 text-slate-100'
+      }`}>
         <div className="space-y-1">
           <div className="flex items-center space-x-2.5">
-            <Sparkles className="w-5 h-5 text-cyan-400" />
-            <h2 className="text-base font-bold text-white tracking-tight">
+            <Sparkles className={`w-5 h-5 ${isGlass ? 'text-sky-600' : 'text-cyan-400'}`} />
+            <h2 className={`text-base font-bold tracking-tight ${isGlass ? 'text-slate-900' : 'text-white'}`}>
               Hermes Growth Studio: Inbound Audit & Multi-Channel Syndication
             </h2>
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-mono font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+            <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold border ${
+              isGlass ? 'bg-sky-50 text-sky-800 border-sky-200' : 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30'
+            }`}>
               SOP Engine Active
             </span>
           </div>
-          <p className="text-xs text-slate-400">
+          <p className={`text-xs ${isGlass ? 'text-slate-600' : 'text-slate-400'}`}>
             Generate 5-Point Inbound Audits, Revenue Leakage Estimates, and Multi-Platform Campaigns from customer voice signals and social footprints.
           </p>
         </div>
@@ -163,7 +172,11 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
               value={customTopic}
               onChange={(e) => setCustomTopic(e.target.value)}
               placeholder="Spoken objection topic..."
-              className="px-3 py-2 rounded-xl bg-slate-950/80 border border-slate-800 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-purple-500 font-mono w-56"
+              className={`px-3 py-2 rounded-xl border text-xs font-mono w-56 transition-all ${
+                isGlass
+                  ? 'bg-slate-50 border-slate-300 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-purple-500'
+                  : 'bg-slate-950/80 border-slate-800 text-slate-200 placeholder-slate-500 focus:outline-none focus:border-purple-500'
+              }`}
             />
             <button
               type="submit"
@@ -183,9 +196,11 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
         {/* Left Column: Job Queue & Research Lanes */}
         <div className="lg:col-span-5 space-y-4 flex flex-col">
           {/* Active Jobs Selector */}
-          <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-xl space-y-3">
-            <div className="flex items-center justify-between text-xs font-mono text-slate-400">
-              <span className="font-semibold uppercase text-slate-300">Active Pipeline Deliverables:</span>
+          <div className={`p-4 rounded-2xl border backdrop-blur-xl space-y-3 ${
+            isGlass ? 'bg-white/80 border-slate-200/90 shadow-sm text-slate-800' : 'bg-slate-900/60 border-slate-800/80 text-slate-100'
+          }`}>
+            <div className={`flex items-center justify-between text-xs font-mono ${isGlass ? 'text-slate-600' : 'text-slate-400'}`}>
+              <span className={`font-semibold uppercase ${isGlass ? 'text-slate-800' : 'text-slate-300'}`}>Active Pipeline Deliverables:</span>
               <span>{jobs.length} Runs</span>
             </div>
 
@@ -198,27 +213,39 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
                     onClick={() => setSelectedJobId(job.id)}
                     className={`w-full text-left p-3 rounded-xl border transition-all text-xs flex flex-col space-y-1.5 ${
                       selectedJob?.id === job.id
-                        ? isAudit
+                        ? isGlass
+                          ? isAudit
+                            ? 'bg-sky-50 border-sky-300 text-sky-950 shadow-xs'
+                            : 'bg-purple-50 border-purple-300 text-purple-950 shadow-xs'
+                          : isAudit
                           ? 'bg-cyan-950/40 border-cyan-500/60 text-cyan-200 shadow-md'
                           : 'bg-purple-950/40 border-purple-500/60 text-purple-200 shadow-md'
+                        : isGlass
+                        ? 'bg-slate-50 border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-white'
                         : 'bg-slate-950/50 border-slate-800/80 text-slate-400 hover:border-slate-700'
                     }`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2 truncate">
                         {isAudit ? (
-                          <Target className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" />
+                          <Target className={`w-3.5 h-3.5 flex-shrink-0 ${isGlass ? 'text-sky-600' : 'text-cyan-400'}`} />
                         ) : (
-                          <Flame className="w-3.5 h-3.5 text-purple-400 flex-shrink-0" />
+                          <Flame className={`w-3.5 h-3.5 flex-shrink-0 ${isGlass ? 'text-purple-600' : 'text-purple-400'}`} />
                         )}
-                        <span className="font-semibold truncate max-w-[200px] text-slate-100">{job.topic}</span>
+                        <span className={`font-semibold truncate max-w-[200px] ${isGlass ? 'text-slate-900' : 'text-slate-100'}`}>{job.topic}</span>
                       </div>
                       <span
                         className={`text-[10px] font-mono px-2 py-0.5 rounded-full uppercase font-bold ${
                           job.status === 'published'
-                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
+                            ? isGlass
+                              ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                              : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
                             : job.status === 'needs_approval'
-                            ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 animate-pulse'
+                            ? isGlass
+                              ? 'bg-amber-50 text-amber-800 border border-amber-200 animate-pulse'
+                              : 'bg-amber-500/20 text-amber-300 border border-amber-500/40 animate-pulse'
+                            : isGlass
+                            ? 'bg-sky-50 text-sky-800 border border-sky-200'
                             : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40'
                         }`}
                       >
@@ -226,7 +253,7 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
                       </span>
                     </div>
 
-                    <div className="flex items-center justify-between text-[11px] font-mono text-slate-500">
+                    <div className={`flex items-center justify-between text-[11px] font-mono ${isGlass ? 'text-slate-500' : 'text-slate-500'}`}>
                       <span>Type: {isAudit ? 'SOP Lead Audit' : '5-Channel Pack'}</span>
                       <span>Cost: ${job.costUsd?.toFixed(3) || '0.045'}</span>
                     </div>
@@ -238,26 +265,30 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
 
           {/* 3 Parallel Research Lanes Inspector */}
           {selectedJob && (
-            <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-xl space-y-3 flex-1 overflow-y-auto">
-              <div className="flex items-center justify-between text-xs font-mono text-slate-400">
-                <div className="flex items-center space-x-1.5 text-cyan-400">
+            <div className={`p-4 rounded-2xl border backdrop-blur-xl space-y-3 flex-1 overflow-y-auto ${
+              isGlass ? 'bg-white/80 border-slate-200/90 shadow-sm text-slate-800' : 'bg-slate-900/60 border-slate-800/80 text-slate-100'
+            }`}>
+              <div className={`flex items-center justify-between text-xs font-mono ${isGlass ? 'text-slate-600' : 'text-slate-400'}`}>
+                <div className={`flex items-center space-x-1.5 ${isGlass ? 'text-sky-700' : 'text-cyan-400'}`}>
                   <Search className="w-4 h-4" />
-                  <span className="font-semibold uppercase text-slate-300">
+                  <span className={`font-semibold uppercase ${isGlass ? 'text-slate-800' : 'text-slate-300'}`}>
                     Parallel Research Lanes:
                   </span>
                 </div>
-                <span className="text-[11px] text-slate-500">Autonomous Synthesis</span>
+                <span className={`text-[11px] ${isGlass ? 'text-slate-500' : 'text-slate-500'}`}>Autonomous Synthesis</span>
               </div>
 
               <div className="space-y-2.5">
                 {selectedJob.researchLanes?.map((lane, idx) => (
-                  <div key={idx} className="p-3 rounded-xl bg-slate-950/70 border border-slate-800/80 space-y-1.5">
-                    <div className="flex items-center justify-between text-xs font-semibold text-slate-200">
+                  <div key={idx} className={`p-3 rounded-xl border space-y-1.5 ${
+                    isGlass ? 'bg-slate-50 border-slate-200/90 text-slate-800' : 'bg-slate-950/70 border-slate-800/80 text-slate-200'
+                  }`}>
+                    <div className={`flex items-center justify-between text-xs font-semibold ${isGlass ? 'text-slate-900' : 'text-slate-200'}`}>
                       <span>{lane.title}</span>
-                      <span className="text-[10px] font-mono text-emerald-400">Completed</span>
+                      <span className={`text-[10px] font-mono ${isGlass ? 'text-emerald-700' : 'text-emerald-400'}`}>Completed</span>
                     </div>
                     {lane.snippets.map((snip, sIdx) => (
-                      <p key={sIdx} className="text-[11px] text-slate-400 italic leading-relaxed">
+                      <p key={sIdx} className={`text-[11px] italic leading-relaxed ${isGlass ? 'text-slate-600' : 'text-slate-400'}`}>
                         "{snip.excerpt}"
                       </p>
                     ))}
@@ -267,24 +298,34 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
 
               {/* Self-Healing Loop Log Card */}
               {selectedJob.selfHealingLogs && selectedJob.selfHealingLogs.length > 0 && (
-                <div className="p-3.5 rounded-xl bg-slate-950/90 border border-amber-500/50 space-y-2 mt-3 shadow-xl relative overflow-hidden">
-                  <div className="absolute top-0 right-0 px-2 py-0.5 rounded-bl bg-amber-500/20 text-[9px] font-mono font-bold text-amber-300 border-b border-l border-amber-500/30 flex items-center space-x-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
+                <div className={`p-3.5 rounded-xl border space-y-2 mt-3 shadow-xl relative overflow-hidden ${
+                  isGlass ? 'bg-amber-50/90 border-amber-300' : 'bg-slate-950/90 border-amber-500/50'
+                }`}>
+                  <div className={`absolute top-0 right-0 px-2 py-0.5 rounded-bl text-[9px] font-mono font-bold border-b border-l flex items-center space-x-1 ${
+                    isGlass ? 'bg-amber-100 text-amber-900 border-amber-300' : 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                  }`}>
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping" />
                     <span>DSPy AUTONOMOUS REPAIR</span>
                   </div>
-                  <div className="flex items-center space-x-2 text-xs font-mono text-amber-300 font-semibold">
-                    <AlertTriangle className="w-4 h-4 text-amber-400 animate-pulse" />
+                  <div className={`flex items-center space-x-2 text-xs font-mono font-semibold ${
+                    isGlass ? 'text-amber-900' : 'text-amber-300'
+                  }`}>
+                    <AlertTriangle className={`w-4 h-4 animate-pulse ${isGlass ? 'text-amber-600' : 'text-amber-400'}`} />
                     <span>DeepSeek-R1 Self-Healing Engine:</span>
                   </div>
-                  <div className="bg-black/80 rounded-lg p-3 border border-slate-800 space-y-2 font-mono text-[11px]">
+                  <div className={`rounded-lg p-3 border space-y-2 font-mono text-[11px] ${
+                    isGlass ? 'bg-white border-amber-200 text-slate-800' : 'bg-black/80 border-slate-800'
+                  }`}>
                     {selectedJob.selfHealingLogs.map((log, lIdx) => (
                       <div key={lIdx} className="space-y-1">
-                        <div className="text-rose-400 flex items-start space-x-1.5">
-                          <span className="text-rose-500 font-bold">▶ FAULT:</span>
+                        <div className="text-rose-600 flex items-start space-x-1.5">
+                          <span className="font-bold">▶ FAULT:</span>
                           <span>{log.issueDetected}</span>
                         </div>
-                        <div className="text-emerald-400 flex items-start space-x-1.5 bg-emerald-950/30 p-1.5 rounded border border-emerald-500/20">
-                          <span className="text-emerald-500 font-bold">✔ REPAIRED:</span>
+                        <div className={`flex items-start space-x-1.5 p-1.5 rounded border ${
+                          isGlass ? 'bg-emerald-50 border-emerald-200 text-emerald-900' : 'bg-emerald-950/30 border-emerald-500/20 text-emerald-400'
+                        }`}>
+                          <span className="font-bold text-emerald-700">✔ REPAIRED:</span>
                           <span>{log.repairApplied}</span>
                         </div>
                       </div>
@@ -300,30 +341,42 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
         <div className="lg:col-span-7 flex flex-col space-y-4">
           {/* VIEW 1: SOP Outbound Lead Magnet & 5-Point Inbound Conversion Audit */}
           {isAuditJob && audit ? (
-            <div className="p-5 rounded-2xl bg-slate-900/60 border border-cyan-800/50 backdrop-blur-xl flex flex-col flex-1 shadow-2xl space-y-5">
+            <div className={`p-5 rounded-2xl border backdrop-blur-xl flex flex-col flex-1 shadow-2xl space-y-5 transition-all ${
+              isGlass
+                ? 'bg-white/80 border-slate-200/90 shadow-[0_12px_40px_rgba(0,0,0,0.05)] text-slate-800'
+                : 'bg-slate-900/60 border-cyan-800/50 text-slate-100'
+            }`}>
               {/* Header & Approval Gate */}
-              <div className="flex items-start justify-between border-b border-slate-800 pb-4">
+              <div className={`flex items-start justify-between border-b pb-4 ${
+                isGlass ? 'border-slate-200/80' : 'border-slate-800'
+              }`}>
                 <div>
-                  <div className="flex items-center space-x-2 text-xs font-mono text-cyan-400 uppercase">
+                  <div className={`flex items-center space-x-2 text-xs font-mono uppercase ${
+                    isGlass ? 'text-sky-700' : 'text-cyan-400'
+                  }`}>
                     <Target className="w-3.5 h-3.5" />
                     <span>SOP Inbound Conversion & Revenue Leakage Audit</span>
                   </div>
-                  <h3 className="text-lg font-bold text-white mt-1 flex items-center space-x-2">
+                  <h3 className={`text-lg font-bold mt-1 flex items-center space-x-2 ${
+                    isGlass ? 'text-slate-900' : 'text-white'
+                  }`}>
                     <span>{audit.companyOrCreator}</span>
                     {audit.website && (
                       <a
                         href={audit.website}
                         target="_blank"
                         rel="noreferrer"
-                        className="text-xs text-slate-400 hover:text-cyan-400 flex items-center space-x-1 font-mono font-normal"
+                        className={`text-xs flex items-center space-x-1 font-mono font-normal ${
+                          isGlass ? 'text-slate-500 hover:text-sky-700' : 'text-slate-400 hover:text-cyan-400'
+                        }`}
                       >
                         <span>({audit.website})</span>
                         <ExternalLink className="w-3 h-3" />
                       </a>
                     )}
                   </h3>
-                  <div className="text-xs text-slate-400 mt-1">
-                    <span className="text-cyan-300 font-mono">Trigger Event:</span> {audit.triggerEvent}
+                  <div className={`text-xs mt-1 ${isGlass ? 'text-slate-600' : 'text-slate-400'}`}>
+                    <span className={`font-mono ${isGlass ? 'text-sky-700 font-semibold' : 'text-cyan-300'}`}>Trigger Event:</span> {audit.triggerEvent}
                   </div>
                 </div>
 
@@ -336,7 +389,11 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
                     <span>Approve Outreach Sequence</span>
                   </button>
                 ) : (
-                  <div className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-emerald-950/60 border border-emerald-500/40 text-emerald-400 text-xs font-mono font-semibold flex-shrink-0">
+                  <div className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl border text-xs font-mono font-semibold flex-shrink-0 ${
+                    isGlass
+                      ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                      : 'bg-emerald-950/60 border-emerald-500/40 text-emerald-400'
+                  }`}>
                     <CheckCircle2 className="w-4 h-4" />
                     <span>Dispatched to SDR / Voice</span>
                   </div>
@@ -346,46 +403,56 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
               {/* KPI Metrics Strip with Circular Radial Gauge and Leakage Flow Meter */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 {/* 1. Annual Revenue Leakage with Visual Flow Meter */}
-                <div className="p-3.5 rounded-xl bg-gradient-to-br from-rose-950/40 via-slate-900 to-slate-950 border border-rose-500/40 space-y-2 shadow-lg relative overflow-hidden">
-                  <div className="flex items-center justify-between text-xs font-mono text-rose-400">
+                <div className={`p-3.5 rounded-xl border space-y-2 shadow-lg relative overflow-hidden ${
+                  isGlass
+                    ? 'bg-rose-50 border-rose-200 text-rose-950 shadow-xs'
+                    : 'bg-gradient-to-br from-rose-950/40 via-slate-900 to-slate-950 border-rose-500/40'
+                }`}>
+                  <div className={`flex items-center justify-between text-xs font-mono ${isGlass ? 'text-rose-700' : 'text-rose-400'}`}>
                     <div className="flex items-center space-x-1.5">
                       <TrendingDown className="w-4 h-4" />
                       <span>Annual Inbound Leakage</span>
                     </div>
-                    <span className="px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 text-[10px] font-bold">CRITICAL</span>
+                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                      isGlass ? 'bg-rose-100 text-rose-800 border border-rose-200' : 'bg-rose-500/20 text-rose-300'
+                    }`}>CRITICAL</span>
                   </div>
-                  <div className="text-2xl font-bold text-rose-200 tracking-tight font-mono">
-                    ${audit.estimatedAnnualRevenueLeakageUsd?.toLocaleString() || '114,000'} <span className="text-xs font-normal text-rose-400">/ yr</span>
+                  <div className={`text-2xl font-bold tracking-tight font-mono ${isGlass ? 'text-rose-700' : 'text-rose-200'}`}>
+                    ${audit.estimatedAnnualRevenueLeakageUsd?.toLocaleString() || '114,000'} <span className={`text-xs font-normal ${isGlass ? 'text-rose-500' : 'text-rose-400'}`}>/ yr</span>
                   </div>
                   {/* Dynamic Visual Leakage Bar */}
                   <div className="space-y-1">
-                    <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden flex">
+                    <div className={`h-2 w-full rounded-full overflow-hidden flex ${isGlass ? 'bg-slate-200' : 'bg-slate-800'}`}>
                       <div className="h-full bg-gradient-to-r from-rose-600 via-rose-500 to-amber-500 w-[78%] rounded-full animate-pulse" />
                     </div>
-                    <div className="flex justify-between text-[9px] font-mono text-slate-400">
+                    <div className={`flex justify-between text-[9px] font-mono ${isGlass ? 'text-slate-600' : 'text-slate-400'}`}>
                       <span>Lost: $9.5k/mo</span>
-                      <span className="text-rose-400 font-bold">Dropoff Rate: 68%</span>
+                      <span className={`font-bold ${isGlass ? 'text-rose-700' : 'text-rose-400'}`}>Dropoff Rate: 68%</span>
                     </div>
                   </div>
                 </div>
 
                 {/* 2. Circular Radial Audit Gauge */}
-                <div className="p-3.5 rounded-xl bg-gradient-to-br from-amber-950/40 via-slate-900 to-slate-950 border border-amber-500/40 flex items-center justify-between shadow-lg">
+                <div className={`p-3.5 rounded-xl border flex items-center justify-between shadow-lg ${
+                  isGlass
+                    ? 'bg-amber-50 border-amber-200 text-amber-950 shadow-xs'
+                    : 'bg-gradient-to-br from-amber-950/40 via-slate-900 to-slate-950 border-amber-500/40'
+                }`}>
                   <div className="space-y-1">
-                    <div className="flex items-center space-x-1.5 text-xs font-mono text-amber-400">
+                    <div className={`flex items-center space-x-1.5 text-xs font-mono ${isGlass ? 'text-amber-800' : 'text-amber-400'}`}>
                       <ShieldAlert className="w-4 h-4" />
                       <span>Audit Score</span>
                     </div>
-                    <div className="text-lg font-bold text-amber-200">
-                      {audit.auditScore || 42} <span className="text-xs text-slate-400 font-normal">/ 100</span>
+                    <div className={`text-lg font-bold ${isGlass ? 'text-amber-900' : 'text-amber-200'}`}>
+                      {audit.auditScore || 42} <span className={`text-xs font-normal ${isGlass ? 'text-slate-500' : 'text-slate-400'}`}>/ 100</span>
                     </div>
-                    <p className="text-[10px] text-amber-300/80 font-mono">3 of 5 Pillars Need AI</p>
+                    <p className={`text-[10px] font-mono ${isGlass ? 'text-amber-800' : 'text-amber-300/80'}`}>3 of 5 Pillars Need AI</p>
                   </div>
 
                   {/* Circular SVG Gauge */}
                   <div className="relative w-16 h-16 flex items-center justify-center flex-shrink-0">
                     <svg className="w-16 h-16 transform -rotate-90">
-                      <circle cx="32" cy="32" r="24" stroke="currentColor" strokeWidth="5" fill="transparent" className="text-slate-800" />
+                      <circle cx="32" cy="32" r="24" stroke="currentColor" strokeWidth="5" fill="transparent" className={isGlass ? 'text-slate-200' : 'text-slate-800'} />
                       <circle
                         cx="32"
                         cy="32"
@@ -396,26 +463,32 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
                         strokeDasharray={2 * Math.PI * 24}
                         strokeDashoffset={2 * Math.PI * 24 - ((audit.auditScore || 42) / 100) * (2 * Math.PI * 24)}
                         strokeLinecap="round"
-                        className="text-amber-400 drop-shadow-[0_0_6px_rgba(251,191,36,0.6)]"
+                        className={isGlass ? 'text-amber-500' : 'text-amber-400 drop-shadow-[0_0_6px_rgba(251,191,36,0.6)]'}
                       />
                     </svg>
-                    <span className="absolute font-mono text-xs font-bold text-white">
+                    <span className={`absolute font-mono text-xs font-bold ${isGlass ? 'text-slate-900' : 'text-white'}`}>
                       {audit.auditScore || 42}%
                     </span>
                   </div>
                 </div>
 
                 {/* 3. Response Time Latency Meter */}
-                <div className="p-3.5 rounded-xl bg-gradient-to-br from-cyan-950/40 via-slate-900 to-slate-950 border border-cyan-500/40 space-y-2 shadow-lg">
-                  <div className="flex items-center justify-between text-xs font-mono text-cyan-400">
+                <div className={`p-3.5 rounded-xl border space-y-2 shadow-lg ${
+                  isGlass
+                    ? 'bg-sky-50 border-sky-200 text-sky-950 shadow-xs'
+                    : 'bg-gradient-to-br from-cyan-950/40 via-slate-900 to-slate-950 border-cyan-500/40'
+                }`}>
+                  <div className={`flex items-center justify-between text-xs font-mono ${isGlass ? 'text-sky-800' : 'text-cyan-400'}`}>
                     <div className="flex items-center space-x-1.5">
                       <Clock className="w-4 h-4" />
                       <span>Response Latency</span>
                     </div>
-                    <span className="text-[10px] font-mono text-slate-400">Target: &lt;5m</span>
+                    <span className={`text-[10px] font-mono ${isGlass ? 'text-slate-500' : 'text-slate-400'}`}>Target: &lt;5m</span>
                   </div>
-                  <div className="text-2xl font-bold text-cyan-200 font-mono tracking-tight">&gt; 14 Hours</div>
-                  <div className="flex items-center space-x-1.5 text-[10px] font-mono text-emerald-400 bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-500/20">
+                  <div className={`text-2xl font-bold font-mono tracking-tight ${isGlass ? 'text-sky-800' : 'text-cyan-200'}`}>&gt; 14 Hours</div>
+                  <div className={`flex items-center space-x-1.5 text-[10px] font-mono px-2 py-0.5 rounded border ${
+                    isGlass ? 'text-emerald-800 bg-emerald-100 border-emerald-200' : 'text-emerald-400 bg-emerald-950/40 border-emerald-500/20'
+                  }`}>
                     <span>Anna Voice: Instant &lt;410ms</span>
                   </div>
                 </div>
@@ -556,14 +629,18 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
               </div>
 
               {/* SOP 3-Touch Outreach Deliverables Switcher */}
-              <div className="border-t border-slate-800 pt-3 space-y-3">
+              <div className={`border-t pt-3 space-y-3 ${isGlass ? 'border-slate-200/80' : 'border-slate-800'}`}>
                 <div className="flex items-center justify-between">
                   <div className="flex flex-wrap items-center gap-2">
                     <button
                       onClick={() => setActiveOutreachTab('voice_script')}
                       className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                         activeOutreachTab === 'voice_script'
-                          ? 'bg-purple-500/20 text-purple-300 border border-purple-500/40'
+                          ? isGlass
+                            ? 'bg-purple-100 text-purple-900 border border-purple-300 shadow-xs'
+                            : 'bg-purple-500/20 text-purple-300 border border-purple-500/40'
+                          : isGlass
+                          ? 'text-slate-600 hover:text-slate-900'
                           : 'text-slate-400 hover:text-slate-200'
                       }`}
                     >
@@ -575,7 +652,11 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
                       onClick={() => setActiveOutreachTab('email')}
                       className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                         activeOutreachTab === 'email'
-                          ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40'
+                          ? isGlass
+                            ? 'bg-sky-100 text-sky-900 border border-sky-300 shadow-xs'
+                            : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40'
+                          : isGlass
+                          ? 'text-slate-600 hover:text-slate-900'
                           : 'text-slate-400 hover:text-slate-200'
                       }`}
                     >
@@ -587,7 +668,11 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
                       onClick={() => setActiveOutreachTab('linkedin')}
                       className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                         activeOutreachTab === 'linkedin'
-                          ? 'bg-blue-500/20 text-blue-300 border border-blue-500/40'
+                          ? isGlass
+                            ? 'bg-blue-100 text-blue-900 border border-blue-300 shadow-xs'
+                            : 'bg-blue-500/20 text-blue-300 border border-blue-500/40'
+                          : isGlass
+                          ? 'text-slate-600 hover:text-slate-900'
                           : 'text-slate-400 hover:text-slate-200'
                       }`}
                     >
@@ -599,7 +684,11 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
                       onClick={() => setActiveOutreachTab('lead_magnet')}
                       className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                         activeOutreachTab === 'lead_magnet'
-                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                          ? isGlass
+                            ? 'bg-emerald-100 text-emerald-900 border border-emerald-300 shadow-xs'
+                            : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                          : isGlass
+                          ? 'text-slate-600 hover:text-slate-900'
                           : 'text-slate-400 hover:text-slate-200'
                       }`}
                     >
@@ -611,9 +700,11 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
 
                 {/* Tab Content */}
                 {activeOutreachTab === 'voice_script' && audit.outreachSequence?.spokenAudioScript && (
-                  <div className="p-4 rounded-xl bg-slate-950/80 border border-purple-800/40 space-y-3">
+                  <div className={`p-4 rounded-xl border space-y-3 ${
+                    isGlass ? 'bg-slate-50/90 border-purple-200 text-slate-800' : 'bg-slate-950/80 border-purple-800/40 text-slate-200'
+                  }`}>
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2 text-xs font-mono text-purple-400">
+                      <div className={`flex items-center space-x-2 text-xs font-mono ${isGlass ? 'text-purple-700' : 'text-purple-400'}`}>
                         <Mic className="w-4 h-4" />
                         <span className="font-semibold">60-Second Personalized Voice Note Script (Anna / SDR):</span>
                       </div>
@@ -624,28 +715,34 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
                             'voice_script'
                           )
                         }
-                        className="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-mono"
+                        className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-mono border transition-all ${
+                          isGlass ? 'bg-white hover:bg-slate-100 border-slate-200 text-slate-700 shadow-xs' : 'bg-slate-900 hover:bg-slate-800 border-slate-700 text-slate-300'
+                        }`}
                       >
-                        {copiedIndex === 'voice_script' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                        {copiedIndex === 'voice_script' ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
                         <span>{copiedIndex === 'voice_script' ? 'Copied' : 'Copy Audio Script'}</span>
                       </button>
                     </div>
 
-                    <div className="space-y-2 text-xs text-slate-300 font-mono leading-relaxed bg-slate-900/60 p-3 rounded-lg border border-slate-800">
-                      <p><span className="text-purple-400 font-bold">[Intro]:</span> "{audit.outreachSequence.spokenAudioScript.intro}"</p>
-                      <p><span className="text-cyan-400 font-bold">[Trigger Hook]:</span> "{audit.outreachSequence.spokenAudioScript.triggerHook}"</p>
-                      <p><span className="text-amber-400 font-bold">[Value Drop]:</span> "{audit.outreachSequence.spokenAudioScript.valueDrop}"</p>
-                      <p><span className="text-emerald-400 font-bold">[Frictionless CTA]:</span> "{audit.outreachSequence.spokenAudioScript.frictionlessCallToAction}"</p>
+                    <div className={`space-y-2 text-xs font-mono leading-relaxed p-3 rounded-lg border ${
+                      isGlass ? 'bg-white border-slate-200 text-slate-800 shadow-xs' : 'bg-slate-900/60 border-slate-800 text-slate-300'
+                    }`}>
+                      <p><span className={`font-bold ${isGlass ? 'text-purple-700' : 'text-purple-400'}`}>[Intro]:</span> "{audit.outreachSequence.spokenAudioScript.intro}"</p>
+                      <p><span className={`font-bold ${isGlass ? 'text-sky-700' : 'text-cyan-400'}`}>[Trigger Hook]:</span> "{audit.outreachSequence.spokenAudioScript.triggerHook}"</p>
+                      <p><span className={`font-bold ${isGlass ? 'text-amber-700' : 'text-amber-400'}`}>[Value Drop]:</span> "{audit.outreachSequence.spokenAudioScript.valueDrop}"</p>
+                      <p><span className={`font-bold ${isGlass ? 'text-emerald-700' : 'text-emerald-400'}`}>[Frictionless CTA]:</span> "{audit.outreachSequence.spokenAudioScript.frictionlessCallToAction}"</p>
                     </div>
                   </div>
                 )}
 
                 {activeOutreachTab === 'email' && audit.outreachSequence?.coldEmail && (
-                  <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 space-y-3">
+                  <div className={`p-4 rounded-xl border space-y-3 ${
+                    isGlass ? 'bg-slate-50/90 border-slate-200 text-slate-800' : 'bg-slate-950/80 border-slate-800 text-slate-200'
+                  }`}>
                     <div className="flex items-center justify-between">
-                      <div className="text-xs font-mono text-slate-400">
-                        <span className="text-slate-500">Subject:</span>{' '}
-                        <span className="text-slate-200 font-bold">{audit.outreachSequence.coldEmail.subject}</span>
+                      <div className={`text-xs font-mono ${isGlass ? 'text-slate-600' : 'text-slate-400'}`}>
+                        <span className={isGlass ? 'text-slate-500' : 'text-slate-500'}>Subject:</span>{' '}
+                        <span className={`font-bold ${isGlass ? 'text-slate-900' : 'text-slate-200'}`}>{audit.outreachSequence.coldEmail.subject}</span>
                       </div>
                       <div className="flex items-center space-x-2">
                         <a
@@ -662,56 +759,72 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
                               'cold_email'
                             )
                           }
-                          className="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-mono"
+                          className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-mono border transition-all ${
+                            isGlass ? 'bg-white hover:bg-slate-100 border-slate-200 text-slate-700 shadow-xs' : 'bg-slate-900 hover:bg-slate-800 border-slate-700 text-slate-300'
+                          }`}
                         >
-                          {copiedIndex === 'cold_email' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                          {copiedIndex === 'cold_email' ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
                           <span>Copy</span>
                         </button>
                       </div>
                     </div>
-                    <pre className="text-xs text-slate-300 whitespace-pre-wrap font-sans leading-relaxed bg-slate-900/60 p-3.5 rounded-lg border border-slate-800">
+                    <pre className={`text-xs whitespace-pre-wrap font-sans leading-relaxed p-3.5 rounded-lg border ${
+                      isGlass ? 'bg-white border-slate-200 text-slate-800 shadow-xs' : 'bg-slate-900/60 border-slate-800 text-slate-300'
+                    }`}>
                       {audit.outreachSequence.coldEmail.bodyMarkdown}
                     </pre>
                   </div>
                 )}
 
                 {activeOutreachTab === 'linkedin' && audit.outreachSequence?.linkedInMessage && (
-                  <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 space-y-3">
+                  <div className={`p-4 rounded-xl border space-y-3 ${
+                    isGlass ? 'bg-slate-50/90 border-slate-200 text-slate-800' : 'bg-slate-950/80 border-slate-800 text-slate-200'
+                  }`}>
                     <div className="flex items-center justify-between">
-                      <div className="text-xs font-mono text-blue-400 font-semibold">
+                      <div className={`text-xs font-mono font-semibold ${isGlass ? 'text-blue-700' : 'text-blue-400'}`}>
                         LinkedIn Connection Note / InMail (Trigger + Context):
                       </div>
                       <button
                         onClick={() =>
                           handleCopy(audit.outreachSequence.linkedInMessage.body, 'linkedin_msg')
                         }
-                        className="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-mono"
+                        className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-mono border transition-all ${
+                          isGlass ? 'bg-white hover:bg-slate-100 border-slate-200 text-slate-700 shadow-xs' : 'bg-slate-900 hover:bg-slate-800 border-slate-700 text-slate-300'
+                        }`}
                       >
-                        {copiedIndex === 'linkedin_msg' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                        {copiedIndex === 'linkedin_msg' ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
                         <span>Copy Message</span>
                       </button>
                     </div>
-                    <pre className="text-xs text-slate-300 whitespace-pre-wrap font-sans leading-relaxed bg-slate-900/60 p-3.5 rounded-lg border border-slate-800">
+                    <pre className={`text-xs whitespace-pre-wrap font-sans leading-relaxed p-3.5 rounded-lg border ${
+                      isGlass ? 'bg-white border-slate-200 text-slate-800 shadow-xs' : 'bg-slate-900/60 border-slate-800 text-slate-300'
+                    }`}>
                       {audit.outreachSequence.linkedInMessage.body}
                     </pre>
                   </div>
                 )}
 
                 {activeOutreachTab === 'lead_magnet' && audit.freeAssetPreviewMarkdown && (
-                  <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 space-y-3">
+                  <div className={`p-4 rounded-xl border space-y-3 ${
+                    isGlass ? 'bg-slate-50/90 border-slate-200 text-slate-800' : 'bg-slate-950/80 border-slate-800 text-slate-200'
+                  }`}>
                     <div className="flex items-center justify-between">
-                      <div className="text-xs font-mono text-emerald-400 font-semibold">
+                      <div className={`text-xs font-mono font-semibold ${isGlass ? 'text-emerald-700' : 'text-emerald-400'}`}>
                         Free Lead Magnet Teardown Asset (Zero-Friction Deliverable):
                       </div>
                       <button
                         onClick={() => handleCopy(audit.freeAssetPreviewMarkdown, 'lead_magnet_asset')}
-                        className="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-mono"
+                        className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-mono border transition-all ${
+                          isGlass ? 'bg-white hover:bg-slate-100 border-slate-200 text-slate-700 shadow-xs' : 'bg-slate-900 hover:bg-slate-800 border-slate-700 text-slate-300'
+                        }`}
                       >
-                        {copiedIndex === 'lead_magnet_asset' ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                        {copiedIndex === 'lead_magnet_asset' ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
                         <span>Copy Asset Markdown</span>
                       </button>
                     </div>
-                    <pre className="text-xs text-slate-300 whitespace-pre-wrap font-sans leading-relaxed bg-slate-900/60 p-3.5 rounded-lg border border-slate-800 max-h-48 overflow-y-auto">
+                    <pre className={`text-xs whitespace-pre-wrap font-sans leading-relaxed p-3.5 rounded-lg border max-h-48 overflow-y-auto ${
+                      isGlass ? 'bg-white border-slate-200 text-slate-800 shadow-xs' : 'bg-slate-900/60 border-slate-800 text-slate-300'
+                    }`}>
                       {audit.freeAssetPreviewMarkdown}
                     </pre>
                   </div>
@@ -720,12 +833,14 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
             </div>
           ) : pack ? (
             /* VIEW 2: Hermes Multi-Channel Content Pack (5 Channels) */
-            <div className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-xl flex flex-col flex-1 shadow-2xl space-y-4">
+            <div className={`p-5 rounded-2xl border backdrop-blur-xl flex flex-col flex-1 space-y-4 ${
+              isGlass ? 'bg-white/85 border-slate-200/90 text-slate-800 shadow-xl' : 'bg-slate-900/60 border-slate-800/80 text-slate-200 shadow-2xl'
+            }`}>
               {/* Header & Approval Boundary */}
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3.5">
+              <div className={`flex items-center justify-between border-b pb-3.5 ${isGlass ? 'border-slate-200' : 'border-slate-800'}`}>
                 <div>
-                  <div className="text-xs font-mono uppercase text-slate-400">Verified Thesis:</div>
-                  <h3 className="text-sm font-bold text-slate-100 mt-0.5">
+                  <div className={`text-xs font-mono uppercase ${isGlass ? 'text-slate-500 font-semibold' : 'text-slate-400'}`}>Verified Thesis:</div>
+                  <h3 className={`text-sm font-bold mt-0.5 ${isGlass ? 'text-slate-900' : 'text-slate-100'}`}>
                     {pack.thesis}
                   </h3>
                 </div>
@@ -739,7 +854,9 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
                     <span>Approve & Publish Pack</span>
                   </button>
                 ) : (
-                  <div className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-emerald-950/60 border border-emerald-500/40 text-emerald-400 text-xs font-mono font-semibold">
+                  <div className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl border text-xs font-mono font-semibold ${
+                    isGlass ? 'bg-emerald-50 border-emerald-300 text-emerald-700' : 'bg-emerald-950/60 border-emerald-500/40 text-emerald-400'
+                  }`}>
                     <CheckCircle2 className="w-4 h-4" />
                     <span>Approved & Dispatched</span>
                   </div>
@@ -747,13 +864,13 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
               </div>
 
               {/* 5-Channel Platform Switcher */}
-              <div className="flex items-center space-x-1.5 border-b border-slate-800 pb-2 overflow-x-auto">
+              <div className={`flex items-center space-x-1.5 border-b pb-2 overflow-x-auto ${isGlass ? 'border-slate-200' : 'border-slate-800'}`}>
                 <button
                   onClick={() => setActiveAssetTab('twitter')}
                   className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
                     activeAssetTab === 'twitter'
-                      ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm'
-                      : 'text-slate-400 hover:text-slate-200'
+                      ? (isGlass ? 'bg-cyan-50 text-cyan-800 border border-cyan-300 shadow-xs' : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm')
+                      : (isGlass ? 'text-slate-600 hover:text-slate-900' : 'text-slate-400 hover:text-slate-200')
                   }`}
                 >
                   <Twitter className="w-3.5 h-3.5" />
@@ -764,8 +881,8 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
                   onClick={() => setActiveAssetTab('linkedin')}
                   className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
                     activeAssetTab === 'linkedin'
-                      ? 'bg-blue-500/20 text-blue-300 border border-blue-500/40 shadow-sm'
-                      : 'text-slate-400 hover:text-slate-200'
+                      ? (isGlass ? 'bg-blue-50 text-blue-800 border border-blue-300 shadow-xs' : 'bg-blue-500/20 text-blue-300 border border-blue-500/40 shadow-sm')
+                      : (isGlass ? 'text-slate-600 hover:text-slate-900' : 'text-slate-400 hover:text-slate-200')
                   }`}
                 >
                   <Linkedin className="w-3.5 h-3.5" />
@@ -776,8 +893,8 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
                   onClick={() => setActiveAssetTab('instagram')}
                   className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
                     activeAssetTab === 'instagram'
-                      ? 'bg-pink-500/20 text-pink-300 border border-pink-500/40 shadow-sm'
-                      : 'text-slate-400 hover:text-slate-200'
+                      ? (isGlass ? 'bg-pink-50 text-pink-800 border border-pink-300 shadow-xs' : 'bg-pink-500/20 text-pink-300 border border-pink-500/40 shadow-sm')
+                      : (isGlass ? 'text-slate-600 hover:text-slate-900' : 'text-slate-400 hover:text-slate-200')
                   }`}
                 >
                   <Instagram className="w-3.5 h-3.5" />
@@ -788,8 +905,8 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
                   onClick={() => setActiveAssetTab('newsletter')}
                   className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
                     activeAssetTab === 'newsletter'
-                      ? 'bg-purple-500/20 text-purple-300 border border-purple-500/40 shadow-sm'
-                      : 'text-slate-400 hover:text-slate-200'
+                      ? (isGlass ? 'bg-purple-50 text-purple-800 border border-purple-300 shadow-xs' : 'bg-purple-500/20 text-purple-300 border border-purple-500/40 shadow-sm')
+                      : (isGlass ? 'text-slate-600 hover:text-slate-900' : 'text-slate-400 hover:text-slate-200')
                   }`}
                 >
                   <Mail className="w-3.5 h-3.5" />
@@ -800,8 +917,8 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
                   onClick={() => setActiveAssetTab('webinar')}
                   className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
                     activeAssetTab === 'webinar'
-                      ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
-                      : 'text-slate-400 hover:text-slate-200'
+                      ? (isGlass ? 'bg-amber-50 text-amber-900 border border-amber-300 shadow-xs' : 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm')
+                      : (isGlass ? 'text-slate-600 hover:text-slate-900' : 'text-slate-400 hover:text-slate-200')
                   }`}
                 >
                   <Video className="w-3.5 h-3.5" />
@@ -813,26 +930,28 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
               <div className="flex-1 overflow-y-auto space-y-4">
                 {activeAssetTab === 'twitter' && pack.twitterThread && (
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between text-xs font-mono text-slate-400">
+                    <div className={`flex items-center justify-between text-xs font-mono ${isGlass ? 'text-slate-600 font-semibold' : 'text-slate-400'}`}>
                       <span>Twitter / X Thread (Strictly &lt;= 280 Chars per Tweet)</span>
                       <button
                         onClick={() => handleCopy(pack.twitterThread.join('\n\n'), 'all_tweets')}
-                        className="flex items-center space-x-1 text-cyan-400 hover:underline"
+                        className={`flex items-center space-x-1 ${isGlass ? 'text-cyan-700 hover:underline font-semibold' : 'text-cyan-400 hover:underline'}`}
                       >
-                        {copiedIndex === 'all_tweets' ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                        {copiedIndex === 'all_tweets' ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
                         <span>Copy Full Thread</span>
                       </button>
                     </div>
 
                     {pack.twitterThread.map((tweet, idx) => (
-                      <div key={idx} className="p-3.5 rounded-xl bg-slate-950/70 border border-slate-800 space-y-2">
-                        <div className="flex items-center justify-between text-[11px] font-mono text-slate-500">
-                          <span>Tweet {idx + 1} / {pack.twitterThread.length}</span>
-                          <span className={tweet.length > 280 ? 'text-red-400' : 'text-slate-400'}>
+                      <div key={idx} className={`p-3.5 rounded-xl border space-y-2 ${
+                        isGlass ? 'bg-slate-50/90 border-slate-200 shadow-xs' : 'bg-slate-950/70 border-slate-800'
+                      }`}>
+                        <div className="flex items-center justify-between text-[11px] font-mono">
+                          <span className={isGlass ? 'text-slate-500 font-semibold' : 'text-slate-500'}>Tweet {idx + 1} / {pack.twitterThread.length}</span>
+                          <span className={tweet.length > 280 ? (isGlass ? 'text-rose-600 font-bold' : 'text-red-400') : (isGlass ? 'text-slate-600' : 'text-slate-400')}>
                             {tweet.length} / 280 chars
                           </span>
                         </div>
-                        <p className="text-xs text-slate-200 leading-relaxed font-sans">{tweet}</p>
+                        <p className={`text-xs leading-relaxed font-sans ${isGlass ? 'text-slate-800' : 'text-slate-200'}`}>{tweet}</p>
                       </div>
                     ))}
                   </div>
@@ -840,7 +959,7 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
 
                 {activeAssetTab === 'linkedin' && pack.linkedInPost && (
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between text-xs font-mono text-slate-400">
+                    <div className={`flex items-center justify-between text-xs font-mono ${isGlass ? 'text-slate-600 font-semibold' : 'text-slate-400'}`}>
                       <span>LinkedIn Long-Form Post & Action Framework</span>
                       <button
                         onClick={() =>
@@ -849,28 +968,30 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
                             'linkedin_post'
                           )
                         }
-                        className="flex items-center space-x-1 text-blue-400 hover:underline"
+                        className={`flex items-center space-x-1 ${isGlass ? 'text-blue-700 hover:underline font-semibold' : 'text-blue-400 hover:underline'}`}
                       >
-                        {copiedIndex === 'linkedin_post' ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                        {copiedIndex === 'linkedin_post' ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
                         <span>Copy Post</span>
                       </button>
                     </div>
 
-                    <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-3 text-xs leading-relaxed font-sans text-slate-200">
-                      <div className="font-bold text-white text-sm pb-1 border-b border-slate-800/80">
+                    <div className={`p-4 rounded-xl border space-y-3 text-xs leading-relaxed font-sans ${
+                      isGlass ? 'bg-slate-50/90 border-slate-200 text-slate-800 shadow-xs' : 'bg-slate-950/70 border-slate-800 text-slate-200'
+                    }`}>
+                      <div className={`font-bold text-sm pb-1 border-b ${isGlass ? 'text-slate-900 border-slate-200' : 'text-white border-slate-800/80'}`}>
                         {pack.linkedInPost.hook}
                       </div>
-                      <p className="whitespace-pre-wrap">{pack.linkedInPost.bodyMarkdown}</p>
+                      <p className={`whitespace-pre-wrap ${isGlass ? 'text-slate-800' : 'text-slate-200'}`}>{pack.linkedInPost.bodyMarkdown}</p>
                       <div className="space-y-1 pt-2">
-                        <div className="font-semibold text-slate-300 font-mono text-[11px]">Core Takeaways:</div>
+                        <div className={`font-semibold font-mono text-[11px] ${isGlass ? 'text-slate-700' : 'text-slate-300'}`}>Core Takeaways:</div>
                         {pack.linkedInPost.takeaways.map((t, idx) => (
-                          <div key={idx} className="flex items-center space-x-2 text-slate-300">
-                            <span className="text-blue-400">✓</span>
+                          <div key={idx} className={`flex items-center space-x-2 ${isGlass ? 'text-slate-700' : 'text-slate-300'}`}>
+                            <span className={isGlass ? 'text-blue-600 font-bold' : 'text-blue-400'}>✓</span>
                             <span>{t}</span>
                           </div>
                         ))}
                       </div>
-                      <div className="flex flex-wrap gap-1.5 pt-2 text-[11px] text-blue-400 font-mono">
+                      <div className={`flex flex-wrap gap-1.5 pt-2 text-[11px] font-mono ${isGlass ? 'text-blue-700 font-semibold' : 'text-blue-400'}`}>
                         {pack.linkedInPost.hashtags.map((tag, idx) => (
                           <span key={idx}>{tag}</span>
                         ))}
@@ -881,7 +1002,7 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
 
                 {activeAssetTab === 'instagram' && pack.instagramCaption && (
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between text-xs font-mono text-slate-400">
+                    <div className={`flex items-center justify-between text-xs font-mono ${isGlass ? 'text-slate-600 font-semibold' : 'text-slate-400'}`}>
                       <span>Instagram / Threads Multi-Slide Carousel Deck</span>
                       <button
                         onClick={() =>
@@ -890,23 +1011,27 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
                             'insta_carousel'
                           )
                         }
-                        className="flex items-center space-x-1 text-pink-400 hover:underline"
+                        className={`flex items-center space-x-1 ${isGlass ? 'text-pink-700 hover:underline font-semibold' : 'text-pink-400 hover:underline'}`}
                       >
-                        {copiedIndex === 'insta_carousel' ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                        {copiedIndex === 'insta_carousel' ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
                         <span>Copy Carousel Outlines</span>
                       </button>
                     </div>
 
-                    <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-3 text-xs leading-relaxed font-sans text-slate-200">
-                      <div className="font-bold text-white text-sm">{pack.instagramCaption.hook}</div>
-                      <p className="text-slate-300 italic">{pack.instagramCaption.caption}</p>
+                    <div className={`p-4 rounded-xl border space-y-3 text-xs leading-relaxed font-sans ${
+                      isGlass ? 'bg-slate-50/90 border-slate-200 text-slate-800 shadow-xs' : 'bg-slate-950/70 border-slate-800 text-slate-200'
+                    }`}>
+                      <div className={`font-bold text-sm ${isGlass ? 'text-slate-900' : 'text-white'}`}>{pack.instagramCaption.hook}</div>
+                      <p className={`italic ${isGlass ? 'text-slate-700' : 'text-slate-300'}`}>{pack.instagramCaption.caption}</p>
                       <div className="space-y-2 pt-2">
-                        <div className="font-semibold text-slate-400 font-mono text-[11px]">5-Slide Visual Storyboard:</div>
+                        <div className={`font-semibold font-mono text-[11px] ${isGlass ? 'text-slate-700' : 'text-slate-400'}`}>5-Slide Visual Storyboard:</div>
                         <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
                           {pack.instagramCaption.slideOutlines.map((slide, idx) => (
-                            <div key={idx} className="p-2.5 rounded-lg bg-slate-900 border border-slate-800 text-[11px] space-y-1">
-                              <span className="font-mono text-pink-400 font-bold block">Slide {idx + 1}</span>
-                              <span className="text-slate-300">{slide}</span>
+                            <div key={idx} className={`p-2.5 rounded-lg border text-[11px] space-y-1 ${
+                              isGlass ? 'bg-white border-slate-200 text-slate-800 shadow-xs' : 'bg-slate-900 border-slate-800 text-slate-300'
+                            }`}>
+                              <span className={`font-mono font-bold block ${isGlass ? 'text-pink-700' : 'text-pink-400'}`}>Slide {idx + 1}</span>
+                              <span className={isGlass ? 'text-slate-700' : 'text-slate-300'}>{slide}</span>
                             </div>
                           ))}
                         </div>
@@ -917,7 +1042,7 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
 
                 {activeAssetTab === 'newsletter' && pack.newsletter && (
                   <div className="space-y-3">
-                    <div className="flex items-center justify-between text-xs font-mono text-slate-400">
+                    <div className={`flex items-center justify-between text-xs font-mono ${isGlass ? 'text-slate-600 font-semibold' : 'text-slate-400'}`}>
                       <div className="flex items-center space-x-3">
                         <span>Word count: {wordCount} words (~{readTimeMin} min read)</span>
                       </div>
@@ -931,7 +1056,9 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
                         </a>
                         <button
                           onClick={() => setIsFullscreenNewsletter(true)}
-                          className="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs"
+                          className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs border ${
+                            isGlass ? 'bg-white hover:bg-slate-100 border-slate-200 text-slate-700 shadow-xs' : 'bg-slate-900 hover:bg-slate-800 border-slate-700 text-slate-300'
+                          }`}
                         >
                           <Maximize2 className="w-3 h-3" />
                           <span>Fullscreen</span>
@@ -939,31 +1066,37 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
                       </div>
                     </div>
 
-                    <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-3 text-xs leading-relaxed font-sans text-slate-200">
-                      <div className="border-b border-slate-800 pb-2">
-                        <div className="text-slate-400 font-mono text-[11px]">Subject Line:</div>
-                        <div className="font-bold text-white text-sm">{pack.newsletter.subjectLine}</div>
+                    <div className={`p-4 rounded-xl border space-y-3 text-xs leading-relaxed font-sans ${
+                      isGlass ? 'bg-slate-50/90 border-slate-200 text-slate-800 shadow-xs' : 'bg-slate-950/70 border-slate-800 text-slate-200'
+                    }`}>
+                      <div className={`border-b pb-2 ${isGlass ? 'border-slate-200' : 'border-slate-800'}`}>
+                        <div className={`font-mono text-[11px] ${isGlass ? 'text-slate-500 font-semibold' : 'text-slate-400'}`}>Subject Line:</div>
+                        <div className={`font-bold text-sm ${isGlass ? 'text-slate-900' : 'text-white'}`}>{pack.newsletter.subjectLine}</div>
                       </div>
-                      <pre className="whitespace-pre-wrap font-sans text-slate-300">{pack.newsletter.bodyMarkdown}</pre>
+                      <pre className={`whitespace-pre-wrap font-sans ${isGlass ? 'text-slate-800' : 'text-slate-300'}`}>{pack.newsletter.bodyMarkdown}</pre>
                     </div>
                   </div>
                 )}
 
                 {activeAssetTab === 'webinar' && pack.webinarScript && (
                   <div className="space-y-3">
-                    <div className="text-xs font-mono text-slate-400">Webinar & Video Pitch Script:</div>
-                    <div className="space-y-2 text-xs leading-relaxed bg-slate-950/70 p-4 rounded-xl border border-slate-800 text-slate-300">
-                      <p><span className="text-amber-400 font-bold font-mono">[The Hook]:</span> {pack.webinarScript.hook}</p>
-                      <p><span className="text-rose-400 font-bold font-mono">[Core Problem]:</span> {pack.webinarScript.coreProblem}</p>
-                      <p><span className="text-cyan-400 font-bold font-mono">[Value Prop]:</span> {pack.webinarScript.valueProposition}</p>
-                      <p><span className="text-emerald-400 font-bold font-mono">[The Close]:</span> {pack.webinarScript.offerClose}</p>
+                    <div className={`text-xs font-mono ${isGlass ? 'text-slate-600 font-semibold' : 'text-slate-400'}`}>Webinar & Video Pitch Script:</div>
+                    <div className={`space-y-2 text-xs leading-relaxed p-4 rounded-xl border ${
+                      isGlass ? 'bg-slate-50/90 border-slate-200 text-slate-800 shadow-xs' : 'bg-slate-950/70 border-slate-800 text-slate-300'
+                    }`}>
+                      <p><span className={`font-bold font-mono ${isGlass ? 'text-amber-800' : 'text-amber-400'}`}>[The Hook]:</span> {pack.webinarScript.hook}</p>
+                      <p><span className={`font-bold font-mono ${isGlass ? 'text-rose-700' : 'text-rose-400'}`}>[Core Problem]:</span> {pack.webinarScript.coreProblem}</p>
+                      <p><span className={`font-bold font-mono ${isGlass ? 'text-cyan-700' : 'text-cyan-400'}`}>[Value Prop]:</span> {pack.webinarScript.valueProposition}</p>
+                      <p><span className={`font-bold font-mono ${isGlass ? 'text-emerald-700' : 'text-emerald-400'}`}>[The Close]:</span> {pack.webinarScript.offerClose}</p>
                     </div>
                   </div>
                 )}
               </div>
             </div>
           ) : (
-            <div className="p-12 text-center text-slate-500 font-mono text-xs bg-slate-900/40 rounded-2xl border border-slate-800">
+            <div className={`p-12 text-center font-mono text-xs rounded-2xl border ${
+              isGlass ? 'bg-white/80 border-slate-200/90 text-slate-500 shadow-xs' : 'bg-slate-900/40 border-slate-800 text-slate-500'
+            }`}>
               Select a job from the left queue to view details.
             </div>
           )}
@@ -972,23 +1105,31 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
 
       {/* MODAL: SOP Outbound Lead Magnet & Conversion Audit Generator */}
       {isAuditModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-6">
-          <div className="w-full max-w-2xl bg-slate-900 border border-cyan-700/50 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] flex flex-col">
-            <div className="flex items-center justify-between p-5 border-b border-slate-800 bg-slate-950/50 flex-shrink-0">
-              <div className="flex items-center space-x-2 text-cyan-400">
+        <div className={`fixed inset-0 z-50 backdrop-blur-md flex items-center justify-center p-6 ${
+          isGlass ? 'bg-slate-900/40' : 'bg-slate-950/80'
+        }`}>
+          <div className={`w-full max-w-2xl border rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] flex flex-col ${
+            isGlass ? 'bg-white border-cyan-300 shadow-cyan-500/10' : 'bg-slate-900 border-cyan-700/50'
+          }`}>
+            <div className={`flex items-center justify-between p-5 border-b flex-shrink-0 ${
+              isGlass ? 'bg-slate-50 border-slate-200' : 'bg-slate-950/50 border-slate-800'
+            }`}>
+              <div className={`flex items-center space-x-2 ${isGlass ? 'text-cyan-700' : 'text-cyan-400'}`}>
                 <Target className="w-5 h-5" />
                 <div>
-                  <h3 className="text-sm font-bold text-white">
+                  <h3 className={`text-sm font-bold ${isGlass ? 'text-slate-900' : 'text-white'}`}>
                     SOP Outbound Lead Magnet & 5-Point Inbound Audit Generator
                   </h3>
-                  <p className="text-[11px] text-slate-400">
+                  <p className={`text-[11px] ${isGlass ? 'text-slate-600' : 'text-slate-400'}`}>
                     High-Volume Lead Gen & Personalized Outreach System (Trigger + Context + Free Resource)
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setIsAuditModalOpen(false)}
-                className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-all"
+                className={`p-1.5 rounded-lg transition-all ${
+                  isGlass ? 'bg-slate-200 hover:bg-slate-300 text-slate-700' : 'bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white'
+                }`}
               >
                 <X className="w-4 h-4" />
               </button>
@@ -997,31 +1138,35 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
             <form onSubmit={handleAuditSubmit} className="p-6 space-y-4 text-xs overflow-y-auto flex-1">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-slate-300 font-mono font-semibold">Target Company / Creator Name:</label>
+                  <label className={`font-mono font-semibold ${isGlass ? 'text-slate-700' : 'text-slate-300'}`}>Target Company / Creator Name:</label>
                   <input
                     type="text"
                     required
                     value={auditCompany}
                     onChange={(e) => setAuditCompany(e.target.value)}
                     placeholder="E.g. DesignAcademy Studio"
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 focus:outline-none focus:border-cyan-500 font-mono"
+                    className={`w-full px-3 py-2 rounded-xl border focus:outline-none font-mono ${
+                      isGlass ? 'bg-slate-50 border-slate-200 text-slate-800 focus:border-cyan-600' : 'bg-slate-950 border-slate-800 text-slate-200 focus:border-cyan-500'
+                    }`}
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-slate-300 font-mono font-semibold">Website URL:</label>
+                  <label className={`font-mono font-semibold ${isGlass ? 'text-slate-700' : 'text-slate-300'}`}>Website URL:</label>
                   <input
                     type="url"
                     value={auditWebsite}
                     onChange={(e) => setAuditWebsite(e.target.value)}
                     placeholder="https://designacademy.io"
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 focus:outline-none focus:border-cyan-500 font-mono"
+                    className={`w-full px-3 py-2 rounded-xl border focus:outline-none font-mono ${
+                      isGlass ? 'bg-slate-50 border-slate-200 text-slate-800 focus:border-cyan-600' : 'bg-slate-950 border-slate-800 text-slate-200 focus:border-cyan-500'
+                    }`}
                   />
                 </div>
               </div>
 
               <div className="space-y-1">
-                <label className="text-slate-300 font-mono font-semibold flex items-center space-x-1.5">
-                  <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+                <label className={`font-mono font-semibold flex items-center space-x-1.5 ${isGlass ? 'text-slate-700' : 'text-slate-300'}`}>
+                  <Sparkles className={`w-3.5 h-3.5 ${isGlass ? 'text-cyan-700' : 'text-cyan-400'}`} />
                   <span>Outreach Trigger Event (From TheOrg.com / LinkedIn / Substack):</span>
                 </label>
                 <input
@@ -1030,57 +1175,75 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
                   value={auditTrigger}
                   onChange={(e) => setAuditTrigger(e.target.value)}
                   placeholder="E.g. Hiring first SDR / Launched $2,997 cohort on Substack"
-                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 focus:outline-none focus:border-cyan-500 font-mono"
+                  className={`w-full px-3 py-2 rounded-xl border focus:outline-none font-mono ${
+                    isGlass ? 'bg-slate-50 border-slate-200 text-slate-800 focus:border-cyan-600' : 'bg-slate-950 border-slate-800 text-slate-200 focus:border-cyan-500'
+                  }`}
                 />
               </div>
 
               {/* Social Platform Links */}
-              <div className="space-y-2 pt-1 border-t border-slate-800/80">
-                <label className="text-slate-300 font-mono font-semibold block">
+              <div className={`space-y-2 pt-1 border-t ${isGlass ? 'border-slate-200' : 'border-slate-800/80'}`}>
+                <label className={`font-mono font-semibold block ${isGlass ? 'text-slate-700' : 'text-slate-300'}`}>
                   Social Platform Profiles:
                 </label>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
-                  <div className="flex items-center space-x-2 bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-1.5">
-                    <Twitter className="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" />
+                  <div className={`flex items-center space-x-2 border rounded-xl px-2.5 py-1.5 ${
+                    isGlass ? 'bg-slate-50 border-slate-200' : 'bg-slate-950 border-slate-800'
+                  }`}>
+                    <Twitter className="w-3.5 h-3.5 text-cyan-500 flex-shrink-0" />
                     <input
                       type="url"
                       value={auditTwitter}
                       onChange={(e) => setAuditTwitter(e.target.value)}
                       placeholder="https://x.com/..."
-                      className="bg-transparent text-slate-200 text-xs w-full focus:outline-none font-mono"
+                      className={`bg-transparent text-xs w-full focus:outline-none font-mono ${
+                        isGlass ? 'text-slate-800 placeholder-slate-400' : 'text-slate-200 placeholder-slate-600'
+                      }`}
                     />
                   </div>
 
-                  <div className="flex items-center space-x-2 bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-1.5">
-                    <Linkedin className="w-3.5 h-3.5 text-blue-400 flex-shrink-0" />
+                  <div className={`flex items-center space-x-2 border rounded-xl px-2.5 py-1.5 ${
+                    isGlass ? 'bg-slate-50 border-slate-200' : 'bg-slate-950 border-slate-800'
+                  }`}>
+                    <Linkedin className="w-3.5 h-3.5 text-blue-500 flex-shrink-0" />
                     <input
                       type="url"
                       value={auditLinkedIn}
                       onChange={(e) => setAuditLinkedIn(e.target.value)}
                       placeholder="https://linkedin.com/in/..."
-                      className="bg-transparent text-slate-200 text-xs w-full focus:outline-none font-mono"
+                      className={`bg-transparent text-xs w-full focus:outline-none font-mono ${
+                        isGlass ? 'text-slate-800 placeholder-slate-400' : 'text-slate-200 placeholder-slate-600'
+                      }`}
                     />
                   </div>
 
-                  <div className="flex items-center space-x-2 bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-1.5">
-                    <Youtube className="w-3.5 h-3.5 text-red-400 flex-shrink-0" />
+                  <div className={`flex items-center space-x-2 border rounded-xl px-2.5 py-1.5 ${
+                    isGlass ? 'bg-slate-50 border-slate-200' : 'bg-slate-950 border-slate-800'
+                  }`}>
+                    <Youtube className="w-3.5 h-3.5 text-red-500 flex-shrink-0" />
                     <input
                       type="url"
                       value={auditYouTube}
                       onChange={(e) => setAuditYouTube(e.target.value)}
                       placeholder="https://youtube.com/@..."
-                      className="bg-transparent text-slate-200 text-xs w-full focus:outline-none font-mono"
+                      className={`bg-transparent text-xs w-full focus:outline-none font-mono ${
+                        isGlass ? 'text-slate-800 placeholder-slate-400' : 'text-slate-200 placeholder-slate-600'
+                      }`}
                     />
                   </div>
 
-                  <div className="flex items-center space-x-2 bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-1.5">
-                    <Mail className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+                  <div className={`flex items-center space-x-2 border rounded-xl px-2.5 py-1.5 ${
+                    isGlass ? 'bg-slate-50 border-slate-200' : 'bg-slate-950 border-slate-800'
+                  }`}>
+                    <Mail className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
                     <input
                       type="url"
                       value={auditSubstack}
                       onChange={(e) => setAuditSubstack(e.target.value)}
                       placeholder="https://....substack.com"
-                      className="bg-transparent text-slate-200 text-xs w-full focus:outline-none font-mono"
+                      className={`bg-transparent text-xs w-full focus:outline-none font-mono ${
+                        isGlass ? 'text-slate-800 placeholder-slate-400' : 'text-slate-200 placeholder-slate-600'
+                      }`}
                     />
                   </div>
                 </div>
@@ -1088,27 +1251,31 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
 
               {/* Dedicated Analysis Text Box for Client Social Platforms and Bio */}
               <div className="space-y-1.5 pt-1">
-                <label className="text-slate-300 font-mono font-semibold flex items-center justify-between">
+                <label className={`font-mono font-semibold flex items-center justify-between ${isGlass ? 'text-slate-700' : 'text-slate-300'}`}>
                   <span>Client Social Footprint, Bio & Audience Context (For Analysis):</span>
-                  <span className="text-[10px] text-cyan-400 font-normal">Deep AI Extraction</span>
+                  <span className={`text-[10px] font-normal ${isGlass ? 'text-cyan-700' : 'text-cyan-400'}`}>Deep AI Extraction</span>
                 </label>
                 <textarea
                   rows={4}
                   value={auditSocialBio}
                   onChange={(e) => setAuditSocialBio(e.target.value)}
                   placeholder="Paste creator/prospect social bio, audience metrics, community size (Discord/Skool/Substack), current price tiers, and pain points here..."
-                  className="w-full p-3 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 focus:outline-none focus:border-cyan-500 font-mono text-xs leading-relaxed"
+                  className={`w-full p-3 rounded-xl border focus:outline-none font-mono text-xs leading-relaxed ${
+                    isGlass ? 'bg-slate-50 border-slate-200 text-slate-800 focus:border-cyan-600' : 'bg-slate-950 border-slate-800 text-slate-200 focus:border-cyan-500'
+                  }`}
                 />
-                <p className="text-[11px] text-slate-500 italic">
+                <p className={`text-[11px] italic ${isGlass ? 'text-slate-600' : 'text-slate-500'}`}>
                   DeepSeek-R1 analyzes this footprint to calculate annual revenue leakage and personalize the 5-point conversion audit & audio script.
                 </p>
               </div>
 
-              <div className="pt-3 flex items-center justify-end space-x-2 border-t border-slate-800">
+              <div className={`pt-3 flex items-center justify-end space-x-2 border-t ${isGlass ? 'border-slate-200' : 'border-slate-800'}`}>
                 <button
                   type="button"
                   onClick={() => setIsAuditModalOpen(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold"
+                  className={`px-4 py-2 rounded-xl font-semibold ${
+                    isGlass ? 'bg-slate-200 hover:bg-slate-300 text-slate-700' : 'bg-slate-800 hover:bg-slate-700 text-slate-300'
+                  }`}
                 >
                   Cancel
                 </button>
@@ -1128,20 +1295,28 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
 
       {/* Fullscreen Newsletter Modal */}
       {isFullscreenNewsletter && pack?.newsletter && (
-        <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-6">
-          <div className="w-full max-w-3xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-            <div className="flex items-center justify-between p-4 border-b border-slate-800 bg-slate-950/60">
-              <div className="text-xs font-mono text-slate-400">Newsletter Reader View</div>
+        <div className={`fixed inset-0 z-50 backdrop-blur-md flex items-center justify-center p-6 ${
+          isGlass ? 'bg-slate-900/40' : 'bg-slate-950/90'
+        }`}>
+          <div className={`w-full max-w-3xl border rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] ${
+            isGlass ? 'bg-white border-slate-200 text-slate-800' : 'bg-slate-900 border-slate-800 text-slate-200'
+          }`}>
+            <div className={`flex items-center justify-between p-4 border-b ${
+              isGlass ? 'border-slate-200 bg-slate-50' : 'border-slate-800 bg-slate-950/60'
+            }`}>
+              <div className={`text-xs font-mono ${isGlass ? 'text-slate-600 font-semibold' : 'text-slate-400'}`}>Newsletter Reader View</div>
               <button
                 onClick={() => setIsFullscreenNewsletter(false)}
-                className="p-1 rounded bg-slate-800 text-slate-400 hover:text-white"
+                className={`p-1 rounded ${
+                  isGlass ? 'bg-slate-200 text-slate-700 hover:bg-slate-300' : 'bg-slate-800 text-slate-400 hover:text-white'
+                }`}
               >
                 <Minimize2 className="w-4 h-4" />
               </button>
             </div>
-            <div className="p-6 overflow-y-auto space-y-4 text-slate-200">
-              <h2 className="text-lg font-bold text-white">{pack.newsletter.subjectLine}</h2>
-              <pre className="whitespace-pre-wrap font-sans text-xs leading-relaxed">{pack.newsletter.bodyMarkdown}</pre>
+            <div className="p-6 overflow-y-auto space-y-4">
+              <h2 className={`text-lg font-bold ${isGlass ? 'text-slate-950' : 'text-white'}`}>{pack.newsletter.subjectLine}</h2>
+              <pre className={`whitespace-pre-wrap font-sans text-xs leading-relaxed ${isGlass ? 'text-slate-800' : 'text-slate-300'}`}>{pack.newsletter.bodyMarkdown}</pre>
             </div>
           </div>
         </div>

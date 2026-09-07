@@ -19,15 +19,18 @@ interface LeadDetailDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   onTriggerCall?: (lead: CRMLead) => void;
+  theme?: 'glass' | 'cyber';
 }
 
 export const LeadDetailDrawer: React.FC<LeadDetailDrawerProps> = ({
   lead,
   isOpen,
   onClose,
-  onTriggerCall
+  onTriggerCall,
+  theme = 'glass'
 }) => {
   if (!isOpen || !lead) return null;
+  const isGlass = theme === 'glass';
 
   const score = lead.qualificationScore;
   const isHighValue = score >= 75;
@@ -40,45 +43,65 @@ export const LeadDetailDrawer: React.FC<LeadDetailDrawerProps> = ({
   const strokeDashoffset = circumference - (score / 100) * circumference;
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex justify-end bg-black/50 backdrop-blur-xs animate-in fade-in duration-200">
       <div
-        className="w-full max-w-md bg-slate-950/95 border-l border-slate-800 p-6 flex flex-col h-full shadow-2xl overflow-y-auto custom-scrollbar"
+        className={`w-full max-w-md p-6 flex flex-col h-full shadow-2xl overflow-y-auto custom-scrollbar border-l transition-all ${
+          isGlass
+            ? 'bg-white/95 backdrop-blur-2xl border-slate-200 text-slate-800'
+            : 'bg-slate-950/95 border-slate-800 text-slate-100'
+        }`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-800/80 pb-4 mb-5">
-          <div className="flex items-center space-x-2">
-            <span className="p-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400">
+        <div
+          className={`flex items-center justify-between border-b pb-4 mb-5 ${
+            isGlass ? 'border-slate-200/80' : 'border-slate-800/80'
+          }`}
+        >
+          <div className="flex items-center space-x-2.5">
+            <span
+              className={`p-1.5 rounded-lg border ${
+                isGlass ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+              }`}
+            >
               <Sparkles className="w-4 h-4" />
             </span>
             <div>
-              <h3 className="text-base font-bold text-white">{lead.fullName}</h3>
-              <p className="text-xs text-slate-400 font-mono">{lead.companyName || 'Independent Creator'}</p>
+              <h3 className={`text-base font-bold ${isGlass ? 'text-slate-900' : 'text-white'}`}>{lead.fullName}</h3>
+              <p className={`text-xs font-mono ${isGlass ? 'text-slate-500' : 'text-slate-400'}`}>{lead.companyName || 'Independent Creator'}</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white transition-all"
+            className={`p-1.5 rounded-lg transition-all ${
+              isGlass
+                ? 'bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-900'
+                : 'bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white'
+            }`}
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Circular Lead Score Card */}
-        <div className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 flex items-center justify-between mb-5 shadow-lg">
+        <div
+          className={`p-4 rounded-xl border flex items-center justify-between mb-5 shadow-sm ${
+            isGlass ? 'bg-slate-50/80 border-slate-200/80' : 'bg-slate-900/80 border-slate-800'
+          }`}
+        >
           <div>
-            <span className="text-xs font-mono uppercase tracking-wider text-slate-400">
+            <span className={`text-xs font-mono uppercase tracking-wider ${isGlass ? 'text-slate-500' : 'text-slate-400'}`}>
               AI BANT Qualification
             </span>
-            <div className="text-sm font-semibold text-slate-200 mt-0.5">
+            <div className={`text-sm font-semibold mt-0.5 ${isGlass ? 'text-slate-900' : 'text-slate-200'}`}>
               {isHighValue
                 ? 'High-Ticket Qualified'
                 : isMidValue
                 ? 'Moderate Fit • Nurture Required'
                 : 'Cold / Pre-Qualification'}
             </div>
-            <div className="text-[11px] text-slate-400 font-mono mt-1">
-              Status: <span className="text-cyan-400 uppercase font-bold">{lead.status.replace('_', ' ')}</span>
+            <div className={`text-[11px] font-mono mt-1 ${isGlass ? 'text-slate-500' : 'text-slate-400'}`}>
+              Status: <span className={`uppercase font-bold ${isGlass ? 'text-sky-700' : 'text-cyan-400'}`}>{lead.status.replace('_', ' ')}</span>
             </div>
           </div>
 
@@ -92,7 +115,7 @@ export const LeadDetailDrawer: React.FC<LeadDetailDrawerProps> = ({
                 stroke="currentColor"
                 strokeWidth={strokeWidth}
                 fill="transparent"
-                className="text-slate-800"
+                className={isGlass ? 'text-slate-200' : 'text-slate-800'}
               />
               <circle
                 cx="48"
@@ -105,13 +128,13 @@ export const LeadDetailDrawer: React.FC<LeadDetailDrawerProps> = ({
                 strokeDashoffset={strokeDashoffset}
                 strokeLinecap="round"
                 className={`transition-all duration-1000 ${
-                  isHighValue ? 'text-emerald-400' : isMidValue ? 'text-cyan-400' : 'text-amber-400'
+                  isHighValue ? (isGlass ? 'text-emerald-600' : 'text-emerald-400') : isMidValue ? (isGlass ? 'text-sky-600' : 'text-cyan-400') : 'text-amber-500'
                 }`}
               />
             </svg>
             <div className="absolute flex flex-col items-center justify-center text-center">
-              <span className="text-xl font-mono font-bold text-white">{score}</span>
-              <span className="text-[9px] font-mono text-slate-400">/100</span>
+              <span className={`text-xl font-mono font-bold ${isGlass ? 'text-slate-900' : 'text-white'}`}>{score}</span>
+              <span className={`text-[9px] font-mono ${isGlass ? 'text-slate-500' : 'text-slate-400'}`}>/100</span>
             </div>
           </div>
         </div>
@@ -119,26 +142,26 @@ export const LeadDetailDrawer: React.FC<LeadDetailDrawerProps> = ({
         {/* Lead Details Breakdown */}
         <div className="space-y-4 flex-1">
           {/* Contact Info */}
-          <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800/80 space-y-2">
-            <div className="text-xs font-mono text-slate-400 uppercase tracking-wider">Contact Channels</div>
-            <div className="text-xs text-slate-200 font-mono flex items-center justify-between">
-              <span>Email:</span>
-              <span className="text-cyan-300 select-all">{lead.email}</span>
+          <div className={`p-3.5 rounded-xl border space-y-2 ${isGlass ? 'bg-slate-50/80 border-slate-200/80 text-slate-800' : 'bg-slate-900/60 border-slate-800/80 text-slate-200'}`}>
+            <div className={`text-xs font-mono uppercase tracking-wider ${isGlass ? 'text-slate-500' : 'text-slate-400'}`}>Contact Channels</div>
+            <div className="text-xs font-mono flex items-center justify-between">
+              <span className={isGlass ? 'text-slate-600' : 'text-slate-400'}>Email:</span>
+              <span className={`font-semibold select-all ${isGlass ? 'text-sky-800' : 'text-cyan-300'}`}>{lead.email}</span>
             </div>
             {lead.phone && (
-              <div className="text-xs text-slate-200 font-mono flex items-center justify-between">
-                <span>Phone:</span>
-                <span className="text-slate-300">{lead.phone}</span>
+              <div className="text-xs font-mono flex items-center justify-between">
+                <span className={isGlass ? 'text-slate-600' : 'text-slate-400'}>Phone:</span>
+                <span className={`font-semibold ${isGlass ? 'text-slate-800' : 'text-slate-300'}`}>{lead.phone}</span>
               </div>
             )}
             {lead.website && (
-              <div className="text-xs text-slate-200 font-mono flex items-center justify-between">
-                <span>Website:</span>
+              <div className="text-xs font-mono flex items-center justify-between">
+                <span className={isGlass ? 'text-slate-600' : 'text-slate-400'}>Website:</span>
                 <a
                   href={lead.website}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-indigo-400 hover:underline flex items-center space-x-1"
+                  className={`hover:underline flex items-center space-x-1 ${isGlass ? 'text-indigo-600' : 'text-indigo-400'}`}
                 >
                   <span>{lead.website.replace('https://', '')}</span>
                   <ExternalLink className="w-3 h-3" />
@@ -149,15 +172,17 @@ export const LeadDetailDrawer: React.FC<LeadDetailDrawerProps> = ({
 
           {/* Social Profiles */}
           {lead.socialLinks && (
-            <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800/80 space-y-2">
-              <div className="text-xs font-mono text-slate-400 uppercase tracking-wider">Verified Social Handles</div>
+            <div className={`p-3.5 rounded-xl border space-y-2 ${isGlass ? 'bg-slate-50/80 border-slate-200/80' : 'bg-slate-900/60 border-slate-800/80'}`}>
+              <div className={`text-xs font-mono uppercase tracking-wider ${isGlass ? 'text-slate-500' : 'text-slate-400'}`}>Verified Social Handles</div>
               <div className="flex flex-wrap gap-2 pt-1">
                 {lead.socialLinks.twitter && (
                   <a
                     href={lead.socialLinks.twitter}
                     target="_blank"
                     rel="noreferrer"
-                    className="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-cyan-300 text-xs font-mono flex items-center space-x-1"
+                    className={`px-2.5 py-1 rounded-lg border text-xs font-mono flex items-center space-x-1 ${
+                      isGlass ? 'bg-white border-slate-200 text-sky-700 shadow-xs' : 'bg-slate-900 hover:bg-slate-800 border-slate-700 text-cyan-300'
+                    }`}
                   >
                     <span>𝕏 Twitter</span>
                   </a>
@@ -167,7 +192,9 @@ export const LeadDetailDrawer: React.FC<LeadDetailDrawerProps> = ({
                     href={lead.socialLinks.linkedin}
                     target="_blank"
                     rel="noreferrer"
-                    className="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-blue-400 text-xs font-mono flex items-center space-x-1"
+                    className={`px-2.5 py-1 rounded-lg border text-xs font-mono flex items-center space-x-1 ${
+                      isGlass ? 'bg-white border-slate-200 text-blue-700 shadow-xs' : 'bg-slate-900 hover:bg-slate-800 border-slate-700 text-blue-400'
+                    }`}
                   >
                     <span>LinkedIn</span>
                   </a>
@@ -177,7 +204,9 @@ export const LeadDetailDrawer: React.FC<LeadDetailDrawerProps> = ({
                     href={lead.socialLinks.youtube}
                     target="_blank"
                     rel="noreferrer"
-                    className="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700 text-red-400 text-xs font-mono flex items-center space-x-1"
+                    className={`px-2.5 py-1 rounded-lg border text-xs font-mono flex items-center space-x-1 ${
+                      isGlass ? 'bg-white border-slate-200 text-red-700 shadow-xs' : 'bg-slate-900 hover:bg-slate-800 border-slate-700 text-red-400'
+                    }`}
                   >
                     <span>YouTube</span>
                   </a>
@@ -188,12 +217,14 @@ export const LeadDetailDrawer: React.FC<LeadDetailDrawerProps> = ({
 
           {/* AI Voice Qualification Notes */}
           {lead.notes && (
-            <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800/80 space-y-2">
-              <div className="flex items-center space-x-1.5 text-xs font-mono text-slate-400 uppercase tracking-wider">
-                <MessageSquare className="w-3.5 h-3.5 text-purple-400" />
-                <span>Voice Agent Call Transcript Summary</span>
+            <div className={`p-3.5 rounded-xl border space-y-2 ${isGlass ? 'bg-slate-50/80 border-slate-200/80' : 'bg-slate-900/60 border-slate-800/80'}`}>
+              <div className="flex items-center space-x-1.5 text-xs font-mono uppercase tracking-wider">
+                <MessageSquare className={`w-3.5 h-3.5 ${isGlass ? 'text-purple-600' : 'text-purple-400'}`} />
+                <span className={isGlass ? 'text-slate-700' : 'text-slate-400'}>Voice Agent Call Transcript Summary</span>
               </div>
-              <p className="text-xs text-slate-300 leading-relaxed bg-slate-950/80 p-3 rounded-lg border border-slate-800 font-mono">
+              <p className={`text-xs leading-relaxed p-3 rounded-lg border font-mono ${
+                isGlass ? 'bg-white border-slate-200 text-slate-800 shadow-xs' : 'bg-slate-950/80 border-slate-800 text-slate-300'
+              }`}>
                 {lead.notes}
               </p>
             </div>
@@ -201,11 +232,13 @@ export const LeadDetailDrawer: React.FC<LeadDetailDrawerProps> = ({
 
           {/* Offer & Strategy Booking */}
           {lead.matchedOffer && (
-            <div className="p-3.5 rounded-xl bg-emerald-950/20 border border-emerald-500/30 space-y-1.5">
-              <div className="text-xs font-mono text-emerald-400 uppercase tracking-wider">Recommended Cohort Offer</div>
-              <div className="text-sm font-bold text-white">{lead.matchedOffer}</div>
+            <div className={`p-3.5 rounded-xl border space-y-1.5 ${
+              isGlass ? 'bg-emerald-50 border-emerald-200 text-emerald-950' : 'bg-emerald-950/20 border-emerald-500/30'
+            }`}>
+              <div className={`text-xs font-mono uppercase tracking-wider ${isGlass ? 'text-emerald-700' : 'text-emerald-400'}`}>Recommended Cohort Offer</div>
+              <div className={`text-sm font-bold ${isGlass ? 'text-slate-900' : 'text-white'}`}>{lead.matchedOffer}</div>
               {lead.scheduledCallTime && (
-                <div className="text-xs text-emerald-300 font-mono flex items-center space-x-1 mt-1">
+                <div className={`text-xs font-mono flex items-center space-x-1 mt-1 ${isGlass ? 'text-emerald-800' : 'text-emerald-300'}`}>
                   <Calendar className="w-3.5 h-3.5" />
                   <span>Scheduled Call: {lead.scheduledCallTime}</span>
                 </div>

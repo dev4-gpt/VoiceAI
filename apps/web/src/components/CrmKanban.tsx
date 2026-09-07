@@ -7,6 +7,7 @@ interface CrmKanbanProps {
   leads: CRMLead[];
   members?: ChurnRiskMember[];
   onSimulateLead?: () => void;
+  theme?: 'glass' | 'cyber';
 }
 
 const COLUMNS: Array<{ key: LeadStatus; label: string; color: string; badgeColor: string }> = [
@@ -36,41 +37,58 @@ const COLUMNS: Array<{ key: LeadStatus; label: string; color: string; badgeColor
   }
 ];
 
-export const CrmKanban: React.FC<CrmKanbanProps> = ({ leads, members = [], onSimulateLead }) => {
+export const CrmKanban: React.FC<CrmKanbanProps> = ({ leads, members = [], onSimulateLead, theme = 'glass' }) => {
+  const isGlass = theme === 'glass';
   const [selectedLead, setSelectedLead] = useState<CRMLead | null>(null);
 
   return (
-    <div className="flex flex-col h-full bg-slate-900/60 rounded-2xl border border-slate-800/80 backdrop-blur-xl p-5 shadow-2xl">
+    <div
+      className={`flex flex-col h-full rounded-2xl p-5 transition-all border backdrop-blur-xl ${
+        isGlass
+          ? 'bg-white/75 border-slate-200/80 shadow-[0_12px_40px_rgba(31,38,135,0.06)] text-slate-800'
+          : 'bg-slate-900/60 border-slate-800/80 shadow-2xl text-slate-100'
+      }`}
+    >
       {/* Top Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-800/80">
+      <div
+        className={`flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b ${
+          isGlass ? 'border-slate-200/70' : 'border-slate-800/80'
+        }`}
+      >
         <div className="flex items-center space-x-2.5">
           <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
             <Users className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center space-x-2">
-              <h3 className="text-base font-semibold text-slate-200">
+              <h3 className={`text-base font-semibold ${isGlass ? 'text-slate-900' : 'text-slate-200'}`}>
                 Live Creator Revenue Pipeline (CRM)
               </h3>
-              <span className="px-2 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-[10px] font-mono font-bold">
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-bold border ${
+                isGlass ? 'bg-sky-50 border-sky-200 text-sky-700' : 'bg-cyan-500/10 border-cyan-500/30 text-cyan-400'
+              }`}>
                 AI BANT SCORING
               </span>
             </div>
-            <p className="text-xs text-slate-400 mt-0.5">
+            <p className={`text-xs mt-0.5 ${isGlass ? 'text-slate-500' : 'text-slate-400'}`}>
               Every inbound voice turn evaluates Budget, Authority, Need, and Timeline with real-time score updates.
             </p>
           </div>
         </div>
 
         <div className="flex items-center space-x-3">
-          <span className="text-xs font-mono text-slate-400">
+          <span className={`text-xs font-mono ${isGlass ? 'text-slate-500' : 'text-slate-400'}`}>
             {leads.length} Leads • {members.length} Retained Members
           </span>
 
           {onSimulateLead && (
             <button
               onClick={onSimulateLead}
-              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 text-emerald-300 text-xs font-semibold shadow-sm transition-all"
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold shadow-sm transition-all ${
+                isGlass
+                  ? 'bg-emerald-50 hover:bg-emerald-100 border-emerald-200 text-emerald-800'
+                  : 'bg-emerald-600/20 hover:bg-emerald-600/30 border-emerald-500/40 text-emerald-300'
+              }`}
             >
               <PlusCircle className="w-3.5 h-3.5" />
               <span>Simulate Inbound Lead</span>
@@ -87,13 +105,21 @@ export const CrmKanban: React.FC<CrmKanbanProps> = ({ leads, members = [], onSim
           return (
             <div
               key={col.key}
-              className="flex flex-col bg-slate-950/60 rounded-xl border border-slate-800/80 p-3.5 min-w-[260px] shadow-sm"
+              className={`flex flex-col rounded-xl p-3.5 min-w-[260px] shadow-sm border ${
+                isGlass ? 'bg-slate-50/70 border-slate-200/80' : 'bg-slate-950/60 border-slate-800/80'
+              }`}
             >
-              <div className="flex items-center justify-between pb-2.5 mb-2.5 border-b border-slate-800">
-                <span className={`text-xs font-semibold uppercase tracking-wider ${col.color.split(' ')[2]}`}>
+              <div className={`flex items-center justify-between pb-2.5 mb-2.5 border-b ${isGlass ? 'border-slate-200/80' : 'border-slate-800'}`}>
+                <span className={`text-xs font-semibold uppercase tracking-wider ${
+                  isGlass
+                    ? col.key === 'inbound_qualified' ? 'text-sky-700' : col.key === 'call_scheduled' ? 'text-emerald-700' : col.key === 'enrolled' ? 'text-purple-700' : 'text-slate-700'
+                    : col.color.split(' ')[2]
+                }`}>
                   {col.label}
                 </span>
-                <span className="text-xs font-mono bg-slate-800 px-2 py-0.5 rounded-full text-slate-400">
+                <span className={`text-xs font-mono px-2 py-0.5 rounded-full ${
+                  isGlass ? 'bg-white border border-slate-200 text-slate-700 shadow-xs' : 'bg-slate-800 text-slate-400'
+                }`}>
                   {colLeads.length}
                 </span>
               </div>
@@ -129,20 +155,32 @@ export const CrmKanban: React.FC<CrmKanbanProps> = ({ leads, members = [], onSim
                       <div
                         key={lead.id}
                         onClick={() => setSelectedLead(lead)}
-                        className="group p-3 rounded-lg bg-slate-900/90 border border-slate-800 hover:border-cyan-500/50 hover:bg-slate-900 transition-all shadow-md space-y-2 cursor-pointer relative overflow-hidden"
+                        className={`group p-3.5 rounded-xl transition-all shadow-xs hover:shadow-md space-y-2 cursor-pointer relative overflow-hidden border ${
+                          isGlass
+                            ? 'bg-white/95 hover:bg-white border-slate-200/90 hover:border-sky-400 text-slate-800'
+                            : 'bg-slate-900/90 hover:bg-slate-850 border-slate-800 hover:border-cyan-500/50 text-slate-100'
+                        }`}
                       >
                         {/* Ambient subtle glow for high-ticket lead */}
                         {isHigh && (
-                          <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-full blur-xl pointer-events-none" />
+                          <div
+                            className={`absolute top-0 right-0 w-24 h-24 rounded-full blur-xl pointer-events-none ${
+                              isGlass ? 'bg-emerald-500/10' : 'bg-emerald-500/5'
+                            }`}
+                          />
                         )}
 
                         <div className="flex items-center justify-between">
                           <div>
-                            <span className="font-semibold text-xs text-slate-100 group-hover:text-cyan-300 transition-colors">
+                            <span
+                              className={`font-semibold text-xs transition-colors ${
+                                isGlass ? 'text-slate-900 group-hover:text-sky-700' : 'text-slate-100 group-hover:text-cyan-300'
+                              }`}
+                            >
                               {lead.fullName}
                             </span>
                             {lead.companyName && (
-                              <div className="text-[11px] text-slate-400 font-medium truncate">
+                              <div className={`text-[11px] font-medium truncate ${isGlass ? 'text-slate-600' : 'text-slate-400'}`}>
                                 {lead.companyName}
                               </div>
                             )}
@@ -158,7 +196,7 @@ export const CrmKanban: React.FC<CrmKanbanProps> = ({ leads, members = [], onSim
                                 stroke="currentColor"
                                 strokeWidth="3.5"
                                 fill="transparent"
-                                className="text-slate-800"
+                                className={isGlass ? 'text-slate-200' : 'text-slate-800'}
                               />
                               <circle
                                 cx="20"
@@ -172,36 +210,42 @@ export const CrmKanban: React.FC<CrmKanbanProps> = ({ leads, members = [], onSim
                                 strokeLinecap="round"
                                 className={`transition-all duration-700 ${
                                   isHigh
-                                    ? 'text-emerald-400 drop-shadow-[0_0_4px_rgba(52,211,153,0.6)]'
+                                    ? isGlass ? 'text-emerald-600' : 'text-emerald-400 drop-shadow-[0_0_4px_rgba(52,211,153,0.6)]'
                                     : isMid
-                                    ? 'text-cyan-400 drop-shadow-[0_0_4px_rgba(34,211,238,0.5)]'
-                                    : 'text-amber-400'
+                                    ? isGlass ? 'text-sky-600' : 'text-cyan-400 drop-shadow-[0_0_4px_rgba(34,211,238,0.5)]'
+                                    : 'text-amber-500'
                                 }`}
                               />
                             </svg>
-                            <span className="absolute text-[10px] font-mono font-bold text-slate-200">
+                            <span className={`absolute text-[10px] font-mono font-bold ${isGlass ? 'text-slate-800' : 'text-slate-200'}`}>
                               {score}
                             </span>
                           </div>
                         </div>
 
-                        <div className="text-[11px] text-slate-400 font-mono truncate">{lead.email}</div>
+                        <div className={`text-[11px] font-mono truncate ${isGlass ? 'text-slate-500' : 'text-slate-400'}`}>{lead.email}</div>
 
                         {/* Social Badges */}
                         {lead.socialLinks && (
-                          <div className="flex items-center space-x-1 pt-0.5 text-slate-400">
+                          <div className="flex items-center space-x-1 pt-0.5">
                             {lead.socialLinks.twitter && (
-                              <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-slate-950 border border-slate-800 text-cyan-300">
+                              <span className={`text-[9px] font-mono px-1.5 py-0.2 rounded border ${
+                                isGlass ? 'bg-sky-50 border-sky-200 text-sky-700' : 'bg-slate-950 border-slate-800 text-cyan-300'
+                              }`}>
                                 𝕏
                               </span>
                             )}
                             {lead.socialLinks.linkedin && (
-                              <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-slate-950 border border-slate-800 text-blue-300">
+                              <span className={`text-[9px] font-mono px-1.5 py-0.2 rounded border ${
+                                isGlass ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-slate-950 border-slate-800 text-blue-300'
+                              }`}>
                                 in
                               </span>
                             )}
                             {lead.socialLinks.youtube && (
-                              <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-slate-950 border border-slate-800 text-red-300">
+                              <span className={`text-[9px] font-mono px-1.5 py-0.2 rounded border ${
+                                isGlass ? 'bg-red-50 border-red-200 text-red-700' : 'bg-slate-950 border-slate-800 text-red-300'
+                              }`}>
                                 ▶
                               </span>
                             )}
@@ -210,7 +254,9 @@ export const CrmKanban: React.FC<CrmKanbanProps> = ({ leads, members = [], onSim
 
                         {/* Matched Offer */}
                         {lead.matchedOffer && (
-                          <div className="flex items-center justify-between text-[11px] font-mono text-emerald-400 bg-emerald-950/30 px-2 py-1 rounded border border-emerald-500/20">
+                          <div className={`flex items-center justify-between text-[11px] font-mono px-2 py-1 rounded border ${
+                            isGlass ? 'text-emerald-800 bg-emerald-50 border-emerald-200' : 'text-emerald-400 bg-emerald-950/30 border-emerald-500/20'
+                          }`}>
                             <span className="truncate">{lead.matchedOffer}</span>
                             <ArrowRight className="w-3 h-3 ml-1 flex-shrink-0 opacity-70 group-hover:translate-x-0.5 transition-transform" />
                           </div>
@@ -230,6 +276,7 @@ export const CrmKanban: React.FC<CrmKanbanProps> = ({ leads, members = [], onSim
         lead={selectedLead}
         isOpen={!!selectedLead}
         onClose={() => setSelectedLead(null)}
+        theme={theme}
       />
     </div>
   );

@@ -172,8 +172,8 @@ export const Spatial3DOdyssey: React.FC<Spatial3DOdysseyProps> = ({
 
   // Glass chamber styling tokens
   const chamberBoxClass = isGlass
-    ? 'w-full max-w-6xl max-h-[85vh] overflow-y-auto custom-scrollbar scrollable-chamber-content bg-white/60 border border-white/85 rounded-3xl p-6 shadow-[0_20px_60px_rgba(31,38,135,0.07)] backdrop-blur-2xl text-slate-800'
-    : 'w-full max-w-6xl max-h-[85vh] overflow-y-auto custom-scrollbar scrollable-chamber-content bg-slate-950/75 border border-cyan-800/40 rounded-3xl p-6 shadow-[0_30px_90px_rgba(0,0,0,0.9)] backdrop-blur-2xl text-slate-100';
+    ? 'w-full max-w-6xl max-h-[85vh] overflow-y-auto custom-scrollbar scrollable-chamber-content bg-white/80 border border-slate-200/80 rounded-3xl p-5 shadow-[0_20px_50px_rgba(15,23,42,0.06)] backdrop-blur-2xl text-slate-800'
+    : 'w-full max-w-6xl max-h-[85vh] overflow-y-auto custom-scrollbar scrollable-chamber-content bg-slate-950/80 border border-cyan-800/40 rounded-3xl p-5 shadow-[0_30px_90px_rgba(0,0,0,0.9)] backdrop-blur-2xl text-slate-100';
 
   const headerBorderClass = isGlass ? 'border-slate-200/70 pb-4 mb-4' : 'border-cyan-800/30 pb-4 mb-4';
 
@@ -333,49 +333,32 @@ export const Spatial3DOdyssey: React.FC<Spatial3DOdysseyProps> = ({
           style={getChamberStyle(0)}
         >
           <div className={chamberBoxClass}>
-            <div className={`flex items-center justify-between border-b ${headerBorderClass}`}>
-              <div className="flex items-center space-x-3">
-                <div
-                  className={`p-2 rounded-xl border ${
-                    isGlass
-                      ? 'bg-sky-50 border-sky-200 text-sky-600'
-                      : 'bg-cyan-500/20 border-cyan-400/40 text-cyan-300'
-                  }`}
-                >
-                  <Mic className="w-5 h-5" />
+            {/* Sleek Waypoint Breadcrumb */}
+            <div className={`flex items-center justify-between px-3.5 py-2 rounded-xl mb-4 border ${
+              isGlass ? 'bg-sky-50/70 border-sky-200/80 text-slate-800' : 'bg-cyan-950/40 border-cyan-800/40 text-slate-200'
+            }`}>
+              <div className="flex items-center space-x-2.5">
+                <div className={`p-1.5 rounded-lg border ${
+                  isGlass ? 'bg-white border-sky-200 text-sky-600' : 'bg-cyan-500/20 border-cyan-400/40 text-cyan-300'
+                }`}>
+                  <Mic className="w-3.5 h-3.5" />
                 </div>
-                <div>
-                  <h2
-                    className={`text-base font-bold tracking-tight flex items-center space-x-2 ${
-                      isGlass ? 'text-slate-900' : 'text-white'
-                    }`}
-                  >
-                    <span>Stratum 0 • The Acoustic Surface</span>
-                    <span
-                      className={`text-[10px] font-mono px-2 py-0.5 rounded font-semibold ${
-                        isGlass
-                          ? 'bg-sky-50 text-sky-800 border border-sky-200'
-                          : 'bg-cyan-950 text-cyan-300 border border-cyan-800'
-                      }`}
-                    >
-                      Z = 0m
-                    </span>
-                  </h2>
-                  <p className={`text-xs ${isGlass ? 'text-slate-500' : 'text-slate-400'}`}>
-                    Full-Duplex Speech Acoustics & Interactive Inbound Demo Hub
-                  </p>
+                <div className="flex items-center space-x-2 text-xs font-mono">
+                  <span className={`font-bold ${isGlass ? 'text-sky-900' : 'text-cyan-300'}`}>Stratum 0 • Acoustic Surface</span>
+                  <span className="opacity-40">•</span>
+                  <span className={`text-[11px] px-1.5 py-0.5 rounded font-semibold ${
+                    isGlass ? 'bg-sky-100/70 text-sky-800' : 'bg-cyan-950 text-cyan-400'
+                  }`}>Z = 0m</span>
                 </div>
               </div>
               <button
                 onClick={() => handleWarpToStratum(1800)}
-                className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-mono font-semibold transition-all border ${
-                  isGlass
-                    ? 'bg-sky-50 hover:bg-sky-100 border-sky-200 text-sky-800 shadow-sm'
-                    : 'bg-cyan-600/20 hover:bg-cyan-600/40 border-cyan-500/50 text-cyan-200'
+                className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-mono font-semibold transition-all border ${
+                  isGlass ? 'bg-white hover:bg-sky-50 border-sky-200 text-sky-800 shadow-2xs' : 'bg-cyan-600/20 hover:bg-cyan-600/40 border-cyan-500/50 text-cyan-200'
                 }`}
               >
-                <span>Dive to Revenue CRM</span>
-                <ChevronRight className="w-3.5 h-3.5" />
+                <span>Warp to CRM (Z = -1,800m)</span>
+                <ChevronRight className="w-3 h-3" />
               </button>
             </div>
             {consoleContent}
@@ -390,60 +373,41 @@ export const Spatial3DOdyssey: React.FC<Spatial3DOdysseyProps> = ({
           style={getChamberStyle(1800)}
         >
           <div className={chamberBoxClass}>
-            <div className={`flex items-center justify-between border-b ${headerBorderClass}`}>
-              <div className="flex items-center space-x-3">
-                <div
-                  className={`p-2 rounded-xl border ${
-                    isGlass
-                      ? 'bg-emerald-50 border-emerald-200 text-emerald-600'
-                      : 'bg-emerald-500/20 border-emerald-400/40 text-emerald-300'
-                  }`}
-                >
-                  <Database className="w-5 h-5" />
+            {/* Sleek Waypoint Breadcrumb */}
+            <div className={`flex items-center justify-between px-3.5 py-2 rounded-xl mb-4 border ${
+              isGlass ? 'bg-emerald-50/70 border-emerald-200/80 text-slate-800' : 'bg-emerald-950/40 border-emerald-800/40 text-slate-200'
+            }`}>
+              <div className="flex items-center space-x-2.5">
+                <div className={`p-1.5 rounded-lg border ${
+                  isGlass ? 'bg-white border-emerald-200 text-emerald-600' : 'bg-emerald-500/20 border-emerald-400/40 text-emerald-300'
+                }`}>
+                  <Database className="w-3.5 h-3.5" />
                 </div>
-                <div>
-                  <h2
-                    className={`text-base font-bold tracking-tight flex items-center space-x-2 ${
-                      isGlass ? 'text-slate-900' : 'text-white'
-                    }`}
-                  >
-                    <span>Stratum 1 • The Logic Stream</span>
-                    <span
-                      className={`text-[10px] font-mono px-2 py-0.5 rounded font-semibold ${
-                        isGlass
-                          ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                          : 'bg-emerald-950 text-emerald-300 border border-emerald-800'
-                      }`}
-                    >
-                      Z = -1,800m
-                    </span>
-                  </h2>
-                  <p className={`text-xs ${isGlass ? 'text-slate-500' : 'text-slate-400'}`}>
-                    Autonomous BANT Qualification & Revenue Pipeline Cylinder
-                  </p>
+                <div className="flex items-center space-x-2 text-xs font-mono">
+                  <span className={`font-bold ${isGlass ? 'text-emerald-900' : 'text-emerald-300'}`}>Stratum 1 • Logic Stream</span>
+                  <span className="opacity-40">•</span>
+                  <span className={`text-[11px] px-1.5 py-0.5 rounded font-semibold ${
+                    isGlass ? 'bg-emerald-100/70 text-emerald-800' : 'bg-emerald-950 text-emerald-400'
+                  }`}>Z = -1,800m</span>
                 </div>
               </div>
               <div className="flex items-center space-x-2">
                 <button
                   onClick={() => handleWarpToStratum(0)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-mono border ${
-                    isGlass
-                      ? 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700'
-                      : 'bg-slate-900 border-slate-700 text-slate-300'
+                  className={`px-2.5 py-1 rounded-lg text-xs font-mono border ${
+                    isGlass ? 'bg-white hover:bg-slate-100 border-slate-200 text-slate-700' : 'bg-slate-900 border-slate-700 text-slate-300'
                   }`}
                 >
                   ↑ Surface
                 </button>
                 <button
                   onClick={() => handleWarpToStratum(3600)}
-                  className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-mono font-semibold transition-all border ${
-                    isGlass
-                      ? 'bg-emerald-50 hover:bg-emerald-100 border-emerald-200 text-emerald-800 shadow-sm'
-                      : 'bg-emerald-600/20 hover:bg-emerald-600/40 border-emerald-500/50 text-emerald-200'
+                  className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-mono font-semibold transition-all border ${
+                    isGlass ? 'bg-white hover:bg-emerald-50 border-emerald-200 text-emerald-800 shadow-2xs' : 'bg-emerald-600/20 hover:bg-emerald-600/40 border-emerald-500/50 text-emerald-200'
                   }`}
                 >
-                  <span>Dive to Hermes Reactor</span>
-                  <ChevronRight className="w-3.5 h-3.5" />
+                  <span>Warp to Hermes Studio</span>
+                  <ChevronRight className="w-3 h-3" />
                 </button>
               </div>
             </div>
@@ -459,60 +423,41 @@ export const Spatial3DOdyssey: React.FC<Spatial3DOdysseyProps> = ({
           style={getChamberStyle(3600)}
         >
           <div className={chamberBoxClass}>
-            <div className={`flex items-center justify-between border-b ${headerBorderClass}`}>
-              <div className="flex items-center space-x-3">
-                <div
-                  className={`p-2 rounded-xl border ${
-                    isGlass
-                      ? 'bg-purple-50 border-purple-200 text-purple-600'
-                      : 'bg-purple-500/20 border-purple-400/40 text-purple-300'
-                  }`}
-                >
-                  <Sparkles className="w-5 h-5" />
+            {/* Sleek Waypoint Breadcrumb */}
+            <div className={`flex items-center justify-between px-3.5 py-2 rounded-xl mb-4 border ${
+              isGlass ? 'bg-purple-50/70 border-purple-200/80 text-slate-800' : 'bg-purple-950/40 border-purple-800/40 text-slate-200'
+            }`}>
+              <div className="flex items-center space-x-2.5">
+                <div className={`p-1.5 rounded-lg border ${
+                  isGlass ? 'bg-white border-purple-200 text-purple-600' : 'bg-purple-500/20 border-purple-400/40 text-purple-300'
+                }`}>
+                  <Sparkles className="w-3.5 h-3.5" />
                 </div>
-                <div>
-                  <h2
-                    className={`text-base font-bold tracking-tight flex items-center space-x-2 ${
-                      isGlass ? 'text-slate-900' : 'text-white'
-                    }`}
-                  >
-                    <span>Stratum 2 • The Synthesizer Reactor</span>
-                    <span
-                      className={`text-[10px] font-mono px-2 py-0.5 rounded font-semibold ${
-                        isGlass
-                          ? 'bg-purple-50 text-purple-800 border border-purple-200'
-                          : 'bg-purple-950 text-purple-300 border border-purple-800'
-                      }`}
-                    >
-                      Z = -3,600m
-                    </span>
-                  </h2>
-                  <p className={`text-xs ${isGlass ? 'text-slate-500' : 'text-slate-400'}`}>
-                    DeepSeek-R1 DSPy Self-Healing & Parallel Research Matrix
-                  </p>
+                <div className="flex items-center space-x-2 text-xs font-mono">
+                  <span className={`font-bold ${isGlass ? 'text-purple-900' : 'text-purple-300'}`}>Stratum 2 • Synthesizer Reactor</span>
+                  <span className="opacity-40">•</span>
+                  <span className={`text-[11px] px-1.5 py-0.5 rounded font-semibold ${
+                    isGlass ? 'bg-purple-100/70 text-purple-800' : 'bg-purple-950 text-purple-400'
+                  }`}>Z = -3,600m</span>
                 </div>
               </div>
               <div className="flex items-center space-x-2">
                 <button
                   onClick={() => handleWarpToStratum(1800)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-mono border ${
-                    isGlass
-                      ? 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700'
-                      : 'bg-slate-900 border-slate-700 text-slate-300'
+                  className={`px-2.5 py-1 rounded-lg text-xs font-mono border ${
+                    isGlass ? 'bg-white hover:bg-slate-100 border-slate-200 text-slate-700' : 'bg-slate-900 border-slate-700 text-slate-300'
                   }`}
                 >
                   ↑ CRM
                 </button>
                 <button
                   onClick={() => handleWarpToStratum(5400)}
-                  className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-mono font-semibold transition-all border ${
-                    isGlass
-                      ? 'bg-purple-50 hover:bg-purple-100 border-purple-200 text-purple-800 shadow-sm'
-                      : 'bg-purple-600/20 hover:bg-purple-600/40 border-purple-500/50 text-purple-200'
+                  className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-mono font-semibold transition-all border ${
+                    isGlass ? 'bg-white hover:bg-purple-50 border-purple-200 text-purple-800 shadow-2xs' : 'bg-purple-600/20 hover:bg-purple-600/40 border-purple-500/50 text-purple-200'
                   }`}
                 >
-                  <span>Dive to Diagnostics</span>
-                  <ChevronRight className="w-3.5 h-3.5" />
+                  <span>Warp to Evals Matrix</span>
+                  <ChevronRight className="w-3 h-3" />
                 </button>
               </div>
             </div>
@@ -528,60 +473,41 @@ export const Spatial3DOdyssey: React.FC<Spatial3DOdysseyProps> = ({
           style={getChamberStyle(5400)}
         >
           <div className={chamberBoxClass}>
-            <div className={`flex items-center justify-between border-b ${headerBorderClass}`}>
-              <div className="flex items-center space-x-3">
-                <div
-                  className={`p-2 rounded-xl border ${
-                    isGlass
-                      ? 'bg-blue-50 border-blue-200 text-blue-600'
-                      : 'bg-blue-500/20 border-blue-400/40 text-blue-300'
-                  }`}
-                >
-                  <BarChart3 className="w-5 h-5" />
+            {/* Sleek Waypoint Breadcrumb */}
+            <div className={`flex items-center justify-between px-3.5 py-2 rounded-xl mb-4 border ${
+              isGlass ? 'bg-blue-50/70 border-blue-200/80 text-slate-800' : 'bg-blue-950/40 border-blue-800/40 text-slate-200'
+            }`}>
+              <div className="flex items-center space-x-2.5">
+                <div className={`p-1.5 rounded-lg border ${
+                  isGlass ? 'bg-white border-blue-200 text-blue-600' : 'bg-blue-500/20 border-blue-400/40 text-blue-300'
+                }`}>
+                  <BarChart3 className="w-3.5 h-3.5" />
                 </div>
-                <div>
-                  <h2
-                    className={`text-base font-bold tracking-tight flex items-center space-x-2 ${
-                      isGlass ? 'text-slate-900' : 'text-white'
-                    }`}
-                  >
-                    <span>Stratum 3 • The Diagnostics Observatory</span>
-                    <span
-                      className={`text-[10px] font-mono px-2 py-0.5 rounded font-semibold ${
-                        isGlass
-                          ? 'bg-blue-50 text-blue-800 border border-blue-200'
-                          : 'bg-blue-950 text-blue-300 border border-blue-800'
-                      }`}
-                    >
-                      Z = -5,400m
-                    </span>
-                  </h2>
-                  <p className={`text-xs ${isGlass ? 'text-slate-500' : 'text-slate-400'}`}>
-                    Anthropic Automated Evals, Pass@k & Latency Radar Range
-                  </p>
+                <div className="flex items-center space-x-2 text-xs font-mono">
+                  <span className={`font-bold ${isGlass ? 'text-blue-900' : 'text-blue-300'}`}>Stratum 3 • Diagnostics Observatory</span>
+                  <span className="opacity-40">•</span>
+                  <span className={`text-[11px] px-1.5 py-0.5 rounded font-semibold ${
+                    isGlass ? 'bg-blue-100/70 text-blue-800' : 'bg-blue-950 text-blue-400'
+                  }`}>Z = -5,400m</span>
                 </div>
               </div>
               <div className="flex items-center space-x-2">
                 <button
                   onClick={() => handleWarpToStratum(3600)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-mono border ${
-                    isGlass
-                      ? 'bg-slate-100 hover:bg-slate-200 border-slate-200 text-slate-700'
-                      : 'bg-slate-900 border-slate-700 text-slate-300'
+                  className={`px-2.5 py-1 rounded-lg text-xs font-mono border ${
+                    isGlass ? 'bg-white hover:bg-slate-100 border-slate-200 text-slate-700' : 'bg-slate-900 border-slate-700 text-slate-300'
                   }`}
                 >
                   ↑ Synthesizer
                 </button>
                 <button
                   onClick={() => handleWarpToStratum(7200)}
-                  className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-mono font-semibold transition-all border ${
-                    isGlass
-                      ? 'bg-blue-50 hover:bg-blue-100 border-blue-200 text-blue-800 shadow-sm'
-                      : 'bg-blue-600/20 hover:bg-blue-600/40 border-blue-500/50 text-blue-200'
+                  className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-mono font-semibold transition-all border ${
+                    isGlass ? 'bg-white hover:bg-blue-50 border-blue-200 text-blue-800 shadow-2xs' : 'bg-blue-600/20 hover:bg-blue-600/40 border-blue-500/50 text-blue-200'
                   }`}
                 >
-                  <span>Dive to Memory Vault</span>
-                  <ChevronRight className="w-3.5 h-3.5" />
+                  <span>Warp to Knowledge Vault</span>
+                  <ChevronRight className="w-3 h-3" />
                 </button>
               </div>
             </div>
@@ -597,45 +523,28 @@ export const Spatial3DOdyssey: React.FC<Spatial3DOdysseyProps> = ({
           style={getChamberStyle(7200)}
         >
           <div className={chamberBoxClass}>
-            <div className={`flex items-center justify-between border-b ${headerBorderClass}`}>
-              <div className="flex items-center space-x-3">
-                <div
-                  className={`p-2 rounded-xl border ${
-                    isGlass
-                      ? 'bg-emerald-50 border-emerald-200 text-emerald-600'
-                      : 'bg-emerald-500/20 border-emerald-400/40 text-emerald-300'
-                  }`}
-                >
-                  <GitFork className="w-5 h-5" />
+            {/* Sleek Waypoint Breadcrumb */}
+            <div className={`flex items-center justify-between px-3.5 py-2 rounded-xl mb-4 border ${
+              isGlass ? 'bg-emerald-50/70 border-emerald-200/80 text-slate-800' : 'bg-emerald-950/40 border-emerald-800/40 text-slate-200'
+            }`}>
+              <div className="flex items-center space-x-2.5">
+                <div className={`p-1.5 rounded-lg border ${
+                  isGlass ? 'bg-white border-emerald-200 text-emerald-600' : 'bg-emerald-500/20 border-emerald-400/40 text-emerald-300'
+                }`}>
+                  <GitFork className="w-3.5 h-3.5" />
                 </div>
-                <div>
-                  <h2
-                    className={`text-base font-bold tracking-tight flex items-center space-x-2 ${
-                      isGlass ? 'text-slate-900' : 'text-white'
-                    }`}
-                  >
-                    <span>Stratum 4 • The Memory Cosmos & Cognitive Vault</span>
-                    <span
-                      className={`text-[10px] font-mono px-2 py-0.5 rounded font-semibold ${
-                        isGlass
-                          ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                          : 'bg-emerald-950 text-emerald-300 border border-emerald-800'
-                      }`}
-                    >
-                      Z = -7,200m
-                    </span>
-                  </h2>
-                  <p className={`text-xs ${isGlass ? 'text-slate-500' : 'text-slate-400'}`}>
-                    3D Synaptic Constellation & Obsidian Markdown Knowledge Graph
-                  </p>
+                <div className="flex items-center space-x-2 text-xs font-mono">
+                  <span className={`font-bold ${isGlass ? 'text-emerald-900' : 'text-emerald-300'}`}>Stratum 4 • Memory Cosmos & Knowledge Vault</span>
+                  <span className="opacity-40">•</span>
+                  <span className={`text-[11px] px-1.5 py-0.5 rounded font-semibold ${
+                    isGlass ? 'bg-emerald-100/70 text-emerald-800' : 'bg-emerald-950 text-emerald-400'
+                  }`}>Z = -7,200m</span>
                 </div>
               </div>
               <button
                 onClick={() => handleWarpToStratum(0)}
-                className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-mono font-semibold transition-all border ${
-                  isGlass
-                    ? 'bg-slate-900 hover:bg-slate-800 text-white shadow-md'
-                    : 'bg-emerald-600/20 hover:bg-emerald-600/40 border-emerald-500/50 text-emerald-200'
+                className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-mono font-semibold transition-all border ${
+                  isGlass ? 'bg-white hover:bg-slate-100 border-slate-200 text-slate-800 shadow-2xs' : 'bg-emerald-600/20 hover:bg-emerald-600/40 border-emerald-500/50 text-emerald-200'
                 }`}
               >
                 <span>↑ Ascent to Surface (Z = 0m)</span>
