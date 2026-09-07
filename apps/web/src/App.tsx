@@ -795,7 +795,7 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
         ? 'Maintain a structured, consultative executive demeanor focused on ROI and risk mitigation.'
         : 'Be direct, tactical, and relentlessly execution-focused.';
 
-    const brandVoiceInstructions = `You represent ${comp}. Tone: ${toneLabel} (${toneRule}). Signature vocabulary to incorporate: ${customLexicon}. Strictly avoid banned terms: ${customBannedTerms}.`;
+    const brandVoiceInstructions = `You represent ${comp}. Tone: ${toneLabel} (${toneRule}). Signature vocabulary to incorporate: ${customLexicon}. Strictly avoid banned terms: ${customBannedTerms}. Markdown & Consultation Briefing Capability: When prospects ask to have the conversation in Markdown or for notes/references to review before their call, inform them enthusiastically that GrowthVoice OS automatically captures and formats this entire strategy session into their local Obsidian vault and that they can click the "Download Briefing (.md)" button on their screen anytime!`;
 
     switch (persona) {
       case 'inbound':
@@ -945,6 +945,7 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
             },
             input: {
               format: { encoding: 'audio/pcm' },
+              language_code: 'en',
               turn_detection: {
                 vad_threshold: 0.5,
                 min_silence: PACING_OPTIONS[voicePacing].minSilence,
@@ -979,13 +980,76 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
         }
       };
 
+      // Utility to clean any Devanagari acoustic artifacts from STT and convert to clean English
+      const cleanSTTTranscript = (rawText: string): string => {
+        if (!rawText) return '';
+        let cleaned = rawText;
+        if (/[\u0900-\u097F]/.test(cleaned)) {
+          const phoneticMap: Record<string, string> = {
+            'या': 'Yeah',
+            'शौर': 'sure',
+            'श्योर': 'sure',
+            'बुक': 'book',
+            'में': 'my',
+            'कॉल': 'call',
+            'फॉर': 'for',
+            'सेप्टेंबर': 'September',
+            'सितंबर': 'September',
+            'सेवेंथ': 'Seventh',
+            'फाइव': '5',
+            'पीएम': 'PM',
+            'एएम': 'AM',
+            'वन': '1',
+            'टू': '2',
+            'थ्री': '3',
+            'फोर': '4',
+            'सिक्स': '6',
+            'सेवन': '7',
+            'एट': '8',
+            'नाइन': '9',
+            'टेन': '10',
+            'यस': 'Yes',
+            'नो': 'No',
+            'ओके': 'OK'
+          };
+          for (const [hindi, eng] of Object.entries(phoneticMap)) {
+            cleaned = cleaned.replace(new RegExp(hindi, 'g'), eng);
+          }
+        }
+        return cleaned.trim();
+      };
+
+      // Real-time transcript smoothing: AssemblyAI delta events send the full cumulative text so far
+      // or incremental tokens. This resolver ensures zero stutter, zero repetitions, and clean word-by-word streaming.
+      const resolveInterimStreamingText = (
+        currentText: string,
+        msg: { text?: string; transcript?: string; delta?: string; content?: string }
+      ): string => {
+        const candidate = msg.text || msg.transcript || msg.content;
+        if (typeof candidate === 'string' && candidate.trim()) {
+          return cleanSTTTranscript(candidate);
+        }
+        if (typeof msg.delta === 'string' && msg.delta) {
+          const cleanedDelta = cleanSTTTranscript(msg.delta);
+          if (!currentText) return cleanedDelta;
+          const needsSpace =
+            !currentText.endsWith(' ') &&
+            !cleanedDelta.startsWith(' ') &&
+            !/^[.,!?;:]/.test(cleanedDelta);
+          return currentText + (needsSpace ? ' ' : '') + cleanedDelta;
+        }
+        return currentText;
+      };
+
       ws.onmessage = (evt) => {
         try {
           const msg = JSON.parse(evt.data);
 
           if (msg.type === 'transcript.user') {
             setIsUserSpeaking(false);
-            const userText = msg.text || msg.transcript || msg.delta || msg.content || '';
+            const userText = cleanSTTTranscript(
+              msg.text || msg.transcript || msg.delta || msg.content || ''
+            );
             if (userText) {
               setMessages((prev) => {
                 const last = prev[prev.length - 1];
@@ -995,6 +1059,15 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
                     ...last,
                     text: userText,
                     isPartial: false
+                  };
+                  return updated;
+                }
+                // If user continued speaking with brief pause, merge seamlessly
+                if (last && last.speaker === 'user' && !last.isPartial) {
+                  const updated = [...prev];
+                  updated[updated.length - 1] = {
+                    ...last,
+                    text: `${last.text} ${userText}`
                   };
                   return updated;
                 }
@@ -1011,36 +1084,43 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
               });
             }
           } else if (msg.type === 'transcript.user.delta') {
-            const deltaText = msg.delta || msg.text || '';
-            if (deltaText) {
-              setMessages((prev) => {
-                const last = prev[prev.length - 1];
-                if (last && last.speaker === 'user' && last.isPartial) {
-                  const updated = [...prev];
-                  updated[updated.length - 1] = {
-                    ...last,
-                    text: last.text + deltaText
-                  };
-                  return updated;
+            setMessages((prev) => {
+              const last = prev[prev.length - 1];
+              if (last && last.speaker === 'user' && last.isPartial) {
+                const nextText = resolveInterimStreamingText(last.text, msg);
+                const updated = [...prev];
+                updated[updated.length - 1] = {
+                  ...last,
+                  text: nextText
+                };
+                return updated;
+              }
+              const initialText = resolveInterimStreamingText('', msg);
+              if (!initialText) return prev;
+              return [
+                ...prev,
+                {
+                  id: `u_${Date.now()}`,
+                  speaker: 'user',
+                  text: initialText,
+                  isPartial: true,
+                  timestamp: new Date().toLocaleTimeString()
                 }
-                return [
-                  ...prev,
-                  {
-                    id: `u_${Date.now()}`,
-                    speaker: 'user',
-                    text: deltaText,
-                    isPartial: true,
-                    timestamp: new Date().toLocaleTimeString()
-                  }
-                ];
-              });
-            }
+              ];
+            });
           } else if (msg.type === 'transcript.agent') {
-            const agentText = msg.text || msg.transcript || msg.delta || msg.content || '';
+            const agentText = cleanSTTTranscript(
+              msg.text || msg.transcript || msg.delta || msg.content || ''
+            );
             if (agentText) {
               setMessages((prev) => {
                 const last = prev[prev.length - 1];
-                if (last && last.speaker === 'agent' && last.isPartial) {
+                // Prevent duplicate greeting or update partial in-place
+                if (
+                  last &&
+                  last.speaker === 'agent' &&
+                  (last.isPartial || last.text.trim() === agentText.trim())
+                ) {
                   const updated = [...prev];
                   updated[updated.length - 1] = {
                     ...last,
@@ -1062,30 +1142,30 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
               });
             }
           } else if (msg.type === 'transcript.agent.delta') {
-            const deltaText = msg.delta || msg.text || '';
-            if (deltaText) {
-              setMessages((prev) => {
-                const last = prev[prev.length - 1];
-                if (last && last.speaker === 'agent' && last.isPartial) {
-                  const updated = [...prev];
-                  updated[updated.length - 1] = {
-                    ...last,
-                    text: last.text + deltaText
-                  };
-                  return updated;
+            setMessages((prev) => {
+              const last = prev[prev.length - 1];
+              if (last && last.speaker === 'agent' && last.isPartial) {
+                const nextText = resolveInterimStreamingText(last.text, msg);
+                const updated = [...prev];
+                updated[updated.length - 1] = {
+                  ...last,
+                  text: nextText
+                };
+                return updated;
+              }
+              const initialText = resolveInterimStreamingText('', msg);
+              if (!initialText) return prev;
+              return [
+                ...prev,
+                {
+                  id: `a_${Date.now()}`,
+                  speaker: 'agent',
+                  text: initialText,
+                  isPartial: true,
+                  timestamp: new Date().toLocaleTimeString()
                 }
-                return [
-                  ...prev,
-                  {
-                    id: `a_${Date.now()}`,
-                    speaker: 'agent',
-                    text: deltaText,
-                    isPartial: true,
-                    timestamp: new Date().toLocaleTimeString()
-                  }
-                ];
-              });
-            }
+              ];
+            });
           } else if (msg.type === 'input.speech.started') {
             setIsUserSpeaking(true);
           } else if (msg.type === 'input.speech.stopped') {

@@ -70,3 +70,34 @@ crmRouter.post('/tools/execute', async (req: Request, res: Response) => {
     return res.status(500).json({ error: 'Tool execution failed', message: err.message });
   }
 });
+
+crmRouter.post('/export-dossier', async (req: Request, res: Response) => {
+  const { markdown, companyName, fileName } = req.body;
+  if (!markdown) {
+    return res.status(400).json({ error: 'Markdown content is required' });
+  }
+
+  try {
+    const safeCompany = (companyName || 'General').replace(/[^a-zA-Z0-9_-]/g, '_');
+    const safeFileName = (fileName || 'Strategy_Briefing.md').replace(/[^a-zA-Z0-9_.-]/g, '_');
+    const targetDir = path.resolve(process.cwd(), 'vault', 'Clients', safeCompany);
+    fs.mkdirSync(targetDir, { recursive: true });
+    const targetPath = path.join(targetDir, safeFileName);
+    fs.writeFileSync(targetPath, markdown, 'utf-8');
+
+    // Also mirror to global vault/Dossiers
+    const globalDir = path.resolve(process.cwd(), 'vault', 'Dossiers');
+    fs.mkdirSync(globalDir, { recursive: true });
+    fs.writeFileSync(path.join(globalDir, `${safeCompany}_${safeFileName}`), markdown, 'utf-8');
+
+    return res.json({
+      success: true,
+      vaultPath: `vault/Clients/${safeCompany}/${safeFileName}`,
+      message: 'Dossier successfully saved to Obsidian vault'
+    });
+  } catch (err: any) {
+    console.error('[Export Dossier Error]', err);
+    return res.status(500).json({ error: 'Failed to write dossier to vault', message: err.message });
+  }
+});
+

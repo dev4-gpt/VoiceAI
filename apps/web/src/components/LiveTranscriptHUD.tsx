@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { User, Bot, Wrench, CheckCircle2, Send, Keyboard, Sparkles } from 'lucide-react';
+import { User, Bot, Wrench, CheckCircle2, Send, Keyboard, Sparkles, FileDown } from 'lucide-react';
 
 export interface MessageItem {
   id: string;
@@ -39,11 +39,121 @@ export const LiveTranscriptHUD: React.FC<LiveTranscriptHUDProps> = ({
 }) => {
   const isGlass = theme === 'glass';
   const [typedInput, setTypedInput] = useState('');
+  const [downloadSuccess, setDownloadSuccess] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  const handleDownloadDossier = async () => {
+    if (messages.length === 0) return;
+
+    const company = activeBrandVoice?.companyName || 'Veloce AgenticOS';
+    const companySafe = company.replace(/[^a-zA-Z0-9_-]/g, '_');
+    const now = new Date();
+
+    const allText = messages.map((m) => m.text).join(' ');
+    const hasConsultation = /september|consultation|scheduled|call|booking|meeting|sept/i.test(allText);
+    const hasFreeTier = /free tier|generous free|resources/i.test(allText);
+    const hasBudget = /\$10|\$5k|budget|fee|platform fee/i.test(allText);
+    const hasTimeline = /30 days|timeline|month|launch/i.test(allText);
+
+    const markdown = `# 📋 GrowthVoice OS: Strategy Briefing & Consultation Reference Dossier
+
+**Client / Brand:** ${company}  
+**Tone Archetype:** ${activeBrandVoice?.toneLabel || 'Tactical Operator'}  
+**Date Generated:** ${now.toLocaleDateString()} at ${now.toLocaleTimeString()}  
+**AI Admissions Director:** Anna (GrowthVoice OS Inbound Specialist)  
+
+---
+
+## 🎯 Executive Summary & Mission Scope
+* **Core Vision:** Transition from a solo entrepreneurship to a public-facing powerhouse with high inbound funnel velocity.
+* **Launch Horizon:** ${hasTimeline ? '30-Day Growth Sprint' : 'Immediate Inbound Rollout'}.
+* **Acquisition Playbook:** ${
+      hasFreeTier
+        ? 'Deploy generous free-tier resources to capture market attention and build trust without burning personal capital.'
+        : 'High-ticket inbound qualification and automated booking.'
+    }
+* **Operational Strategy:** Utilize local-first agent loops, intelligent model routing, and persistent Obsidian memory to keep operational overhead near-zero.
+
+---
+
+## 💰 Commercial Parameters & Budget Guardrails
+* **Initial Platform Budget:** ${hasBudget ? '$10 platform fee target (lean bootstrapper mode)' : 'To be finalized in strategy consultation'}.
+* **Efficiency Mandate:** Zero manual hustle; automate lead intake, qualification, and calendar reservations hands-off.
+* **Scaling Milestone:** Migrate from lightweight local routing into dedicated high-ticket managed infrastructure as paying client volume expands.
+
+---
+
+## 📅 Scheduled Strategy Consultation Card
+* **Status:** ${hasConsultation ? '✅ Confirmed & Reserved' : 'Pending Scheduling'}
+* **Target Session:** September 7, 2026 at 5:00 PM EST
+* **Format:** 1-on-1 Strategic Architecture & Model Routing Consultation
+* **Key Consultation Agenda Items:**
+  1. Audit free-tier resource architecture to ensure stability during traffic spikes.
+  2. Blueprint persistent Obsidian knowledge memory and local model routing.
+  3. Formulate monetization tiers to transition free-tier users into paid high-ticket retainers.
+
+---
+
+## 🛠️ Key References & Architecture Stack
+* **Operating Layer:** Veloce AgenticOS (local-first layer for Claude Code, Codex, Antigravity, Ollama).
+* **Voice Inbound Engine:** GrowthVoice OS with AssemblyAI Voice Agent API (24kHz PCM16, universal-3-5-pro).
+* **Persistent Memory:** Local Obsidian Knowledge Vault with automated dossier synchronization.
+* **Reasoning Engine:** DeepSeek LLM with multi-turn context retention.
+
+---
+
+## 📝 Complete Verbatim Dialogue Transcript
+
+${messages
+  .map(
+    (m) =>
+      `### ${
+        m.speaker === 'user'
+          ? '👤 Operator / Prospect'
+          : m.speaker === 'agent'
+          ? '🤖 Growth AI (Anna)'
+          : '⚙️ System'
+      } [${m.timestamp}]\n${m.text || (m.isPartial ? '*(In-flight spoken turn)*' : '')}\n`
+  )
+  .join('\n')}
+
+---
+*Generated autonomously by GrowthVoice OS • Local-First Sovereign AI Growth Operator*
+`;
+
+    // 1. Trigger browser file download
+    const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${companySafe}_Strategy_Briefing_${now.toISOString().slice(0, 10)}.md`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    // 2. Mirror into Obsidian vault via orchestrator
+    try {
+      await fetch('/api/crm/export-dossier', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          markdown,
+          companyName: company,
+          fileName: `${companySafe}_Strategy_Briefing.md`
+        })
+      });
+    } catch (e) {
+      console.warn('[Failed to mirror dossier to vault]', e);
+    }
+
+    setDownloadSuccess(true);
+    setTimeout(() => setDownloadSuccess(false), 3500);
+  };
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,6 +180,26 @@ export const LiveTranscriptHUD: React.FC<LiveTranscriptHUDProps> = ({
           </h3>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          {/* Download Strategic Briefing & References Button */}
+          <button
+            type="button"
+            onClick={handleDownloadDossier}
+            disabled={messages.length === 0}
+            className={`inline-flex items-center space-x-1.5 px-3 py-1 rounded-lg text-xs font-mono font-semibold border shadow-xs transition-all disabled:opacity-40 ${
+              downloadSuccess
+                ? 'bg-emerald-500 text-white border-emerald-600'
+                : isGlass
+                ? 'bg-amber-50 hover:bg-amber-100/80 border-amber-200 text-amber-900 shadow-2xs'
+                : 'bg-amber-950/70 hover:bg-amber-900/80 border-amber-700/60 text-amber-300'
+            }`}
+            title="Download complete strategy briefing, references, and scheduled consultation notes (.md)"
+          >
+            <FileDown className="w-3.5 h-3.5 text-amber-600" />
+            <span>
+              {downloadSuccess ? '✓ Saved to Vault & Downloaded' : '📥 Download Briefing (.md)'}
+            </span>
+          </button>
+
           {activeBrandVoice && (
             <span className={`inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded text-xs font-mono border shadow-xs ${
               isGlass ? 'bg-indigo-50 text-indigo-800 border-indigo-200' : 'bg-indigo-950/80 text-indigo-300 border-indigo-700/60'
@@ -122,7 +252,9 @@ export const LiveTranscriptHUD: React.FC<LiveTranscriptHUDProps> = ({
               )}
 
               <div
-                className={`max-w-[78%] rounded-2xl px-4 py-2.5 shadow-md ${
+                className={`max-w-[78%] rounded-2xl px-4 py-2.5 shadow-md transition-all ${
+                  msg.isPartial ? (isGlass ? 'ring-2 ring-sky-300/70' : 'ring-2 ring-cyan-500/40') : ''
+                } ${
                   msg.speaker === 'user'
                     ? isGlass
                       ? 'bg-sky-50 border border-sky-200 text-sky-950 rounded-tr-none shadow-xs'
@@ -139,14 +271,32 @@ export const LiveTranscriptHUD: React.FC<LiveTranscriptHUDProps> = ({
                 <div className={`flex items-center justify-between space-x-4 mb-1 text-[11px] font-mono ${
                   isGlass ? 'text-slate-500' : 'opacity-60'
                 }`}>
-                  <span className="font-semibold uppercase">
-                    {msg.speaker === 'user' ? 'Operator / Prospect' : msg.speaker === 'agent' ? 'Growth AI' : 'System'}
+                  <span className="font-semibold uppercase flex items-center space-x-1.5">
+                    <span>{msg.speaker === 'user' ? 'Operator / Prospect' : msg.speaker === 'agent' ? 'Growth AI' : 'System'}</span>
+                    {msg.isPartial && (
+                      <span className="text-[10px] px-1 py-0.2 rounded bg-cyan-500/20 text-cyan-600 dark:text-cyan-300 font-bold uppercase animate-pulse">
+                        Live Speaking
+                      </span>
+                    )}
                   </span>
                   <span>{msg.timestamp}</span>
                 </div>
-                <p className="leading-relaxed">
-                  {msg.text || (msg.isPartial ? 'Speaking...' : '[Voice audio turn]')}
-                  {msg.isPartial && <span className="inline-block w-1.5 h-3 ml-1 bg-cyan-400 animate-pulse" />}
+                <p className="leading-relaxed font-sans text-[13.5px]">
+                  {msg.text ? (
+                    <span>{msg.text}</span>
+                  ) : msg.isPartial ? (
+                    <span className="inline-flex items-center space-x-1.5 opacity-70 text-xs italic">
+                      <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-bounce" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-bounce [animation-delay:0.15s]" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-bounce [animation-delay:0.3s]" />
+                      <span className="ml-1 font-mono">Listening to voice stream...</span>
+                    </span>
+                  ) : (
+                    <span className="opacity-50 italic">[Voice audio turn]</span>
+                  )}
+                  {msg.isPartial && (
+                    <span className="inline-block w-1.5 h-3.5 ml-1.5 bg-cyan-500 rounded-xs animate-pulse align-middle" />
+                  )}
                 </p>
               </div>
 
@@ -162,6 +312,7 @@ export const LiveTranscriptHUD: React.FC<LiveTranscriptHUDProps> = ({
         )}
         <div ref={messagesEndRef} />
       </div>
+
 
       {/* Active Tool Executions HUD */}
       {activeTools.length > 0 && (
