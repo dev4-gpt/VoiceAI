@@ -42,7 +42,7 @@ import {
 } from 'lucide-react';
 import { speechSynth } from './utils/speechSynth';
 import { AudioWaveform } from './components/AudioWaveform';
-import { NeuralAudioOrb } from './components/NeuralAudioOrb';
+import { NeuralAudioOrb, VisualizerMode, VISUALIZER_MODES } from './components/NeuralAudioOrb';
 import { AmbientVercelShader } from './components/AmbientVercelShader';
 import { LiveTranscriptHUD, MessageItem, ActiveToolItem } from './components/LiveTranscriptHUD';
 import { CrmKanban } from './components/CrmKanban';
@@ -183,7 +183,7 @@ export const App: React.FC = () => {
   const [selectedScenario, setSelectedScenario] = useState<OperatingPersona>('inbound');
   const [isSendingMessage, setIsSendingMessage] = useState(false);
   const [is3DSpatialMode, setIs3DSpatialMode] = useState(false);
-  const [audioVisualizerType, setAudioVisualizerType] = useState<'orb' | 'waveform'>('orb');
+  const [audioVisualizerType, setAudioVisualizerType] = useState<VisualizerMode | 'waveform'>('cymatic');
   const [activeSimulationKey, setActiveSimulationKey] = useState<string | null>(null);
 
   // Voice Pacing & Silence Threshold Tuning
@@ -795,50 +795,50 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
         ? 'Maintain a structured, consultative executive demeanor focused on ROI and risk mitigation.'
         : 'Be direct, tactical, and relentlessly execution-focused.';
 
-    const brandVoiceInstructions = `You represent ${comp}. Tone: ${toneLabel} (${toneRule}). Signature vocabulary to incorporate: ${customLexicon}. Strictly avoid banned terms: ${customBannedTerms}. Markdown & Consultation Briefing Capability: When prospects ask to have the conversation in Markdown or for notes/references to review before their call, inform them enthusiastically that GrowthVoice OS automatically captures and formats this entire strategy session into their local Obsidian vault and that they can click the "Download Briefing (.md)" button on their screen anytime!`;
+    const brandVoiceInstructions = `You represent GrowthOS advising ${comp}. Tone: ${toneLabel} (${toneRule}). Signature vocabulary to incorporate: ${customLexicon}. Strictly avoid banned terms: ${customBannedTerms}. Positioning: You are Anna, Senior Growth Operating Architect at GrowthOS, an elite sovereign growth operating system and management consultancy. You advise ${comp} on revenue systems, acquisition infrastructure, and unit economics. Never claim to have built ${comp} internally or say "we did this" regarding their products. Markdown & Consultation Briefing Capability: When prospects ask to have the conversation in Markdown or for notes/references to review before their call, inform them enthusiastically that GrowthVoice OS automatically captures and formats this entire strategy session into their local Obsidian vault and that they can click the "Download Briefing (.md)" button on their screen anytime!`;
 
     switch (persona) {
       case 'inbound':
         return {
-          title: `After-Hours Inbound Admissions SDR (${comp})`,
-          prompt: `You are Anna, the elite AI Admissions Director for ${comp}. ${brandVoiceInstructions} Warmly qualify inbound prospects using BANT criteria, answer curriculum and pricing questions using get_product_knowledge, and schedule strategy consultations.`,
-          greeting: `Hey there! Welcome to ${comp}. I'm Anna, your AI admissions director. What brings you to our program today?`
+          title: `Senior Growth Operating Architect (Advisory for ${comp})`,
+          prompt: `You are Anna, Senior Growth Operating Architect at GrowthOS, advising ${comp}. ${brandVoiceInstructions} Warmly and analytically qualify inbound leaders, identify acquisition bottlenecks and unit economics friction, leverage get_product_knowledge to align curriculum and offer structures, and schedule strategy consultations.`,
+          greeting: `Welcome to GrowthOS Advisory for ${comp}. I'm Anna, Senior Growth Operating Architect. What is the primary bottleneck in your revenue or customer acquisition architecture today?`
         };
       case 'outbound':
         return {
-          title: `Outbound Lead Reactivation Specialist (${comp})`,
-          prompt: `You are Anna, conducting warm outreach on behalf of ${comp}. ${brandVoiceInstructions} Inquire about their launch progress, address hesitation with our 14-day action guarantee, and offer a private sprint.`,
-          greeting: `Hi there! Following up from ${comp} regarding your project. How is your launch progressing?`
+          title: `Outbound Expansion Advisor (Advisory for ${comp})`,
+          prompt: `You are Anna, Growth Operating Architect at GrowthOS conducting executive outreach for ${comp}. ${brandVoiceInstructions} Inquire into their operational bottlenecks, address scaling friction with high-conviction sprint models, and offer a strategic growth roadmap.`,
+          greeting: `Hello! This is Anna from GrowthOS Advisory following up on the growth infrastructure for ${comp}. How is your acquisition pipeline performing this sprint?`
         };
       case 'churn':
         return {
-          title: `Churn Save & Margin Guardrail (${comp})`,
-          prompt: `You are the empathetic Retention Specialist for ${comp}. A member wants to cancel. Listen to their reason, offer to pause or apply our policy discount (up to 15%), and log their feedback.`,
-          greeting: `Hi Sarah, I see you requested to discuss your ${comp} membership. How can I help today?`
+          title: `Revenue Retention & Account Strategy (${comp})`,
+          prompt: `You are Anna, Senior Operating Architect at GrowthOS advising on account retention for ${comp}. An account has raised retention or renewal questions. Listen to their operational blockers, propose retention architecture or subscription pause/restructuring, and log key feedback.`,
+          greeting: `Hello, this is Anna from GrowthOS Advisory regarding your engagement with ${comp}. How can we optimize your operational efficiency and unit economics today?`
         };
       case 'onboarding':
         return {
-          title: `VIP Student Onboarding Concierge (${comp})`,
-          prompt: `You are Anna, the VIP Onboarding Concierge for ${comp}. ${brandVoiceInstructions} Guide newly enrolled high-ticket members through workspace setup and schedule their 1-on-1 Kickoff Call.`,
-          greeting: `Welcome to the ${comp} family! I am here to help you get your workspace, community credentials, and 1-on-1 kickoff session locked in. Ready to get started?`
+          title: `VIP Growth Architecture Onboarding Concierge (${comp})`,
+          prompt: `You are Anna, VIP Onboarding Architect at GrowthOS for ${comp}. ${brandVoiceInstructions} Guide newly onboarded clients through their workspace integration, knowledge vault syncing, and calendar kickoff.`,
+          greeting: `Welcome to GrowthOS onboarding for ${comp}! I am Anna, your dedicated operating architect. Let's configure your workspace, knowledge assets, and strategy kickoff session. Ready to begin?`
         };
       case 'affiliate':
         return {
-          title: `Affiliate & Strategic Partner Scout (${comp})`,
-          prompt: `You are Anna, vetting incoming partnership inquiries for ${comp}. ${brandVoiceInstructions}`,
-          greeting: `Thanks for reaching out about ${comp}'s partner program. What niche and audience size are you currently reaching?`
+          title: `Ecosystem & Distribution Partner Scout (${comp})`,
+          prompt: `You are Anna, vetting strategic growth and distribution partnerships for ${comp}. ${brandVoiceInstructions}`,
+          greeting: `Welcome to the GrowthOS Ecosystem desk for ${comp}. What audience scale and strategic distribution channel are you looking to integrate?`
         };
       case 'diagnostic':
         return {
-          title: `Executive Diagnostic Advisor ($10k+) (${comp})`,
-          prompt: `You are Anna, senior growth architect for ${comp}. Conduct a strategic discovery audit examining team structure, customer acquisition cost, and revenue bottlenecks.`,
-          greeting: `Welcome to the ${comp} Executive Diagnostic. Could you walk me through your current monthly revenue run-rate and primary growth bottleneck?`
+          title: `Executive Growth Diagnostic ($10k+ Architecture Audit) (${comp})`,
+          prompt: `You are Anna, Senior Growth Architect at GrowthOS conducting an executive discovery audit for ${comp}. Examine acquisition velocity, unit economics, and operational bottlenecks with executive precision.`,
+          greeting: `Welcome to the GrowthOS Executive Diagnostic for ${comp}. Could you outline your current monthly revenue run-rate and primary operational bottleneck?`
         };
       default:
         return {
-          title: `Admissions Director (${comp})`,
-          prompt: `You are Anna representing ${comp}. ${brandVoiceInstructions}`,
-          greeting: `Hello! Welcome to ${comp}. How can I assist you today?`
+          title: `Senior Growth Operating Architect (Advisory for ${comp})`,
+          prompt: `You are Anna, Senior Growth Operating Architect at GrowthOS advising ${comp}. ${brandVoiceInstructions}`,
+          greeting: `Welcome to GrowthOS Advisory for ${comp}. I'm Anna, Senior Growth Operating Architect. How can I assist your operational scaling today?`
         };
     }
   };
@@ -1908,48 +1908,87 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
               </div>
             </div>
 
-            {/* Front-and-Center Audio Visualizer & 3D Neural Orb */}
+            {/* Front-and-Center Audio Visualizer & 3D Glassy Reactor Suite */}
             <div className="space-y-2">
-              <div className="flex items-center justify-between px-1">
+              <div className="flex flex-wrap items-center justify-between px-1 gap-2">
                 <div className={`flex items-center space-x-2 text-xs font-mono ${isGlass ? 'text-slate-600 font-semibold' : 'text-slate-400'}`}>
                   <span className={`w-2 h-2 rounded-full animate-pulse ${isGlass ? 'bg-cyan-600' : 'bg-cyan-400'}`} />
-                  <span className="uppercase font-semibold">Front-and-Center Audio Engine</span>
+                  <span className="uppercase font-semibold">Anna 3D Voice Reactor</span>
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-mono font-bold ${
+                    isGlass ? 'bg-emerald-50 text-emerald-800 border border-emerald-300' : 'bg-emerald-950 text-emerald-300 border border-emerald-800'
+                  }`}>
+                    DEFAULT: THE CYMATIC PLANE
+                  </span>
                 </div>
-                <div className={`flex items-center space-x-1 p-0.5 rounded-lg border text-[11px] font-mono ${
-                  isGlass ? 'bg-[#fdfcf9] border-[#e2ded5] shadow-2xs' : 'bg-slate-900 border-slate-800'
-                }`}>
-                  <button
-                    onClick={() => setAudioVisualizerType('orb')}
-                    className={`px-2.5 py-1 rounded transition-all ${
-                      audioVisualizerType === 'orb'
-                        ? (isGlass ? 'bg-cyan-50 text-cyan-800 border border-cyan-300 font-bold shadow-xs' : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-bold')
-                        : (isGlass ? 'text-slate-600 hover:text-slate-900' : 'text-slate-400 hover:text-slate-200')
-                    }`}
-                  >
-                    3D Neural Orb (GPU)
-                  </button>
-                  <button
-                    onClick={() => setAudioVisualizerType('waveform')}
-                    className={`px-2.5 py-1 rounded transition-all ${
-                      audioVisualizerType === 'waveform'
-                        ? (isGlass ? 'bg-purple-50 text-purple-800 border border-purple-300 font-bold shadow-xs' : 'bg-purple-500/20 text-purple-300 border border-purple-500/40 font-bold')
-                        : (isGlass ? 'text-slate-600 hover:text-slate-900' : 'text-slate-400 hover:text-slate-200')
-                    }`}
-                  >
-                    2D Waveform
-                  </button>
+
+                {/* Dropdown Select Box & Button Chips */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex items-center space-x-1.5">
+                    <span className={`text-[11px] font-mono font-medium ${isGlass ? 'text-slate-600' : 'text-slate-400'}`}>
+                      Select Look:
+                    </span>
+                    <select
+                      value={audioVisualizerType}
+                      onChange={(e) => setAudioVisualizerType(e.target.value as VisualizerMode | 'waveform')}
+                      className={`text-xs font-mono font-semibold rounded-lg px-2.5 py-1 outline-none transition-all cursor-pointer border ${
+                        isGlass
+                          ? 'bg-[#ffffff] text-slate-800 border-[#d8d3c7] hover:border-slate-400 shadow-2xs'
+                          : 'bg-slate-900 text-slate-200 border-slate-700 hover:border-cyan-500 shadow-inner'
+                      }`}
+                    >
+                      <option value="cymatic">🌊 The Cymatic Plane (Liquid & Organic - Default)</option>
+                      <option value="prism">💎 The Frosted Prism (Geometric & Authoritative)</option>
+                      <option value="gyroscope">🪐 The Glass Gyroscope (Sleek & Data-Driven)</option>
+                      <option value="monolith">🏛️ The Monolith Lightbox (Apple Minimalist Column)</option>
+                      <option value="ribbon">🎗️ The Neural Ribbon (Flowing Möbius Harmonic)</option>
+                      <option value="droplet">💧 The Liquid Droplet (Mercury Fluid Core)</option>
+                      <option value="waveform">📊 2D Acoustic Waveform (Frequency Bins)</option>
+                    </select>
+                  </div>
+
+                  {/* Mode Pill Buttons */}
+                  <div className={`flex flex-wrap items-center p-0.5 rounded-lg border text-[11px] font-mono gap-1 ${
+                    isGlass ? 'bg-[#fdfcf9] border-[#e2ded5] shadow-2xs' : 'bg-slate-900 border-slate-800'
+                  }`}>
+                    {VISUALIZER_MODES.map((vm) => (
+                      <button
+                        key={vm.id}
+                        onClick={() => setAudioVisualizerType(vm.id)}
+                        className={`px-2 py-1 rounded transition-all ${
+                          audioVisualizerType === vm.id
+                            ? (isGlass ? 'bg-cyan-100 text-cyan-900 border border-cyan-300 font-bold shadow-xs' : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-bold')
+                            : (isGlass ? 'text-slate-600 hover:text-slate-900' : 'text-slate-400 hover:text-slate-200')
+                        }`}
+                        title={vm.description}
+                      >
+                        {vm.name.replace('The ', '')}
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => setAudioVisualizerType('waveform')}
+                      className={`px-2 py-1 rounded transition-all ${
+                        audioVisualizerType === 'waveform'
+                          ? (isGlass ? 'bg-purple-100 text-purple-900 border border-purple-300 font-bold shadow-xs' : 'bg-purple-500/20 text-purple-300 border border-purple-500/40 font-bold')
+                          : (isGlass ? 'text-slate-600 hover:text-slate-900' : 'text-slate-400 hover:text-slate-200')
+                      }`}
+                    >
+                      Waveform
+                    </button>
+                  </div>
                 </div>
               </div>
 
-              {audioVisualizerType === 'orb' ? (
+              {audioVisualizerType !== 'waveform' ? (
                 <NeuralAudioOrb
                   isActive={isCalling}
                   isAgentSpeaking={isAgentSpeaking}
                   isUserSpeaking={isUserSpeaking}
-                  agentName="Anna (Voice Agent)"
+                  agentName="Anna (GrowthOS Senior Advisor)"
                   samplingRate="24,000 Hz PCM16"
                   modelName="universal-3-5-pro + Claude 3.5"
                   theme={theme}
+                  visualMode={audioVisualizerType as VisualizerMode}
+                  onSelectVisualMode={(mode) => setAudioVisualizerType(mode)}
                 />
               ) : (
                 <AudioWaveform

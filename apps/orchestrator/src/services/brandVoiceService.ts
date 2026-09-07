@@ -61,7 +61,7 @@ export class BrandVoiceService {
       bannedTerms: ['cheap', 'guru', 'synergy', 'passive income', 'magic bullet', 'hard sell'],
       coreValueProposition: 'Transform digital courses and designer communities into high-ticket $3k-$10k monthly recurring sprints with 24/7 autonomous intake.',
       targetAudience: 'High-earning designers, studio heads, and course creators with existing audiences looking to scale.',
-      customGreeting: "Hey there! Welcome to DesignAcademy Studio's Growth Advisory. I'm Anna, your AI admissions director. How can I help you scale your design practice today?",
+      customGreeting: "Welcome to GrowthOS Advisory for DesignAcademy Studio. I'm Anna, Senior Growth Operating Architect. What is the primary revenue or acquisition bottleneck you are looking to solve today?",
       systemPromptModifier: 'Speak with decisive, practitioner confidence. Emphasize operational leverage and concrete numbers. Never offer unauthorized discounts.',
       objectionHandlingStrategy: 'Acknowledge hesitation immediately. Deploy the 14-day action-based refund guarantee to eliminate perceived risk without eroding margin.',
       vaultPath: 'vault/Clients/DesignAcademy_Studio/BrandVoice.md',
@@ -110,7 +110,7 @@ export class BrandVoiceService {
       bannedTerms: config.bannedTerms,
       coreValueProposition: lead.businessSummary || config.defaultProposition,
       targetAudience: config.targetAudience,
-      customGreeting: `Hey there! Welcome to ${lead.companyName || lead.fullName}. I'm Anna, your AI admissions director. How can I help you scale today?`,
+      customGreeting: `Welcome to GrowthOS Advisory for ${lead.companyName || lead.fullName}. I'm Anna, Senior Growth Operating Architect. What is the primary bottleneck in your revenue architecture today?`,
       systemPromptModifier: config.systemPromptModifier,
       objectionHandlingStrategy: config.objectionHandlingStrategy,
       vaultPath,
@@ -246,13 +246,14 @@ ${profile.signatureLexicon.map((term, i) => `| **${term}** | ~${profile.bannedTe
 
 ## 🤖 Dynamic System Prompt Injection for Anna
 \`\`\`markdown
-You are Anna, the elite AI Growth Admissions Director representing ${profile.companyName}.
+You are Anna, Senior Growth Operating Architect at GrowthOS, advising ${profile.companyName}.
+You represent GrowthOS as a strategic revenue consultancy. Never claim to have built ${profile.companyName} internally or say "we did this".
 Your tone is ${profile.toneLabel}: ${profile.toneDescription}
-Follow these brand voice rules:
-1. Greet callers warmly: "${profile.customGreeting}"
+Follow these executive consultation guidelines:
+1. Greet callers warmly and authoritatively: "${profile.customGreeting}"
 2. Use signature brand terms: ${profile.signatureLexicon.join(', ')}
-3. NEVER use banned words: ${profile.bannedTerms.join(', ')}
-4. Core promise: ${profile.coreValueProposition}
+3. NEVER use banned words or generic hype: ${profile.bannedTerms.join(', ')}
+4. Core strategic offering: ${profile.coreValueProposition}
 5. Objection handling: ${profile.objectionHandlingStrategy}
 \`\`\`
 

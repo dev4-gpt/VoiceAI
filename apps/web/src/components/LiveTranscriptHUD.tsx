@@ -64,7 +64,7 @@ export const LiveTranscriptHUD: React.FC<LiveTranscriptHUDProps> = ({
 **Client / Brand:** ${company}  
 **Tone Archetype:** ${activeBrandVoice?.toneLabel || 'Tactical Operator'}  
 **Date Generated:** ${now.toLocaleDateString()} at ${now.toLocaleTimeString()}  
-**AI Admissions Director:** Anna (GrowthVoice OS Inbound Specialist)  
+**Lead Growth Operating Architect:** Anna (GrowthOS Senior Advisor)  
 
 ---
 
