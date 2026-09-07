@@ -22,6 +22,23 @@ export const VOICE_AGENT_TOOLS: FlatToolDefinition[] = [
   },
   {
     type: 'function',
+    name: 'enrich_prospect_dossier',
+    description: 'Enrich a prospect with their business website, LinkedIn profile, company name, and bio summary.',
+    parameters: {
+      type: 'object',
+      properties: {
+        email: { type: 'string', description: "The prospect's email address" },
+        fullName: { type: 'string', description: "The prospect's name if known" },
+        website: { type: 'string', description: "The prospect's company or portfolio website URL" },
+        linkedIn: { type: 'string', description: "The prospect's LinkedIn profile URL" },
+        companyName: { type: 'string', description: "The prospect's company or community name" },
+        businessSummary: { type: 'string', description: "Brief overview of what they do and their audience or revenue" }
+      },
+      required: ['email']
+    }
+  },
+  {
+    type: 'function',
     name: 'qualify_lead',
     description: 'Record BANT qualification metrics (Budget, Authority, Need, Timeline) and compute fit score.',
     parameters: {

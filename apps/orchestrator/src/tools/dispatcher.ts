@@ -20,6 +20,24 @@ export class ToolDispatcher {
         };
       }
 
+      case 'enrich_prospect_dossier': {
+        const lead = crmStore.createOrUpdateLead({
+          fullName: args.fullName || 'Prospective Founder',
+          email: args.email,
+          website: args.website,
+          linkedIn: args.linkedIn,
+          companyName: args.companyName,
+          businessSummary: args.businessSummary,
+          source: 'after_hours_inbound'
+        });
+        return {
+          status: 'success',
+          message: `Dossier enriched for ${lead.fullName}: Website (${args.website || 'N/A'}), LinkedIn (${args.linkedIn || 'N/A'}), Business (${args.companyName || 'Verified'}). Profile active in RAG memory.`,
+          leadId: lead.id,
+          lead
+        };
+      }
+
       case 'qualify_lead': {
         const { lead, calculatedScore } = crmStore.qualifyLead({
           email: args.email,

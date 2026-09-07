@@ -57,6 +57,10 @@ class CRMStore {
     fullName: string;
     email: string;
     phone?: string;
+    website?: string;
+    linkedIn?: string;
+    companyName?: string;
+    businessSummary?: string;
     source: 'after_hours_inbound' | 'outbound_campaign' | 'web_callback';
   }): CRMLead {
     const existing = Array.from(this.leads.values()).find((l) => l.email.toLowerCase() === data.email.toLowerCase());
@@ -65,6 +69,10 @@ class CRMStore {
     if (existing) {
       existing.fullName = data.fullName || existing.fullName;
       existing.phone = data.phone || existing.phone;
+      existing.website = data.website || existing.website;
+      existing.linkedIn = data.linkedIn || existing.linkedIn;
+      existing.companyName = data.companyName || existing.companyName;
+      existing.businessSummary = data.businessSummary || existing.businessSummary;
       existing.source = data.source || existing.source;
       existing.updatedAt = now;
       existing.notes.push(`Updated via voice inbound on ${now}`);
@@ -77,6 +85,10 @@ class CRMStore {
       fullName: data.fullName,
       email: data.email,
       phone: data.phone,
+      website: data.website,
+      linkedIn: data.linkedIn,
+      companyName: data.companyName,
+      businessSummary: data.businessSummary,
       source: data.source,
       qualificationScore: 20,
       status: 'new',

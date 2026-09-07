@@ -106,6 +106,27 @@ export class ContentFactoryEngine {
           coreProblem: 'Creators spend endless hours answering repetitive pricing questions instead of producing content.',
           valueProposition: 'The GrowthVoice OS qualifies leads, books meetings, and handles objections 24/7.',
           offerClose: 'Join the Pro Mentorship today backed by our 14-day action-based guarantee.'
+        },
+        linkedInPost: {
+          hook: 'Most course creators lose 64% of potential high-ticket revenue between 8 PM and 2 AM.',
+          bodyMarkdown: 'High-ticket buyers don\'t hesitate because of your price tag.\n\nThey hesitate because of perceived execution risk. When someone asks "Will this work for me?", a 30% discount is the worst thing you can offer—it signals that your price was arbitrary.\n\nHere is how we structured the 14-Day Action Guarantee to close $42,000 without touching sales DMs:',
+          takeaways: [
+            'Shift risk from customer to system with milestone-based refunds',
+            'Capture after-hours momentum with sub-50ms voice qualification',
+            'Enforce hard deterministic guardrails on discounts'
+          ],
+          hashtags: ['#CreatorEconomy', '#VoiceAI', '#GrowthHacking', '#B2BSales', '#EdTech']
+        },
+        instagramCaption: {
+          hook: 'Why discounting your high-ticket course destroys client trust 📉',
+          caption: 'Stop dropping prices when prospects hesitate. Give them an action-based guarantee instead. Swipe through to see the exact 3-step reframe ➡️',
+          slideOutlines: [
+            'Slide 1: The Panic Discount Trap (Why 30% off kills perceived value)',
+            'Slide 2: The Risk-Reversal Blueprint (Action-based 14-day guarantee)',
+            'Slide 3: Real-Time Voice Admissions (How AI books calls at 11 PM)',
+            'Slide 4: The 4.2x Completion Multiplier',
+            'Slide 5: Comment "GROWTH" to get the full audio teardown'
+          ]
         }
       },
       verificationScore: 98,
@@ -299,6 +320,26 @@ export class ContentFactoryEngine {
             coreProblem: 'Creators lose 60% of after-hours leads because no one is there to answer objections in real-time.',
             valueProposition: 'Our Autonomous Growth Operator qualifies leads and handles objections 24/7.',
             offerClose: 'Enroll today backed by our 14-day action-based guarantee.'
+          },
+          linkedInPost: {
+            hook: `How top digital educators overcome objections on "${job.topic}" without lowering prices:`,
+            bodyMarkdown: `Every high-ticket sales conversation eventually reaches an inflection point.\n\nProspects want proof that they won't waste their investment. If you immediately offer a discount, you confirm their suspicion that your price was inflated.\n\nInstead, use milestone-based risk reversal.`,
+            takeaways: [
+              'Discounts attract high-maintenance clients',
+              'Action-based guarantees shift the risk to you',
+              'Fast spoken response beats 24-hour email replies'
+            ],
+            hashtags: ['#OnlineEducation', '#SalesStrategy', '#VoiceAI', '#CoachingBusiness']
+          },
+          instagramCaption: {
+            hook: `The #1 reason creators lose high-ticket clients on "${job.topic}" 🛑`,
+            caption: 'It\'s not your price. It\'s the lack of an immediate, confident answer when hesitation strikes. Swipe through for the 3-step objection reframe 📲',
+            slideOutlines: [
+              'Slide 1: Why prospects ghost your DMs',
+              'Slide 2: The power of instant voice response',
+              'Slide 3: Replacing discounts with risk-reversal',
+              'Slide 4: Drop a comment with "OPERATOR" for our live setup checklist'
+            ]
           }
         };
       }

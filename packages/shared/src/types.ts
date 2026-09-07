@@ -161,6 +161,17 @@ export interface GeneratedContentPack {
     valueProposition: string;
     offerClose: string;
   };
+  linkedInPost?: {
+    hook: string;
+    bodyMarkdown: string;
+    takeaways: string[];
+    hashtags: string[];
+  };
+  instagramCaption?: {
+    hook: string;
+    caption: string;
+    slideOutlines: string[];
+  };
 }
 
 export interface ContentFactoryJob {
@@ -201,6 +212,10 @@ export interface CRMLead {
   fullName: string;
   email: string;
   phone?: string;
+  website?: string;
+  linkedIn?: string;
+  companyName?: string;
+  businessSummary?: string;
   source: 'after_hours_inbound' | 'outbound_campaign' | 'web_callback';
   budgetRange?: string;
   coreNeed?: string;
