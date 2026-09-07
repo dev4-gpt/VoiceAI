@@ -46,6 +46,7 @@ interface KnowledgeGraph3DProps {
   }>;
   selectedNodeId?: string | null;
   onSelectNode?: (node: any) => void;
+  theme?: 'glass' | 'cyber';
 }
 
 const TYPE_COLORS: Record<string, string> = {
@@ -63,8 +64,10 @@ export const KnowledgeGraph3D: React.FC<KnowledgeGraph3DProps> = ({
   nodes,
   edges,
   selectedNodeId,
-  onSelectNode
+  onSelectNode,
+  theme = 'glass'
 }) => {
+  const isGlass = theme === 'glass';
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
@@ -207,8 +210,8 @@ export const KnowledgeGraph3D: React.FC<KnowledgeGraph3DProps> = ({
           ctx.moveTo(p1.px, p1.py);
           ctx.lineTo(p2.px, p2.py);
           ctx.strokeStyle = isHighlighted
-            ? 'rgba(6, 182, 212, 0.85)'
-            : `rgba(148, 163, 184, ${edgeAlpha})`;
+            ? (isGlass ? 'rgba(2, 132, 199, 0.9)' : 'rgba(6, 182, 212, 0.85)')
+            : (isGlass ? `rgba(148, 163, 184, ${edgeAlpha * 0.75})` : `rgba(148, 163, 184, ${edgeAlpha})`);
           ctx.lineWidth = isHighlighted ? 2.5 : 1.0;
           ctx.stroke();
 
@@ -240,24 +243,55 @@ export const KnowledgeGraph3D: React.FC<KnowledgeGraph3DProps> = ({
           ctx.fill();
         }
 
-        // Main Node Sphere
+        // Pristine Colored Glass Marble Rendering
+        const marbleGrad = ctx.createRadialGradient(
+          p.px - nodeRadius * 0.35,
+          p.py - nodeRadius * 0.35,
+          nodeRadius * 0.1,
+          p.px,
+          p.py,
+          nodeRadius
+        );
+
+        if (isGlass) {
+          marbleGrad.addColorStop(0, '#ffffff'); // Specular highlight
+          marbleGrad.addColorStop(0.3, p.node.color); // Colored translucent core
+          marbleGrad.addColorStop(0.85, p.node.color);
+          marbleGrad.addColorStop(1, 'rgba(15, 23, 42, 0.35)'); // Refractive rim shadow
+        } else {
+          marbleGrad.addColorStop(0, '#ffffff');
+          marbleGrad.addColorStop(0.3, p.node.color);
+          marbleGrad.addColorStop(1, p.node.color);
+        }
+
         ctx.beginPath();
         ctx.arc(p.px, p.py, nodeRadius, 0, Math.PI * 2);
-        ctx.fillStyle = p.node.color;
+        ctx.fillStyle = marbleGrad;
         ctx.globalAlpha = p.alpha;
         ctx.fill();
 
-        // White border ring
-        ctx.strokeStyle = isSelected ? '#ffffff' : 'rgba(255, 255, 255, 0.6)';
-        ctx.lineWidth = isSelected ? 2 : 1;
+        // Crisp white glass rim
+        ctx.strokeStyle = isSelected
+          ? (isGlass ? '#0284c7' : '#38bdf8')
+          : (isGlass ? 'rgba(255, 255, 255, 0.95)' : 'rgba(255, 255, 255, 0.6)');
+        ctx.lineWidth = isSelected ? 2.5 : 1.2;
         ctx.stroke();
+
+        // Secondary specular dot
+        ctx.beginPath();
+        ctx.arc(p.px - nodeRadius * 0.3, p.py - nodeRadius * 0.3, Math.max(1.2, nodeRadius * 0.22), 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+        ctx.fill();
+
         ctx.globalAlpha = 1.0;
 
-        // Label for closer or highlighted nodes
+        // High-contrast label for closer or highlighted nodes
         if (p.scale > 0.75 || isSelected || isHovered) {
-          ctx.font = `${Math.max(10, Math.min(12, 10 * p.scale))}px Inter, monospace`;
-          ctx.fillStyle = isSelected ? '#ffffff' : '#cbd5e1';
-          ctx.fillText(p.node.label, p.px + nodeRadius + 4, p.py + 4);
+          ctx.font = `${Math.max(10, Math.min(12, 10 * p.scale))}px Inter, sans-serif`;
+          ctx.fillStyle = isGlass
+            ? (isSelected ? '#0f172a' : '#334155')
+            : (isSelected ? '#ffffff' : '#cbd5e1');
+          ctx.fillText(p.node.label, p.px + nodeRadius + 5, p.py + 4);
         }
       }
 
@@ -350,22 +384,28 @@ export const KnowledgeGraph3D: React.FC<KnowledgeGraph3DProps> = ({
   return (
     <div
       ref={containerRef}
-      className="relative w-full h-[520px] rounded-2xl bg-gradient-to-b from-slate-950 via-slate-900/90 to-slate-950 border border-indigo-500/20 shadow-2xl overflow-hidden backdrop-blur-2xl flex flex-col"
+      className={`relative w-full h-[520px] rounded-2xl overflow-hidden backdrop-blur-2xl flex flex-col transition-all border ${
+        isGlass
+          ? "bg-white/65 border-white/85 shadow-[0_12px_40px_rgba(31,38,135,0.06)] text-slate-800"
+          : "bg-gradient-to-b from-slate-950 via-slate-900/90 to-slate-950 border-indigo-500/20 shadow-2xl text-slate-100"
+      }`}
     >
       {/* Top 3D Control Bar */}
-      <div className="relative z-10 flex flex-wrap items-center justify-between gap-2 p-4 border-b border-slate-800/80 bg-slate-950/70 backdrop-blur-md">
+      <div className={`relative z-10 flex flex-wrap items-center justify-between gap-2 p-4 border-b backdrop-blur-md ${
+        isGlass ? "border-slate-200/70 bg-white/70" : "border-slate-800/80 bg-slate-950/70"
+      }`}>
         <div className="flex items-center space-x-2.5">
           <span className="p-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/30 text-indigo-400">
             <Sparkles className="w-4 h-4" />
           </span>
           <div>
             <div className="flex items-center space-x-2">
-              <h3 className="text-sm font-semibold text-white">Interactive 3D Spatial Knowledge Cloud</h3>
+              <h3 className={`text-sm font-semibold ${isGlass ? "text-slate-900" : "text-white"}`}>Interactive 3D Spatial Knowledge Cloud</h3>
               <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-[10px] font-mono font-bold">
                 ORBIT • ZOOM • SCROLL DEPTH
               </span>
             </div>
-            <p className="text-[11px] text-slate-400">
+            <p className={`text-[11px] ${isGlass ? "text-slate-500" : "text-slate-400"}`}>
               Drag to orbit 360° in 3D • Scroll to zoom along the Z-axis • Click any node to anchor inspector
             </p>
           </div>
@@ -374,7 +414,9 @@ export const KnowledgeGraph3D: React.FC<KnowledgeGraph3DProps> = ({
         {/* Action buttons */}
         <div className="flex items-center space-x-2">
           {/* Depth Scrubbing Slider (Cindy Zhu 5k Scroll Depth Model) */}
-          <div className="hidden sm:flex items-center space-x-2 px-3 py-1 rounded-lg bg-slate-900 border border-slate-800 text-[11px] font-mono text-slate-300">
+          <div className={`hidden sm:flex items-center space-x-2 px-3 py-1 rounded-lg text-[11px] font-mono ${
+            isGlass ? "bg-slate-100 border-slate-200 text-slate-700" : "bg-slate-900 border-slate-800 text-slate-300"
+          }`}>
             <span>Z-Depth:</span>
             <input
               type="range"
@@ -441,7 +483,9 @@ export const KnowledgeGraph3D: React.FC<KnowledgeGraph3DProps> = ({
         />
 
         {/* Legend Overlay */}
-        <div className="absolute bottom-3 left-3 flex flex-wrap gap-2 p-2 rounded-xl bg-slate-950/80 border border-slate-800/80 backdrop-blur-md text-[10px] font-mono text-slate-300 pointer-events-none">
+        <div className={`absolute bottom-3 left-3 flex flex-wrap gap-2 p-2 rounded-xl backdrop-blur-md text-[10px] font-mono pointer-events-none border ${
+          isGlass ? "bg-white/80 border-slate-200/80 text-slate-700 shadow-sm" : "bg-slate-950/80 border-slate-800/80 text-slate-300"
+        }`}>
           {Object.entries(TYPE_COLORS)
             .filter(([k]) => k !== 'default')
             .map(([type, color]) => (

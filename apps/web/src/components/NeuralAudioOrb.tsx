@@ -8,6 +8,7 @@ interface NeuralAudioOrbProps {
   agentName?: string;
   samplingRate?: string;
   modelName?: string;
+  theme?: 'glass' | 'cyber';
 }
 
 export const NeuralAudioOrb: React.FC<NeuralAudioOrbProps> = ({
@@ -16,17 +17,18 @@ export const NeuralAudioOrb: React.FC<NeuralAudioOrbProps> = ({
   isUserSpeaking,
   agentName = 'Anna (Voice Agent)',
   samplingRate = '24,000 Hz PCM16',
-  modelName = 'universal-3-5-pro + Claude 3.5'
+  modelName = 'universal-3-5-pro + Claude 3.5',
+  theme = 'glass'
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const gl = canvas.getContext('webgl');
+    const gl = canvas.getContext('webgl', { alpha: true, premultipliedAlpha: false });
     if (!gl) return;
 
-    // Vertex shader for a screen-filling quad
+    // Vertex shader for full canvas quad
     const vsSource = `
       attribute vec2 aPosition;
       varying vec2 vUv;
@@ -36,84 +38,104 @@ export const NeuralAudioOrb: React.FC<NeuralAudioOrbProps> = ({
       }
     `;
 
-    // High-fidelity Raymarched volumetric pulsating energy sphere fragment shader
+    // Liquid Glass / Refractive Water Droplet Shaders
     const fsSource = `
       precision mediump float;
       varying vec2 vUv;
       uniform float uTime;
-      uniform float uState; // 0=idle, 1=user speaking, 2=agent speaking, 3=thinking
+      uniform float uState; // 0=idle, 1=user speaking, 2=agent speaking
       uniform float uIntensity;
       uniform vec2 uResolution;
-
-      float hash(vec2 p) {
-        return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453123);
-      }
+      uniform float uTheme; // 0=glass, 1=cyber
 
       float sdSphere(vec3 p, float s) {
-        float disp = sin(4.0 * p.x + uTime * 2.5) * sin(4.0 * p.y + uTime * 2.0) * sin(4.0 * p.z + uTime * 3.0) * (0.07 + uIntensity * 0.12);
+        float disp = sin(3.5 * p.x + uTime * 2.2) * sin(3.5 * p.y + uTime * 1.8) * sin(3.5 * p.z + uTime * 2.6) * (0.05 + uIntensity * 0.14);
         return length(p) - (s + disp);
       }
 
       void main() {
         vec2 uv = (gl_FragCoord.xy - 0.5 * uResolution.xy) / min(uResolution.x, uResolution.y);
-        
-        vec3 ro = vec3(0.0, 0.0, 2.3);
+        vec3 ro = vec3(0.0, 0.0, 2.2);
         vec3 rd = normalize(vec3(uv, -1.0));
 
-        vec3 coreColor;
-        vec3 auraColor;
+        vec3 glassCore;
+        vec3 glassAura;
 
-        if (uState > 1.8) {
-          // Agent speaking: vibrant emerald + cyber cyan
-          coreColor = vec3(0.06, 0.95, 0.65);
-          auraColor = vec3(0.1, 0.6, 0.9);
-        } else if (uState > 0.8) {
-          // User speaking: electric neon blue + cyan
-          coreColor = vec3(0.05, 0.75, 1.0);
-          auraColor = vec3(0.35, 0.2, 0.95);
+        if (uTheme < 0.5) {
+          // 💎 LUCID GLASS THEME: Translucent water droplet / iridescent quartz
+          if (uState > 1.8) {
+            // Speaking: Vibrant seafoam / emerald refraction
+            glassCore = vec3(0.12, 0.78, 0.65);
+            glassAura = vec3(0.38, 0.72, 0.95);
+          } else if (uState > 0.8) {
+            // User speaking: Icy royal azure
+            glassCore = vec3(0.15, 0.55, 0.95);
+            glassAura = vec3(0.55, 0.45, 0.95);
+          } else {
+            // Idle / Standby: Soft crystalline lavender & sky tint
+            glassCore = vec3(0.48, 0.45, 0.88);
+            glassAura = vec3(0.32, 0.68, 0.92);
+          }
         } else {
-          // Standby / idle: deep luminous violet + indigo
-          coreColor = vec3(0.45, 0.25, 0.85);
-          auraColor = vec3(0.12, 0.35, 0.75);
+          // 🌑 OBSIDIAN CYBER THEME
+          if (uState > 1.8) {
+            glassCore = vec3(0.06, 0.95, 0.65);
+            glassAura = vec3(0.1, 0.6, 0.9);
+          } else if (uState > 0.8) {
+            glassCore = vec3(0.05, 0.75, 1.0);
+            glassAura = vec3(0.35, 0.2, 0.95);
+          } else {
+            glassCore = vec3(0.45, 0.25, 0.85);
+            glassAura = vec3(0.12, 0.35, 0.75);
+          }
         }
 
         float t = 0.0;
         float d = 0.0;
         float glow = 0.0;
 
-        for (int i = 0; i < 48; i++) {
+        for (int i = 0; i < 46; i++) {
           vec3 p = ro + rd * t;
-          d = sdSphere(p, 0.62);
-          glow += 0.016 / (0.05 + abs(d));
-          if (d < 0.01 || t > 4.0) break;
+          d = sdSphere(p, 0.65);
+          glow += 0.015 / (0.04 + abs(d));
+          if (d < 0.01 || t > 3.8) break;
           t += max(d * 0.65, 0.02);
         }
 
-        vec3 col = vec3(0.0);
-        if (d < 0.03) {
+        vec4 finalColor = vec4(0.0);
+
+        if (d < 0.04) {
           vec3 p = ro + rd * t;
-          float fresnel = pow(1.0 - max(dot(-rd, normalize(p)), 0.0), 2.5);
-          col = mix(coreColor, auraColor, fresnel * 0.8);
-          col += vec3(0.8, 1.0, 0.9) * pow(fresnel, 4.0);
+          vec3 norm = normalize(p);
+          float fresnel = pow(1.0 - max(dot(-rd, norm), 0.0), 2.2);
+
+          if (uTheme < 0.5) {
+            // Glassmorphism refraction: high specular rim and translucent center
+            vec3 refColor = mix(glassCore, glassAura, fresnel);
+            refColor += vec3(0.95, 0.98, 1.0) * pow(fresnel, 3.5); // Pristine white rim reflection
+            finalColor = vec4(refColor, 0.82 + fresnel * 0.18);
+          } else {
+            vec3 col = mix(glassCore, glassAura, fresnel * 0.8);
+            col += vec3(0.8, 1.0, 0.9) * pow(fresnel, 4.0);
+            finalColor = vec4(col, 0.9);
+          }
         }
 
-        col += auraColor * glow * (0.16 + uIntensity * 0.25);
-        col += coreColor * pow(glow * 0.08, 1.4);
+        // Soft outer ambient halo
+        float haloAlpha = clamp(glow * (uTheme < 0.5 ? 0.08 : 0.18), 0.0, 0.85);
+        finalColor += vec4(glassAura * glow * 0.12, haloAlpha);
 
-        float vignette = 1.0 - length(uv) * 0.65;
-        col *= clamp(vignette, 0.0, 1.0);
-
-        gl_FragColor = vec4(col, 1.0);
+        gl_FragColor = finalColor;
       }
     `;
 
-    const createShader = (type: number, source: string) => {
+    const createShader = (type: number, src: string) => {
       const shader = gl.createShader(type);
       if (!shader) return null;
-      gl.shaderSource(shader, source);
+      gl.shaderSource(shader, src);
       gl.compileShader(shader);
       if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-        console.warn('[WebGL Shader Error]', gl.getShaderInfoLog(shader));
+        console.error('[Shader Error]', gl.getShaderInfoLog(shader));
         gl.deleteShader(shader);
         return null;
       }
@@ -124,66 +146,80 @@ export const NeuralAudioOrb: React.FC<NeuralAudioOrbProps> = ({
     const fs = createShader(gl.FRAGMENT_SHADER, fsSource);
     if (!vs || !fs) return;
 
-    const program = gl.createProgram();
-    if (!program) return;
-    gl.attachShader(program, vs);
-    gl.attachShader(program, fs);
-    gl.linkProgram(program);
+    const prog = gl.createProgram();
+    if (!prog) return;
+    gl.attachShader(prog, vs);
+    gl.attachShader(prog, fs);
+    gl.linkProgram(prog);
 
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-      console.warn('[WebGL Link Error]', gl.getProgramInfoLog(program));
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+      console.error('[Program Link Error]', gl.getProgramInfoLog(prog));
       return;
     }
 
-    const posBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ARRAY_BUFFER, posBuffer);
+    gl.useProgram(prog);
+
+    const quadBuffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, quadBuffer);
     gl.bufferData(
       gl.ARRAY_BUFFER,
-      new Float32Array([
-        -1.0, -1.0,
-         1.0, -1.0,
-        -1.0,  1.0,
-        -1.0,  1.0,
-         1.0, -1.0,
-         1.0,  1.0,
-      ]),
+      new Float32Array([-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1]),
       gl.STATIC_DRAW
     );
 
-    const aPositionLoc = gl.getAttribLocation(program, 'aPosition');
-    const uTimeLoc = gl.getUniformLocation(program, 'uTime');
-    const uStateLoc = gl.getUniformLocation(program, 'uState');
-    const uIntensityLoc = gl.getUniformLocation(program, 'uIntensity');
-    const uResolutionLoc = gl.getUniformLocation(program, 'uResolution');
+    const aPos = gl.getAttribLocation(prog, 'aPosition');
+    gl.enableVertexAttribArray(aPos);
+    gl.vertexAttribPointer(aPos, 2, gl.FLOAT, false, 0, 0);
+
+    const uTimeLoc = gl.getUniformLocation(prog, 'uTime');
+    const uStateLoc = gl.getUniformLocation(prog, 'uState');
+    const uIntensityLoc = gl.getUniformLocation(prog, 'uIntensity');
+    const uResLoc = gl.getUniformLocation(prog, 'uResolution');
+    const uThemeLoc = gl.getUniformLocation(prog, 'uTheme');
+
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
     let animId: number;
-    const startTime = performance.now();
+    let startTime = performance.now();
+
+    const resize = () => {
+      if (!canvas) return;
+      const rect = canvas.getBoundingClientRect();
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = rect.width * dpr;
+      canvas.height = rect.height * dpr;
+      gl.viewport(0, 0, canvas.width, canvas.height);
+      gl.uniform2f(uResLoc, canvas.width, canvas.height);
+    };
+
+    resize();
+    window.addEventListener('resize', resize);
 
     const render = () => {
-      const currentTime = (performance.now() - startTime) * 0.001;
-      const width = canvas.clientWidth || 600;
-      const height = canvas.clientHeight || 220;
+      const now = performance.now();
+      const time = (now - startTime) * 0.001;
 
-      if (canvas.width !== width || canvas.height !== height) {
-        canvas.width = width;
-        canvas.height = height;
-        gl.viewport(0, 0, width, height);
+      let stateVal = 0.0;
+      let intensityVal = 0.15;
+
+      if (isAgentSpeaking) {
+        stateVal = 2.0;
+        intensityVal = 0.55 + Math.sin(time * 12.0) * 0.35;
+      } else if (isUserSpeaking) {
+        stateVal = 1.0;
+        intensityVal = 0.4 + Math.sin(time * 8.0) * 0.25;
+      } else if (isActive) {
+        intensityVal = 0.25 + Math.sin(time * 3.0) * 0.08;
       }
 
-      gl.useProgram(program);
-
-      gl.enableVertexAttribArray(aPositionLoc);
-      gl.bindBuffer(gl.ARRAY_BUFFER, posBuffer);
-      gl.vertexAttribPointer(aPositionLoc, 2, gl.FLOAT, false, 0, 0);
-
-      const stateVal = !isActive ? 0.0 : isAgentSpeaking ? 2.0 : isUserSpeaking ? 1.0 : 0.0;
-      const intensityVal = isAgentSpeaking ? 0.9 : isUserSpeaking ? 0.6 : 0.2;
-
-      gl.uniform1f(uTimeLoc, currentTime);
+      gl.uniform1f(uTimeLoc, time);
       gl.uniform1f(uStateLoc, stateVal);
       gl.uniform1f(uIntensityLoc, intensityVal);
-      gl.uniform2f(uResolutionLoc, canvas.width, canvas.height);
+      gl.uniform1f(uThemeLoc, theme === 'glass' ? 0.0 : 1.0);
 
+      gl.clearColor(0.0, 0.0, 0.0, 0.0);
+      gl.clear(gl.COLOR_BUFFER_BIT);
       gl.drawArrays(gl.TRIANGLES, 0, 6);
 
       animId = requestAnimationFrame(render);
@@ -192,77 +228,96 @@ export const NeuralAudioOrb: React.FC<NeuralAudioOrbProps> = ({
     render();
 
     return () => {
+      window.removeEventListener('resize', resize);
       cancelAnimationFrame(animId);
-      gl.deleteProgram(program);
+      gl.deleteProgram(prog);
       gl.deleteShader(vs);
       gl.deleteShader(fs);
-      gl.deleteBuffer(posBuffer);
+      gl.deleteBuffer(quadBuffer);
     };
-  }, [isActive, isAgentSpeaking, isUserSpeaking]);
+  }, [isActive, isAgentSpeaking, isUserSpeaking, theme]);
+
+  const isGlass = theme === 'glass';
 
   return (
-    <div className="relative w-full rounded-2xl bg-gradient-to-b from-slate-950/90 via-slate-900/80 to-slate-950/90 border border-cyan-500/20 shadow-[0_0_50px_rgba(6,182,212,0.12)] p-4 overflow-hidden backdrop-blur-2xl transition-all">
-      {/* Ambient background glow beam */}
-      <div className="absolute -top-20 -left-20 w-72 h-72 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-20 -right-20 w-72 h-72 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
-
-      {/* Top Telemetry Header */}
-      <div className="relative z-10 flex flex-wrap items-center justify-between gap-2 border-b border-slate-800/80 pb-3 mb-3">
+    <div
+      className={`relative w-full rounded-3xl overflow-hidden transition-all duration-300 ${
+        isGlass
+          ? 'bg-white/60 backdrop-blur-2xl border border-white/85 shadow-[0_12px_40px_rgba(31,38,135,0.06)]'
+          : 'bg-slate-950/80 border border-cyan-800/40 shadow-2xl'
+      }`}
+    >
+      {/* Top Telemetry Strip */}
+      <div
+        className={`flex items-center justify-between px-6 py-3.5 border-b ${
+          isGlass ? 'border-slate-200/60 bg-white/40' : 'border-cyan-900/40 bg-slate-900/60'
+        }`}
+      >
         <div className="flex items-center space-x-2.5">
-          <span className="relative flex h-3 w-3">
-            {isActive && (
-              <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
-                isAgentSpeaking ? 'bg-emerald-400' : isUserSpeaking ? 'bg-cyan-400' : 'bg-purple-400'
-              }`} />
-            )}
-            <span className={`relative inline-flex rounded-full h-3 w-3 ${
-              !isActive ? 'bg-slate-600' : isAgentSpeaking ? 'bg-emerald-500' : isUserSpeaking ? 'bg-cyan-500' : 'bg-purple-500'
-            }`} />
+          <span
+            className={`w-2.5 h-2.5 rounded-full ${
+              isAgentSpeaking
+                ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.8)] animate-pulse'
+                : isUserSpeaking
+                ? 'bg-sky-500 shadow-[0_0_10px_rgba(14,165,233,0.8)] animate-pulse'
+                : isActive
+                ? 'bg-indigo-500 animate-pulse'
+                : 'bg-slate-400'
+            }`}
+          />
+          <span className={`text-xs font-semibold ${isGlass ? 'text-slate-800' : 'text-slate-200'}`}>
+            {agentName}
           </span>
-          <span className="text-xs font-mono font-bold tracking-wider text-slate-200 uppercase">
-            {!isActive
-              ? 'Standby • Duplex Audio Engine Off'
-              : isAgentSpeaking
-              ? `${agentName} Speaking (Streaming TTS)`
-              : isUserSpeaking
-              ? 'Listening to Founder / Operator (VAD Active)'
-              : 'Full-Duplex Zero-Latency Standby (<50ms Abort)'}
+          <span
+            className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-semibold ${
+              isGlass
+                ? 'bg-sky-50 text-sky-700 border border-sky-200'
+                : 'bg-cyan-950 text-cyan-400 border border-cyan-800'
+            }`}
+          >
+            {isAgentSpeaking ? 'ANNA SPEAKING' : isUserSpeaking ? 'LISTENING (USER)' : 'READY • STANDBY'}
           </span>
         </div>
 
-        <div className="flex items-center space-x-3 text-[11px] font-mono text-slate-400">
-          <span className="hidden sm:inline-flex items-center space-x-1 px-2 py-0.5 rounded-full bg-slate-900 border border-slate-800 text-slate-300">
-            <Activity className="w-3 h-3 text-cyan-400" />
-            <span>{samplingRate}</span>
-          </span>
-          <span className="hidden md:inline-flex items-center space-x-1 px-2 py-0.5 rounded-full bg-slate-900 border border-slate-800 text-purple-300">
-            <Cpu className="w-3 h-3 text-purple-400" />
-            <span>{modelName}</span>
-          </span>
-          <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-bold flex items-center space-x-1">
-            <Sparkles className="w-3 h-3" />
-            <span>GPU SHADER (60 FPS)</span>
-          </span>
+        <div className="flex items-center space-x-3 text-[11px] font-mono">
+          <div className="flex items-center space-x-1">
+            <Activity className={`w-3.5 h-3.5 ${isGlass ? 'text-sky-600' : 'text-cyan-400'}`} />
+            <span className={isGlass ? 'text-slate-600' : 'text-slate-400'}>{samplingRate}</span>
+          </div>
+          <div className="hidden sm:flex items-center space-x-1">
+            <Cpu className={`w-3.5 h-3.5 ${isGlass ? 'text-purple-600' : 'text-purple-400'}`} />
+            <span className={isGlass ? 'text-slate-600' : 'text-slate-400'}>{modelName}</span>
+          </div>
         </div>
       </div>
 
-      {/* Main Visualizer Canvas */}
-      <div className="relative w-full h-44 sm:h-52 rounded-xl bg-slate-950/80 border border-slate-800/80 overflow-hidden flex items-center justify-center">
-        <canvas ref={canvasRef} className="w-full h-full object-cover" />
+      {/* Center 3D WebGL Liquid Glass Orb Canvas */}
+      <div className="relative w-full h-64 sm:h-72 flex items-center justify-center overflow-hidden">
+        <canvas ref={canvasRef} className="w-full h-full cursor-pointer" />
 
-        {/* Center overlay indicator badge */}
-        <div className="absolute bottom-3 left-3 flex items-center space-x-2 px-2.5 py-1 rounded-lg bg-slate-950/70 border border-slate-800 backdrop-blur-md text-[10px] font-mono text-slate-300 pointer-events-none">
-          <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
-          <span>Raymarched Neural Spherical Mesh • Vercel-Grade WebGL</span>
+        {/* Floating Specular Ring Labels */}
+        <div className="absolute bottom-4 left-6 pointer-events-none flex items-center space-x-2">
+          <div
+            className={`px-3 py-1 rounded-xl text-[10px] font-mono font-medium backdrop-blur-md shadow-sm border ${
+              isGlass
+                ? 'bg-white/80 border-white/90 text-slate-700'
+                : 'bg-slate-900/80 border-cyan-900/50 text-cyan-300'
+            }`}
+          >
+            Liquid Quartz Engine • 60 FPS GPU
+          </div>
         </div>
 
-        {/* Dynamic Energy Rings HUD */}
-        <div className="absolute bottom-3 right-3 flex items-center space-x-2 text-[10px] font-mono text-slate-400 pointer-events-none">
-          <span>Turn Latency:</span>
-          <span className="text-emerald-400 font-bold">410ms TTFA</span>
-          <span>•</span>
-          <span>Interruption:</span>
-          <span className="text-cyan-400 font-bold">&lt;48ms</span>
+        <div className="absolute bottom-4 right-6 pointer-events-none flex items-center space-x-2">
+          <div
+            className={`px-3 py-1 rounded-xl text-[10px] font-mono font-medium backdrop-blur-md shadow-sm border ${
+              isGlass
+                ? 'bg-white/80 border-white/90 text-slate-700'
+                : 'bg-slate-900/80 border-emerald-900/50 text-emerald-300'
+            }`}
+          >
+            TTFA: 410ms • Latency &lt;48ms
+          </div>
         </div>
       </div>
     </div>

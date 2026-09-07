@@ -138,6 +138,8 @@ export const BUILT_IN_PRESETS: DossierPreset[] = [
 export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'console' | 'crm' | 'evals' | 'content' | 'graph'>('console');
   const [viewMode, setViewMode] = useState<'odyssey' | 'tactical'>('odyssey');
+  const [theme, setTheme] = useState<'glass' | 'cyber'>('glass');
+  const isGlass = theme === 'glass';
   const [isCalling, setIsCalling] = useState(false);
   const [isAgentSpeaking, setIsAgentSpeaking] = useState(false);
   const [isUserSpeaking, setIsUserSpeaking] = useState(false);
@@ -1189,19 +1191,23 @@ export const App: React.FC = () => {
   const renderConsoleContent = () => (
     <div className="space-y-6">
             {/* Explainer & Mental Model Banner */}
-            <div className="p-4.5 rounded-2xl bg-gradient-to-r from-blue-950/40 via-slate-900/60 to-purple-950/40 border border-blue-800/40 backdrop-blur-xl flex flex-col xl:flex-row xl:items-center justify-between gap-4 shadow-xl">
+            <div className={`p-4.5 rounded-2xl flex flex-col xl:flex-row xl:items-center justify-between gap-4 transition-all border backdrop-blur-xl ${
+              isGlass
+                ? "bg-white/65 border-white/85 shadow-[0_8px_30px_rgba(31,38,135,0.06)] text-slate-800"
+                : "bg-gradient-to-r from-blue-950/40 via-slate-900/60 to-purple-950/40 border-blue-800/40 shadow-xl text-slate-100"
+            }`}>
               <div className="flex items-start space-x-3.5 max-w-3xl">
                 <div className="p-2 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex-shrink-0 mt-0.5">
                   <Info className="w-4 h-4" />
                 </div>
                 <div className="space-y-1">
-                  <h4 className="text-xs font-bold text-slate-100 uppercase tracking-wider flex items-center space-x-2">
+                  <h4 className={`text-xs font-bold uppercase tracking-wider flex items-center space-x-2 ${isGlass ? "text-slate-900" : "text-slate-100"}`}>
                     <span>Live Roleplay & Simulator Architecture</span>
                     <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-950/80 text-cyan-400 border border-cyan-800/60 font-semibold normal-case">
                       Full-Duplex VAD
                     </span>
                   </h4>
-                  <p className="text-xs text-slate-300 leading-relaxed">
+                  <p className={`text-xs leading-relaxed ${isGlass ? "text-slate-600" : "text-slate-300"}`}>
                     In production, this voice widget lives on the <strong>Creator's website</strong>. When an after-hours <strong>Prospective Buyer</strong> speaks, <strong>Anna</strong> qualifies their BANT budget, books consultations, and saves the objection into the <strong>Persistent Knowledge Graph</strong> below.
                   </p>
                 </div>
@@ -1276,7 +1282,9 @@ export const App: React.FC = () => {
             </div>
 
             {/* Brand Voice Layer Selector Bar */}
-            <div className="p-3.5 rounded-xl bg-indigo-950/30 border border-indigo-800/40 backdrop-blur-sm space-y-2.5">
+            <div className={`p-3.5 rounded-xl space-y-2.5 backdrop-blur-sm transition-all border ${
+              isGlass ? "bg-white/65 border-white/85 shadow-sm text-slate-800" : "bg-indigo-950/30 border-indigo-800/40 text-slate-100"
+            }`}>
               <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
                 <div className="flex items-center space-x-2">
                   <Sparkles className="w-4 h-4 text-indigo-400" />
@@ -1477,6 +1485,7 @@ export const App: React.FC = () => {
                   agentName="Anna (Voice Agent)"
                   samplingRate="24,000 Hz PCM16"
                   modelName="universal-3-5-pro + Claude 3.5"
+                  theme={theme}
                 />
               ) : (
                 <AudioWaveform
@@ -1649,29 +1658,52 @@ export const App: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-[#05070f] text-slate-100 flex flex-col relative overflow-x-hidden">
+    <div
+      className={`min-h-screen flex flex-col relative overflow-x-hidden transition-colors duration-300 ${
+        isGlass ? 'bg-[#f8fafc] text-slate-800' : 'bg-[#05070f] text-slate-100'
+      }`}
+    >
       {/* Vercel-Grade Ambient GPU Background Shader Canvas */}
-      <AmbientVercelShader />
+      <AmbientVercelShader theme={theme} />
 
       {/* Top Navigation Bar */}
-      <header className="border-b border-slate-800/80 bg-slate-950/70 backdrop-blur-xl px-6 py-4 flex flex-wrap items-center justify-between gap-4 sticky top-0 z-50">
+      <header
+        className={`px-6 py-4 flex flex-wrap items-center justify-between gap-4 sticky top-0 z-50 transition-all border-b backdrop-blur-2xl ${
+          isGlass
+            ? 'bg-white/75 border-slate-200/80 text-slate-900 shadow-sm'
+            : 'bg-slate-950/70 border-slate-800/80 text-slate-100'
+        }`}
+      >
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-purple-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
             <Zap className="w-5 h-5 text-white" />
           </div>
           <div>
             <div className="flex items-center space-x-2">
-              <h1 className="text-lg font-bold tracking-tight text-white">GrowthVoice OS</h1>
+              <h1 className={`text-lg font-bold tracking-tight ${isGlass ? "text-slate-900" : "text-white"}`}>GrowthVoice OS</h1>
               <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-950/80 text-cyan-400 border border-cyan-800/60 font-semibold">
                 AssemblyAI Universal-3.5 Pro
               </span>
             </div>
-            <p className="text-xs text-slate-400">Autonomous AI Growth Operator for Creators & High-Ticket Programs</p>
+            <p className={`text-xs ${isGlass ? "text-slate-500" : "text-slate-400"}`}>Autonomous AI Growth Operator for Creators & High-Ticket Programs</p>
           </div>
         </div>
 
         {/* View Engine Switcher & Tab Navigation */}
         <div className="flex items-center space-x-2.5">
+          {/* Theme Switcher: 💎 Lucid Glass vs 🌑 Obsidian */}
+          <button
+            onClick={() => setTheme(theme === 'glass' ? 'cyber' : 'glass')}
+            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-mono font-semibold transition-all border ${
+              isGlass
+                ? 'bg-white/90 hover:bg-white border-slate-300 text-slate-800 shadow-sm'
+                : 'bg-cyan-950/60 hover:bg-cyan-900/60 border-cyan-800/60 text-cyan-300'
+            }`}
+            title="Toggle between Lucid Glass (Light) and Obsidian Cyber (Dark)"
+          >
+            <Sparkles className={`w-3.5 h-3.5 ${isGlass ? 'text-sky-600' : 'text-cyan-400'}`} />
+            <span>{isGlass ? '💎 Lucid Glass' : '🌑 Obsidian'}</span>
+          </button>
           {/* Odyssey Mode vs Tactical Console Switcher */}
           <div className="flex items-center space-x-1 bg-slate-900/90 p-1 rounded-2xl border border-cyan-800/60 shadow-inner">
             <button
@@ -1774,6 +1806,7 @@ export const App: React.FC = () => {
 
       {viewMode === 'odyssey' ? (
         <Spatial3DOdyssey
+          theme={theme}
           consoleContent={renderConsoleContent()}
           crmContent={
             <CrmKanban
