@@ -248,6 +248,21 @@ export const App: React.FC = () => {
 
   // Fetch initial CRM leads and connect to telemetry WS
   useEffect(() => {
+    // Check if local private profile exists on disk
+    fetch('/api/crm/local-profile')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.exists && data.profile) {
+          const lp = data.profile;
+          applyPreset(lp);
+          setCustomPresets((prev) => {
+            const filtered = prev.filter((p) => p.id !== lp.id);
+            return [lp, ...filtered];
+          });
+        }
+      })
+      .catch((err) => console.log('[API Local Profile]', err.message));
+
     fetch('/api/crm/leads')
       .then((res) => res.json())
       .then((data) => {

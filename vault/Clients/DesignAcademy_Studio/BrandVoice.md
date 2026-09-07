@@ -1,5 +1,5 @@
 ---
-id: "bv_1788748656746_tleh"
+id: "bv_1788748978127_w2xy"
 title: "DesignAcademy Studio — Brand Voice & Persona Matrix"
 type: "BrandVoice"
 clientId: "lead_jm_901"
@@ -10,7 +10,7 @@ toneLabel: "Enterprise Advisor"
 formality: 4
 energy: 3
 directness: 4
-updatedAt: "2026-09-07T02:37:36.746Z"
+updatedAt: "2026-09-07T02:42:58.128Z"
 tags:
   - brand-voice
   - revenue-os

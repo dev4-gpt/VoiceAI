@@ -43,4 +43,7 @@ vault/Leads/*
 !vault/Leads/lead_jason_miller.md
 !vault/Leads/.gitkeep
 
+# Private Local Profiles & Dossier Presets
+data/local_profile.json
+
 

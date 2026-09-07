@@ -1,9 +1,35 @@
 import { Router, Request, Response } from 'express';
+import * as fs from 'fs';
+import * as path from 'path';
 import { crmStore } from '../services/crmStore';
 import { toolDispatcher } from '../tools/dispatcher';
 import { websiteScraperService } from '../services/websiteScraperService';
 
 export const crmRouter = Router();
+
+crmRouter.get('/local-profile', (_req: Request, res: Response) => {
+  const profilePath = path.resolve(process.cwd(), 'data', 'local_profile.json');
+  if (fs.existsSync(profilePath)) {
+    try {
+      const data = JSON.parse(fs.readFileSync(profilePath, 'utf-8'));
+      return res.json({ exists: true, profile: data });
+    } catch {
+      return res.json({ exists: false });
+    }
+  }
+  return res.json({ exists: false });
+});
+
+crmRouter.post('/local-profile', (req: Request, res: Response) => {
+  const profilePath = path.resolve(process.cwd(), 'data', 'local_profile.json');
+  try {
+    fs.mkdirSync(path.dirname(profilePath), { recursive: true });
+    fs.writeFileSync(profilePath, JSON.stringify(req.body, null, 2), 'utf-8');
+    return res.json({ success: true });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message });
+  }
+});
 
 crmRouter.get('/leads', (_req: Request, res: Response) => {
   res.json({ leads: crmStore.getLeads() });
