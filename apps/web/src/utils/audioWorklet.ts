@@ -9,6 +9,7 @@ export class AudioPipeline {
   private sourceNode: MediaStreamAudioSourceNode | null = null;
   private isRecording: boolean = false;
   private scheduledTime: number = 0;
+  private playbackSources: AudioBufferSourceNode[] = [];
 
   constructor(private onAudioChunk: (base64Pcm16: string) => void) {}
 
@@ -115,6 +116,11 @@ export class AudioPipeline {
       source.buffer = buffer;
       source.connect(this.audioCtx.destination);
 
+      source.onended = () => {
+        this.playbackSources = this.playbackSources.filter((s) => s !== source);
+      };
+      this.playbackSources.push(source);
+
       const currentTime = this.audioCtx.currentTime;
       if (this.scheduledTime < currentTime) {
         this.scheduledTime = currentTime;
@@ -132,7 +138,13 @@ export class AudioPipeline {
     if (this.audioCtx) {
       this.scheduledTime = this.audioCtx.currentTime;
     }
-    this.playbackQueue = [];
+    this.playbackSources.forEach((src) => {
+      try {
+        src.stop();
+        src.disconnect();
+      } catch (_) {}
+    });
+    this.playbackSources = [];
     console.log('[AudioPipeline] Playback buffer aborted due to user barge-in.');
   }
 

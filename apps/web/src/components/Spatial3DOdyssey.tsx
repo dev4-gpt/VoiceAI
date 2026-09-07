@@ -74,6 +74,7 @@ interface Spatial3DOdysseyProps {
   graphContent: React.ReactNode;
   onExitOdyssey?: () => void;
   theme?: 'glass' | 'cyber';
+  requestedZ?: number | null;
 }
 
 export const Spatial3DOdyssey: React.FC<Spatial3DOdysseyProps> = ({
@@ -83,13 +84,21 @@ export const Spatial3DOdyssey: React.FC<Spatial3DOdysseyProps> = ({
   evalsContent,
   graphContent,
   onExitOdyssey,
-  theme = 'glass'
+  theme = 'glass',
+  requestedZ = null
 }) => {
   // Current camera Z position in CSS pixels (0 to 7200)
   const [currentZ, setCurrentZ] = useState(0);
   const targetZRef = useRef(0);
   const animFrameRef = useRef<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Programmatic camera warp (e.g. from 60s Judge Auto-Pilot Tour)
+  useEffect(() => {
+    if (typeof requestedZ === 'number' && !isNaN(requestedZ)) {
+      targetZRef.current = Math.max(0, Math.min(7200, requestedZ));
+    }
+  }, [requestedZ]);
 
   // Mouse tilt / parallax state
   const [mouseTilt, setMouseTilt] = useState({ x: 0, y: 0 });

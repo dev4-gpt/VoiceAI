@@ -140,4 +140,6 @@ export async function runEvalSuite(k: number = 5): Promise<EvalSuiteReport> {
   };
 }
 
-runEvalSuite(5).catch(console.error);
+if (import.meta.url === `file://${process.argv[1]}`) {
+  runEvalSuite(5).catch(console.error);
+}
