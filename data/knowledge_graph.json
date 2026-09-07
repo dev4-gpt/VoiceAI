@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-09-06T23:28:24.119Z",
+  "updatedAt": "2026-09-07T02:04:06.532Z",
   "nodes": [
     {
       "id": "offer_pro_mentorship",
@@ -212,6 +212,51 @@
         "healedSuccessfully": true,
         "reasoningEngine": "DeepSeek-R1",
         "summary": "Autonomous prompt mutation tightened redundant adjectives down to 234 chars."
+      }
+    },
+    {
+      "id": "lead_jm_901",
+      "type": "Lead",
+      "label": "Jason Miller (DesignAcademy Studio)",
+      "properties": {
+        "email": "jason.m@designacademy.io",
+        "phone": "+1 (555) 438-9201",
+        "website": "https://designacademy.io",
+        "companyName": "DesignAcademy Studio",
+        "budgetRange": "5k_to_15k",
+        "qualificationScore": 85,
+        "status": "inbound_qualified",
+        "vaultPath": "vault/Clients/DesignAcademy_Studio/Dossier.md"
+      }
+    },
+    {
+      "id": "lead_1788746625990_3308i",
+      "type": "Lead",
+      "label": "Alex Rivera (Solopreneur OS)",
+      "properties": {
+        "email": "founder@solopreneur-os.io",
+        "phone": "+1-555-987-6543",
+        "website": "https://solopreneur-os.io",
+        "companyName": "Solopreneur OS",
+        "budgetRange": "unspecified",
+        "qualificationScore": 20,
+        "status": "new",
+        "vaultPath": "vault/Clients/Solopreneur_OS/Dossier.md"
+      }
+    },
+    {
+      "id": "lead_1788746646363_quhdf",
+      "type": "Lead",
+      "label": "Elena Rostova (NeuralCinema AI)",
+      "properties": {
+        "email": "elena@neuralcinema.ai",
+        "phone": "N/A",
+        "website": "https://neuralcinema.ai",
+        "companyName": "NeuralCinema AI",
+        "budgetRange": "unspecified",
+        "qualificationScore": 20,
+        "status": "new",
+        "vaultPath": "vault/Clients/NeuralCinema_AI/Dossier.md"
       }
     }
   ],

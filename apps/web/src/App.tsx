@@ -40,6 +40,7 @@ export const App: React.FC = () => {
   const [isAgentSpeaking, setIsAgentSpeaking] = useState(false);
   const [isUserSpeaking, setIsUserSpeaking] = useState(false);
   const [selectedScenario, setSelectedScenario] = useState<OperatingPersona>('inbound');
+  const [isSendingMessage, setIsSendingMessage] = useState(false);
 
   // Prospect Enrichment Modal State
   const [isEnrichModalOpen, setIsEnrichModalOpen] = useState(false);
@@ -282,25 +283,111 @@ export const App: React.FC = () => {
 
           if (msg.type === 'transcript.user') {
             setIsUserSpeaking(false);
-            setMessages((prev) => [
-              ...prev,
-              {
-                id: `u_${Date.now()}`,
-                speaker: 'user',
-                text: msg.transcript,
-                timestamp: new Date().toLocaleTimeString()
-              }
-            ]);
+            const userText = msg.text || msg.transcript || msg.delta || msg.content || '';
+            if (userText) {
+              setMessages((prev) => {
+                const last = prev[prev.length - 1];
+                if (last && last.speaker === 'user' && last.isPartial) {
+                  const updated = [...prev];
+                  updated[updated.length - 1] = {
+                    ...last,
+                    text: userText,
+                    isPartial: false
+                  };
+                  return updated;
+                }
+                return [
+                  ...prev,
+                  {
+                    id: `u_${Date.now()}`,
+                    speaker: 'user',
+                    text: userText,
+                    isPartial: false,
+                    timestamp: new Date().toLocaleTimeString()
+                  }
+                ];
+              });
+            }
+          } else if (msg.type === 'transcript.user.delta') {
+            const deltaText = msg.delta || msg.text || '';
+            if (deltaText) {
+              setMessages((prev) => {
+                const last = prev[prev.length - 1];
+                if (last && last.speaker === 'user' && last.isPartial) {
+                  const updated = [...prev];
+                  updated[updated.length - 1] = {
+                    ...last,
+                    text: last.text + deltaText
+                  };
+                  return updated;
+                }
+                return [
+                  ...prev,
+                  {
+                    id: `u_${Date.now()}`,
+                    speaker: 'user',
+                    text: deltaText,
+                    isPartial: true,
+                    timestamp: new Date().toLocaleTimeString()
+                  }
+                ];
+              });
+            }
           } else if (msg.type === 'transcript.agent') {
-            setMessages((prev) => [
-              ...prev,
-              {
-                id: `a_${Date.now()}`,
-                speaker: 'agent',
-                text: msg.transcript,
-                timestamp: new Date().toLocaleTimeString()
-              }
-            ]);
+            const agentText = msg.text || msg.transcript || msg.delta || msg.content || '';
+            if (agentText) {
+              setMessages((prev) => {
+                const last = prev[prev.length - 1];
+                if (last && last.speaker === 'agent' && last.isPartial) {
+                  const updated = [...prev];
+                  updated[updated.length - 1] = {
+                    ...last,
+                    text: agentText,
+                    isPartial: false
+                  };
+                  return updated;
+                }
+                return [
+                  ...prev,
+                  {
+                    id: `a_${Date.now()}`,
+                    speaker: 'agent',
+                    text: agentText,
+                    isPartial: false,
+                    timestamp: new Date().toLocaleTimeString()
+                  }
+                ];
+              });
+            }
+          } else if (msg.type === 'transcript.agent.delta') {
+            const deltaText = msg.delta || msg.text || '';
+            if (deltaText) {
+              setMessages((prev) => {
+                const last = prev[prev.length - 1];
+                if (last && last.speaker === 'agent' && last.isPartial) {
+                  const updated = [...prev];
+                  updated[updated.length - 1] = {
+                    ...last,
+                    text: last.text + deltaText
+                  };
+                  return updated;
+                }
+                return [
+                  ...prev,
+                  {
+                    id: `a_${Date.now()}`,
+                    speaker: 'agent',
+                    text: deltaText,
+                    isPartial: true,
+                    timestamp: new Date().toLocaleTimeString()
+                  }
+                ];
+              });
+            }
+          } else if (msg.type === 'input.speech.started') {
+            setIsUserSpeaking(true);
+          } else if (msg.type === 'input.speech.stopped') {
+            setIsUserSpeaking(false);
           } else if (msg.type === 'reply.started') {
             setIsAgentSpeaking(true);
           } else if (msg.type === 'reply.audio') {
@@ -363,6 +450,112 @@ export const App: React.FC = () => {
     setIsUserSpeaking(false);
   };
 
+  // Send Typed Message to Voice Agent & Sync to Obsidian Vault
+  const handleSendTextMessage = async (text: string) => {
+    if (!text.trim()) return;
+    setIsSendingMessage(true);
+
+    const now = new Date().toLocaleTimeString();
+    // 1. Instantly display user typed message in transcript HUD
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: `u_typed_${Date.now()}`,
+        speaker: 'user',
+        text: text,
+        timestamp: now
+      }
+    ]);
+
+    try {
+      // 2. Call backend endpoint POST /api/voice/chat
+      const res = await fetch('/api/voice/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text,
+          prospect: {
+            name: prospectName,
+            email: prospectEmail,
+            website: prospectWebsite,
+            linkedIn: prospectLinkedIn,
+            company: prospectCompany,
+            bio: prospectBio
+          }
+        })
+      });
+
+      const data = await res.json();
+
+      if (data.reply) {
+        // 3. Display Anna's reply in transcript HUD
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `a_reply_${Date.now()}`,
+            speaker: 'agent',
+            text: data.reply,
+            timestamp: new Date().toLocaleTimeString()
+          }
+        ]);
+
+        // 4. Also speak Anna's reply aloud using SpeechSynthesis if supported
+        if ('speechSynthesis' in window && !isAgentSpeaking) {
+          try {
+            window.speechSynthesis.cancel();
+            const utterance = new SpeechSynthesisUtterance(data.reply);
+            utterance.rate = 1.05;
+            utterance.pitch = 1.0;
+            const voices = window.speechSynthesis.getVoices();
+            const femaleVoice = voices.find(
+              (v) =>
+                (v.name.includes('Samantha') ||
+                  v.name.includes('Karen') ||
+                  v.name.includes('Zira') ||
+                  v.name.includes('Google') ||
+                  v.name.includes('Female')) &&
+                v.lang.startsWith('en')
+            ) || voices.find((v) => v.lang.startsWith('en'));
+            if (femaleVoice) utterance.voice = femaleVoice;
+
+            utterance.onstart = () => setIsAgentSpeaking(true);
+            utterance.onend = () => setIsAgentSpeaking(false);
+            utterance.onerror = () => setIsAgentSpeaking(false);
+            window.speechSynthesis.speak(utterance);
+          } catch (e) {
+            console.error('[SpeechSynthesis Error]', e);
+          }
+        }
+      }
+
+      // If a lead was created or updated, refresh CRM leads and add tool execution chip
+      if (data.lead) {
+        const leadsRes = await fetch('/api/crm/leads');
+        const leadsData = await leadsRes.json();
+        if (leadsData.leads) setLeads(leadsData.leads);
+
+        setActiveTools((prev) => [
+          ...prev,
+          {
+            id: `tool_${Date.now()}`,
+            name: 'sync_lead_vault_dossier',
+            args: { email: data.lead.email, company: data.lead.companyName, phone: data.lead.phone },
+            result: {
+              status: 'success',
+              vaultPath: data.vaultPath,
+              message: `Dedicated client folder and dossier created at ${data.vaultPath}`
+            },
+            status: 'completed'
+          }
+        ]);
+      }
+    } catch (err) {
+      console.error('[handleSendTextMessage error]', err);
+    } finally {
+      setIsSendingMessage(false);
+    }
+  };
+
   // Submit Prospect Website / Social Platforms Context Enrichment
   const handleEnrichProspect = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -397,12 +590,15 @@ export const App: React.FC = () => {
       const leadsData = await leadsRes.json();
       if (leadsData.leads) setLeads(leadsData.leads);
 
+      const targetCompany = prospectCompany || prospectName || 'Client';
+      const safeFolder = targetCompany.replace(/[^a-zA-Z0-9_-]/g, '_').replace(/_+/g, '_');
+
       setMessages((prev) => [
         ...prev,
         {
           id: `enrich_${Date.now()}`,
           speaker: 'system',
-          text: `🌐 Prospect Dossier Enriched: ${prospectName} (${prospectWebsite}). Verified profile and business model loaded into active agent context.`,
+          text: `📁 Prospect Dossier Saved to Vault: vault/Clients/${safeFolder}/Dossier.md | Indexed in Obsidian MOC & Knowledge Graph for ${prospectName} (${prospectWebsite}).`,
           timestamp: new Date().toLocaleTimeString()
         }
       ]);
@@ -824,7 +1020,7 @@ export const App: React.FC = () => {
             {/* Live Interaction HUD */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2">
-                <LiveTranscriptHUD messages={messages} activeTools={activeTools} />
+                <LiveTranscriptHUD messages={messages} activeTools={activeTools} onSendMessage={handleSendTextMessage} isSendingMessage={isSendingMessage} />
               </div>
 
               {/* Quick Interactive Simulator & Telemetry Sidebar */}

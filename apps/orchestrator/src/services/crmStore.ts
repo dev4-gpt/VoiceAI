@@ -1,4 +1,7 @@
 import type { CRMLead, ChurnRiskMember, TurnTelemetry } from '@voice-os/shared';
+import * as fs from 'fs';
+import * as path from 'path';
+import { graphDatabaseService } from './graphDatabaseService';
 
 class CRMStore {
   private leads: Map<string, CRMLead> = new Map();
@@ -71,6 +74,7 @@ class CRMStore {
       updatedAt: now
     };
     this.leads.set(demoLead.id, demoLead);
+    this.syncLeadToVault(demoLead);
   }
 
   public getLeads(): CRMLead[] {
@@ -128,6 +132,7 @@ class CRMStore {
       existing.updatedAt = now;
       existing.notes.push(`Updated via voice inbound on ${now}`);
       this.leads.set(existing.id, existing);
+      this.syncLeadToVault(existing);
       return existing;
     }
 
@@ -151,6 +156,7 @@ class CRMStore {
     };
 
     this.leads.set(newLead.id, newLead);
+    this.syncLeadToVault(newLead);
     return newLead;
   }
 
@@ -184,6 +190,7 @@ class CRMStore {
     lead.notes.push(`BANT Qualified: score ${lead.qualificationScore}/100. Budget: ${data.budgetRange}`);
 
     this.leads.set(lead.id, lead);
+    this.syncLeadToVault(lead);
     return { lead, calculatedScore: lead.qualificationScore };
   }
 
@@ -202,6 +209,7 @@ class CRMStore {
     lead.notes.push(`Consultation booked: ${data.preferredDatetime}. Code: ${confirmationCode}`);
 
     this.leads.set(lead.id, lead);
+    this.syncLeadToVault(lead);
     return { success: true, lead, confirmationCode };
   }
 
@@ -230,6 +238,164 @@ class CRMStore {
     this.members.set(member.memberId, member);
     return member;
   }
+
+  public syncLeadToVault(lead: CRMLead) {
+    try {
+      const vaultBase = path.resolve(process.cwd(), 'vault');
+      const safeFolder = (lead.companyName || lead.fullName || 'Client')
+        .replace(/[^a-zA-Z0-9_-]/g, '_')
+        .replace(/_+/g, '_');
+      const clientDir = path.join(vaultBase, 'Clients', safeFolder);
+      const dossiersDir = path.join(vaultBase, 'Dossiers');
+      const leadsDir = path.join(vaultBase, 'Leads');
+
+      if (!fs.existsSync(clientDir)) fs.mkdirSync(clientDir, { recursive: true });
+      if (!fs.existsSync(dossiersDir)) fs.mkdirSync(dossiersDir, { recursive: true });
+      if (!fs.existsSync(leadsDir)) fs.mkdirSync(leadsDir, { recursive: true });
+
+      const nowStr = new Date().toISOString();
+      const socialLinksList = lead.socialLinks
+        ? Object.entries(lead.socialLinks)
+            .filter(([_, url]) => Boolean(url))
+            .map(([platform, url]) => `* **${platform.toUpperCase()}:** [${url}](${url})`)
+            .join('\n')
+        : '* *No direct social links configured.*';
+
+      const notesList = lead.notes && lead.notes.length > 0
+        ? lead.notes.map((n) => `* ${n}`).join('\n')
+        : '* *Initial dossier created via Voice AI Operator.*';
+
+      const dossierContent = `---
+id: "${lead.id}"
+title: "${lead.fullName} — ${lead.companyName || 'Client Dossier'}"
+type: "ClientDossier"
+clientName: "${lead.fullName}"
+companyName: "${lead.companyName || 'Independent'}"
+email: "${lead.email}"
+phone: "${lead.phone || 'N/A'}"
+website: "${lead.website || 'N/A'}"
+linkedIn: "${lead.linkedIn || 'N/A'}"
+budgetRange: "${lead.budgetRange || 'unspecified'}"
+qualificationScore: ${lead.qualificationScore}
+status: "${lead.status}"
+updatedAt: "${nowStr}"
+tags:
+  - client-dossier
+  - revenue-os
+  - voice-ai
+  - assemblyai
+---
+
+# 👤 Client & Business Dossier: ${lead.fullName}
+**Organization / Community:** ${lead.companyName || 'Independent Creator'}  
+**Primary Contact:** [${lead.email}](mailto:${lead.email}) • ${lead.phone || 'Phone Pending'}  
+**Official Website:** [${lead.website || 'N/A'}](${lead.website || '#'})  
+**LinkedIn:** [${lead.linkedIn || 'N/A'}](${lead.linkedIn || '#'})  
+
+> [!info] Autonomous Dossier Synchronization
+> This file is automatically maintained by **GrowthVoice OS** and synced into active RAG memory for the **AssemblyAI Voice Agent (Anna)**.
+
+---
+
+## 🌐 Multi-Platform Social Footprint
+${socialLinksList}
+
+---
+
+## 📝 Audience Context & Strategic Bio Analysis
+${lead.socialBioText || lead.businessSummary || '*No bio context provided yet.*'}
+
+---
+
+## 🎯 High-Ticket Growth Objectives & Core Needs
+* **Core Problem / Objective:** ${lead.coreNeed || 'Scale high-ticket inbound funnel and automate 24/7 after-hours qualification.'}
+* **Business Summary:** ${lead.businessSummary || 'Scaling educational or coaching community into high-ticket cohorts.'}
+* **Purchasing Authority:** \`${lead.authority || 'Decision Maker'}\`
+* **Target Budget Range:** \`${lead.budgetRange || '$5,000 - $15,000'}\`
+* **Implementation Timeline:** \`${lead.timelineWeeks || 2} Weeks\`
+* **Scheduled Strategy Consultation:** \`${lead.scheduledCallTime || 'Pending Call Booking'}\`
+
+---
+
+## 📊 BANT Qualification Status
+* **Qualification Fit Score:** **${lead.qualificationScore} / 100**
+* **Pipeline Stage:** \`${lead.status.toUpperCase()}\`
+* **Recommendation:** ${
+        lead.qualificationScore >= 75
+          ? 'Fast-track to Elite Mastermind / Dedicated Growth Operator.'
+          : lead.qualificationScore >= 60
+          ? 'Qualifies for Pro Mentorship Sprint ($2,997).'
+          : 'Recommend Self-Paced Growth Sprint ($997).'
+      }
+
+---
+
+## 💬 Real-Time Activity Log & Voice Transcripts
+${notesList}
+
+---
+
+## 🔗 Bidirectional Vault Links
+- [[../../Index|← Return to Vault Map of Content]]
+- [[../../Content-Packs/pack_cf_101|Associated Content Marketing Pack]]
+`;
+
+      const dossierPath = path.join(clientDir, 'Dossier.md');
+      fs.writeFileSync(dossierPath, dossierContent, 'utf-8');
+
+      // Also write convenience link in vault/Dossiers/
+      const topLevelDossierPath = path.join(dossiersDir, `${safeFolder}.md`);
+      fs.writeFileSync(topLevelDossierPath, dossierContent, 'utf-8');
+
+      // Also write in vault/Leads/ for backwards compatibility
+      const leadPath = path.join(leadsDir, `${lead.id}.md`);
+      fs.writeFileSync(leadPath, dossierContent, 'utf-8');
+
+      // Update Node in Graph Database
+      graphDatabaseService.addNode({
+        id: lead.id,
+        type: 'Lead',
+        label: `${lead.fullName} (${lead.companyName || 'Independent'})`,
+        properties: {
+          email: lead.email,
+          phone: lead.phone || 'N/A',
+          website: lead.website || 'N/A',
+          companyName: lead.companyName || 'N/A',
+          budgetRange: lead.budgetRange || 'unspecified',
+          qualificationScore: lead.qualificationScore,
+          status: lead.status,
+          vaultPath: `vault/Clients/${safeFolder}/Dossier.md`
+        }
+      });
+
+      // Update vault/Index.md to list new client
+      this.updateVaultIndex(safeFolder, lead);
+
+      console.log(`[CRM Store] Successfully synced ${lead.fullName} to vault/Clients/${safeFolder}/Dossier.md`);
+    } catch (err: any) {
+      console.error('[CRM Store Vault Sync Error]', err.message);
+    }
+  }
+
+  private updateVaultIndex(safeFolder: string, lead: CRMLead) {
+    try {
+      const indexPath = path.resolve(process.cwd(), 'vault', 'Index.md');
+      if (fs.existsSync(indexPath)) {
+        let content = fs.readFileSync(indexPath, 'utf-8');
+        const linkEntry = `- [[Clients/${safeFolder}/Dossier|Client Dossier: ${lead.fullName} (${lead.companyName || 'Independent'})]] — Score ${lead.qualificationScore}/100.`;
+        if (!content.includes(linkEntry)) {
+          content = content.replace(
+            '## 🗂️ Knowledge Vault Sections',
+            `## 🗂️ Knowledge Vault Sections\n\n${linkEntry}`
+          );
+          fs.writeFileSync(indexPath, content, 'utf-8');
+        }
+      }
+    } catch (e: any) {
+      console.error('[Update Vault Index]', e.message);
+    }
+  }
+
 }
 
 export const crmStore = new CRMStore();

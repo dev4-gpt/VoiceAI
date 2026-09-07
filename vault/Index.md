@@ -35,6 +35,12 @@ graph TD
 
 ## 🗂️ Knowledge Vault Sections
 
+- [[Clients/NeuralCinema_AI/Dossier|Client Dossier: Elena Rostova (NeuralCinema AI)]] — Score 20/100.
+
+- [[Clients/Solopreneur_OS/Dossier|Client Dossier: Alex Rivera (Solopreneur OS)]] — Score 20/100.
+
+- [[Clients/DesignAcademy_Studio/Dossier|Client Dossier: Jason Miller (DesignAcademy Studio)]] — Score 85/100.
+
 - [[Leads/lead_jason_miller|Lead: Jason Miller]] — Score 85, $5k-$15k budget, booked for consultation.
 - [[Members/member_sarah_jenkins|Member: Sarah Jenkins]] — Retained mastermind member, 15% clamped discount applied.
 - [[Voice-Sessions/session_inbound_jason|Voice Session: Inbound Jason]] — AssemblyAI 24kHz stream transcript & telemetry.

@@ -1,5 +1,5 @@
-import React from 'react';
-import { User, Bot, Wrench, CheckCircle2 } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { User, Bot, Wrench, CheckCircle2, Send, Keyboard, Sparkles } from 'lucide-react';
 
 export interface MessageItem {
   id: string;
@@ -20,9 +20,33 @@ export interface ActiveToolItem {
 interface LiveTranscriptHUDProps {
   messages: MessageItem[];
   activeTools: ActiveToolItem[];
+  onSendMessage?: (text: string) => Promise<void>;
+  isSendingMessage?: boolean;
 }
 
-export const LiveTranscriptHUD: React.FC<LiveTranscriptHUDProps> = ({ messages, activeTools }) => {
+export const LiveTranscriptHUD: React.FC<LiveTranscriptHUDProps> = ({
+  messages,
+  activeTools,
+  onSendMessage,
+  isSendingMessage = false
+}) => {
+  const [typedInput, setTypedInput] = useState('');
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  const handleSend = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!typedInput.trim() || isSendingMessage) return;
+    const text = typedInput.trim();
+    setTypedInput('');
+    if (onSendMessage) {
+      await onSendMessage(text);
+    }
+  };
+
   return (
     <div className="flex flex-col h-full bg-slate-900/60 rounded-2xl border border-slate-800/80 backdrop-blur-xl overflow-hidden shadow-2xl">
       {/* HUD Header */}
@@ -40,15 +64,19 @@ export const LiveTranscriptHUD: React.FC<LiveTranscriptHUDProps> = ({ messages, 
           <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-mono bg-purple-950/80 text-purple-300 border border-purple-800/50">
             Voice: Anna
           </span>
+          <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded text-xs font-mono bg-emerald-950/80 text-emerald-300 border border-emerald-800/50">
+            <Keyboard className="w-3 h-3" />
+            <span>Keyboard Active</span>
+          </span>
         </div>
       </div>
 
       {/* Messages Scroll Area */}
-      <div className="flex-1 p-4 overflow-y-auto space-y-3.5 min-h-[340px] max-h-[420px]">
+      <div className="flex-1 p-4 overflow-y-auto space-y-3.5 min-h-[300px] max-h-[380px]">
         {messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-slate-500 text-sm space-y-2 py-16">
             <Bot className="w-8 h-8 text-slate-600 animate-pulse" />
-            <p>Click "Start Voice Agent" below to initiate speech-in / speech-out session.</p>
+            <p>Click "Start Voice Session" or type a message below to converse with Anna.</p>
           </div>
         ) : (
           messages.map((msg) => (
@@ -80,7 +108,7 @@ export const LiveTranscriptHUD: React.FC<LiveTranscriptHUDProps> = ({ messages, 
                   <span>{msg.timestamp}</span>
                 </div>
                 <p className="leading-relaxed">
-                  {msg.text}
+                  {msg.text || (msg.isPartial ? 'Speaking...' : '[Voice audio turn]')}
                   {msg.isPartial && <span className="inline-block w-1.5 h-3 ml-1 bg-cyan-400 animate-pulse" />}
                 </p>
               </div>
@@ -93,11 +121,12 @@ export const LiveTranscriptHUD: React.FC<LiveTranscriptHUDProps> = ({ messages, 
             </div>
           ))
         )}
+        <div ref={messagesEndRef} />
       </div>
 
       {/* Active Tool Executions HUD */}
       {activeTools.length > 0 && (
-        <div className="border-t border-slate-800/80 bg-slate-950/70 p-3.5 space-y-2">
+        <div className="border-t border-slate-800/80 bg-slate-950/70 px-4 py-2.5 space-y-1.5">
           <div className="flex items-center space-x-2 text-xs font-mono text-slate-400">
             <Wrench className="w-3.5 h-3.5 text-emerald-400" />
             <span className="font-semibold text-slate-300">Autonomous Tool Orchestration Layer:</span>
@@ -107,13 +136,17 @@ export const LiveTranscriptHUD: React.FC<LiveTranscriptHUDProps> = ({ messages, 
             {activeTools.map((tool) => (
               <div
                 key={tool.id}
-                className="flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-slate-900 border border-emerald-500/40 text-xs font-mono text-emerald-300 shadow-sm"
+                className="flex items-center space-x-2 px-2.5 py-1 rounded-lg bg-slate-900 border border-emerald-500/40 text-xs font-mono text-emerald-300 shadow-sm"
               >
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
                 <span className="font-semibold">{tool.name}</span>
                 {tool.result && (
-                  <span className="text-slate-400 text-[11px] bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700">
-                    {tool.name === 'process_retention_offer' ? 'Clamped 15% (Policy)' : 'Synced CRM'}
+                  <span className="text-slate-400 text-[10px] bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700">
+                    {tool.name === 'process_retention_offer'
+                      ? 'Clamped 15% (Policy)'
+                      : tool.name === 'enrich_prospect_dossier'
+                      ? 'Saved to Vault & CRM'
+                      : 'Synced CRM'}
                   </span>
                 )}
               </div>
@@ -121,6 +154,64 @@ export const LiveTranscriptHUD: React.FC<LiveTranscriptHUDProps> = ({ messages, 
           </div>
         </div>
       )}
+
+      {/* Interactive Text & Keyboard Input Bar */}
+      <div className="border-t border-slate-800/80 bg-slate-950/95 p-3 space-y-2">
+        {/* Quick Answer Chips */}
+        <div className="flex items-center space-x-1.5 overflow-x-auto pb-1 text-[11px] font-mono text-slate-400 scrollbar-none">
+          <span className="text-slate-500 font-semibold flex-shrink-0 flex items-center space-x-1">
+            <Sparkles className="w-3 h-3 text-cyan-400" />
+            <span>Suggestions:</span>
+          </span>
+          <button
+            type="button"
+            onClick={() => setTypedInput('My email is founder@mygrowthproject.com and phone is +1 (555) 234-5678')}
+            className="px-2 py-0.5 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 text-cyan-300 hover:text-cyan-200 transition-all flex-shrink-0"
+          >
+            📧 Attach Email & Phone
+          </button>
+          <button
+            type="button"
+            onClick={() => setTypedInput('We have 15,000 members and $5,000 budget, looking to launch a $2,997 program in 3 weeks')}
+            className="px-2 py-0.5 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 text-purple-300 hover:text-purple-200 transition-all flex-shrink-0"
+          >
+            💰 $5k Budget & 15k Members
+          </button>
+          <button
+            type="button"
+            onClick={() => setTypedInput('How does your 14-day action-based guarantee work?')}
+            className="px-2 py-0.5 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 text-amber-300 hover:text-amber-200 transition-all flex-shrink-0"
+          >
+            🛡️ 14-Day Guarantee
+          </button>
+        </div>
+
+        {/* Keyboard Input Form */}
+        <form onSubmit={handleSend} className="flex items-center space-x-2">
+          <div className="relative flex-1">
+            <input
+              type="text"
+              value={typedInput}
+              onChange={(e) => setTypedInput(e.target.value)}
+              placeholder="Type your email, phone, project details, or questions to Anna..."
+              className="w-full pl-3.5 pr-20 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500 font-mono transition-all"
+            />
+            <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[10px] font-mono text-slate-600 pointer-events-none">
+              Press ↵
+            </span>
+          </div>
+
+          <button
+            type="submit"
+            disabled={!typedInput.trim() || isSendingMessage}
+            className="flex items-center space-x-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold text-xs shadow-lg shadow-cyan-500/20 disabled:opacity-40 transition-all flex-shrink-0"
+          >
+            <Send className="w-3.5 h-3.5" />
+            <span>Send</span>
+          </button>
+        </form>
+      </div>
     </div>
   );
 };
+
