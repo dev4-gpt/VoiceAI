@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-09-07T02:14:00.439Z",
+  "updatedAt": "2026-09-07T02:24:59.179Z",
   "nodes": [
     {
       "id": "offer_pro_mentorship",
@@ -400,6 +400,49 @@
         ],
         "vaultPath": "vault/Clients/NeuralCinema_AI/BrandVoice.md"
       }
+    },
+    {
+      "id": "bv_1788747791445_ki8r",
+      "type": "BrandVoice",
+      "label": "Brand Voice: DesignAcademy Studio (Enterprise Advisor)",
+      "properties": {
+        "clientId": "lead_jm_901",
+        "companyName": "DesignAcademy Studio",
+        "toneArchetype": "enterprise_advisor",
+        "toneLabel": "Enterprise Advisor",
+        "signatureLexicon": [
+          "revenue architecture",
+          "pipeline velocity",
+          "retention yield",
+          "SLA",
+          "governance",
+          "deterministic guardrails"
+        ],
+        "bannedTerms": [
+          "hacks",
+          "tricks",
+          "viral loop",
+          "get rich",
+          "cheap",
+          "untested"
+        ],
+        "vaultPath": "vault/Clients/DesignAcademy_Studio/BrandVoice.md"
+      }
+    },
+    {
+      "id": "intel_neuralcinema_ai",
+      "type": "Asset",
+      "label": "Scraped Intel: NeuralCinema AI",
+      "properties": {
+        "url": "https://neuralcinema.ai",
+        "companyName": "NeuralCinema AI",
+        "detectedPricing": [
+          "$997",
+          "$2,997",
+          "$10,000/mo"
+        ],
+        "vaultPath": "vault/Clients/NeuralCinema_AI/Scraped_Intel.md"
+      }
     }
   ],
   "edges": [
@@ -505,7 +548,7 @@
     {
       "id": "edge_lead_jm_901_has_bv",
       "source": "lead_jm_901",
-      "target": "bv_1788747158389_c861",
+      "target": "bv_1788747791445_ki8r",
       "type": "HAS_BRAND_VOICE",
       "label": "CONFIGURED_WITH"
     },

@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { crmStore } from '../services/crmStore';
 import { toolDispatcher } from '../tools/dispatcher';
+import { websiteScraperService } from '../services/websiteScraperService';
 
 export const crmRouter = Router();
 
@@ -14,6 +15,20 @@ crmRouter.get('/members', (_req: Request, res: Response) => {
 
 crmRouter.get('/telemetry', (_req: Request, res: Response) => {
   res.json({ telemetry: crmStore.getTelemetry() });
+});
+
+crmRouter.post('/scrape', async (req: Request, res: Response) => {
+  const { url, companyName } = req.body;
+  if (!url) {
+    return res.status(400).json({ error: 'URL is required' });
+  }
+
+  try {
+    const intel = await websiteScraperService.scrapeAndExtractIntel(url, companyName || 'Company');
+    return res.json({ status: 'success', intel });
+  } catch (err: any) {
+    return res.status(500).json({ error: 'Scraping failed', message: err.message });
+  }
 });
 
 crmRouter.post('/tools/execute', async (req: Request, res: Response) => {

@@ -35,6 +35,8 @@ graph TD
 
 ## 🗂️ Knowledge Vault Sections
 
+- [[Infrastructure/Starred_Repositories_Architecture|🌟 Starred Repositories Architecture & Infrastructure Roadmap]]
+
 - [[Clients/NeuralCinema_AI/BrandVoice|Brand Voice: NeuralCinema AI (Tactical Operator)]]
 
 - [[Clients/NeuralCinema_AI/BrandVoice|Brand Voice: NeuralCinema AI (Visionary Founder)]]

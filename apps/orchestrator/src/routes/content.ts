@@ -1,5 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { contentFactoryEngine } from '../services/contentFactoryEngine';
+import { outreachDispatcherService } from '../services/outreachDispatcherService';
+import { antiSlopGuardrail } from '../services/antiSlopGuardrail';
 
 export const contentRouter = Router();
 
@@ -47,6 +49,46 @@ contentRouter.post('/audit', async (req: Request, res: Response) => {
     message: `SOP Outbound Lead Magnet & Conversion Audit queued for "${companyOrCreator}". Analysis will stream into Content Studio.`,
     jobId: job.id
   });
+});
+
+contentRouter.post('/dispatch', async (req: Request, res: Response) => {
+  const {
+    companyName,
+    recipientName,
+    recipientEmail,
+    emailSubject,
+    emailBodyMarkdown,
+    spokenAudioScript,
+    linkedInMessage,
+    webhookUrl
+  } = req.body;
+
+  if (!companyName || !recipientEmail) {
+    return res.status(400).json({ error: 'Company name and recipient email are required' });
+  }
+
+  try {
+    const result = await outreachDispatcherService.dispatchOutreachSequence({
+      companyName,
+      recipientName: recipientName || 'Founder',
+      recipientEmail,
+      emailSubject: emailSubject || `Quick Audit for ${companyName}`,
+      emailBodyMarkdown: emailBodyMarkdown || 'Audit preview',
+      spokenAudioScript: spokenAudioScript || 'Audio note script',
+      linkedInMessage,
+      webhookUrl
+    });
+    return res.json({ status: 'success', result });
+  } catch (e: any) {
+    return res.status(500).json({ error: 'Dispatch failed', message: e.message });
+  }
+});
+
+contentRouter.post('/anti-slop/evaluate', (req: Request, res: Response) => {
+  const { text } = req.body;
+  if (!text) return res.status(400).json({ error: 'Text is required for evaluation' });
+  const evalResult = antiSlopGuardrail.evaluateCopyQuality(text);
+  res.json({ evalResult });
 });
 
 contentRouter.post('/jobs/:id/approve', (req: Request, res: Response) => {
