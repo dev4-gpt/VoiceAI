@@ -210,11 +210,15 @@ export const App: React.FC = () => {
 
   // Helper to speak agent turn aloud via Web Speech API (with visualizer animation)
   const speakTurnIfEnabled = (text: string, onDone?: () => void) => {
-    if (spokenAudioEnabled && !isCalling) {
+    if (spokenAudioEnabled && !isCalling && speechSynth.isEnabled()) {
       speechSynth.speak(text, onDone, () => {
         setAudioLevel(0.35 + Math.random() * 0.45);
       });
     } else {
+      speechSynth.cancel();
+      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
       if (onDone) onDone();
     }
   };
@@ -1168,33 +1172,8 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
           }
         ]);
 
-        // 4. Also speak Anna's reply aloud using SpeechSynthesis if supported
-        if ('speechSynthesis' in window && !isAgentSpeaking) {
-          try {
-            window.speechSynthesis.cancel();
-            const utterance = new SpeechSynthesisUtterance(data.reply);
-            utterance.rate = 1.05;
-            utterance.pitch = 1.0;
-            const voices = window.speechSynthesis.getVoices();
-            const femaleVoice = voices.find(
-              (v) =>
-                (v.name.includes('Samantha') ||
-                  v.name.includes('Karen') ||
-                  v.name.includes('Zira') ||
-                  v.name.includes('Google') ||
-                  v.name.includes('Female')) &&
-                v.lang.startsWith('en')
-            ) || voices.find((v) => v.lang.startsWith('en'));
-            if (femaleVoice) utterance.voice = femaleVoice;
-
-            utterance.onstart = () => setIsAgentSpeaking(true);
-            utterance.onend = () => setIsAgentSpeaking(false);
-            utterance.onerror = () => setIsAgentSpeaking(false);
-            window.speechSynthesis.speak(utterance);
-          } catch (e) {
-            console.error('[SpeechSynthesis Error]', e);
-          }
-        }
+        // 4. Speak Anna's reply aloud using centralized speech controller if unmuted
+        speakTurnIfEnabled(data.reply);
       }
 
       // If a lead was created or updated, refresh CRM leads and add tool execution chip
@@ -2117,7 +2096,13 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
             onClick={() => {
               const next = !spokenAudioEnabled;
               setSpokenAudioEnabled(next);
-              if (!next) speechSynth.cancel();
+              speechSynth.setEnabled(next);
+              if (!next) {
+                speechSynth.cancel();
+                if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+                  window.speechSynthesis.cancel();
+                }
+              }
             }}
             className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-mono font-semibold transition-all border ${
               spokenAudioEnabled

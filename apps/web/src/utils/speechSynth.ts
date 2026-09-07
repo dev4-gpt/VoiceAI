@@ -9,9 +9,21 @@ class SpeechSynthController {
   private synth: SpeechSynthesis | null = null;
   private selectedVoice: SpeechSynthesisVoice | null = null;
   private speaking: boolean = false;
+  private enabled: boolean = true;
   private onBoundaryCallback: SpeechCallback | null = null;
   private onStartCallback: SpeechCallback | null = null;
   private onEndCallback: SpeechCallback | null = null;
+
+  public setEnabled(enabled: boolean): void {
+    this.enabled = enabled;
+    if (!enabled) {
+      this.cancel();
+    }
+  }
+
+  public isEnabled(): boolean {
+    return this.enabled;
+  }
 
   constructor() {
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
@@ -88,7 +100,7 @@ class SpeechSynthController {
     onComplete?: () => void,
     onBoundary?: () => void
   ): void {
-    if (!this.synth) {
+    if (!this.synth || !this.enabled) {
       if (onComplete) onComplete();
       return;
     }
