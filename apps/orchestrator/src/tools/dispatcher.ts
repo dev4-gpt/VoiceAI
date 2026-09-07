@@ -30,16 +30,19 @@ export class ToolDispatcher {
           socialBioText: args.socialBioText,
           companyName: args.companyName,
           businessSummary: args.businessSummary,
+          toneArchetype: args.toneArchetype,
           source: 'after_hours_inbound'
         });
         const platformsList = args.socialLinks
           ? Object.keys(args.socialLinks).filter((k) => (args.socialLinks as any)[k]).join(', ')
           : 'None specified';
+        const toneLabel = lead.brandVoice?.toneLabel || 'Tactical Operator';
         return {
           status: 'success',
-          message: `Dossier enriched for ${lead.fullName}: Website (${args.website || 'N/A'}), LinkedIn (${args.linkedIn || 'N/A'}), Socials (${platformsList}), Business (${args.companyName || 'Verified'}). Profile active in RAG memory.`,
+          message: `Dossier & Brand Voice (${toneLabel}) calibrated for ${lead.fullName}: Website (${args.website || 'N/A'}), Socials (${platformsList}), Business (${args.companyName || 'Verified'}). Profile active in RAG memory.`,
           leadId: lead.id,
-          lead
+          lead,
+          brandVoice: lead.brandVoice
         };
       }
 

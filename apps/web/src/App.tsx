@@ -54,6 +54,9 @@ export const App: React.FC = () => {
   const [prospectSubstack, setProspectSubstack] = useState('https://jasonmiller.substack.com');
   const [prospectCompany, setProspectCompany] = useState('DesignAcademy Studio');
   const [prospectBio, setProspectBio] = useState('Founder of DesignAcademy.io (15k UI/UX designer community, 120k newsletter readers). Transitioning from $47 ebook sales into high-ticket $2,997 Pro Career Sprints and $10k/mo agency retainers. Needs 24/7 after-hours voice qualification to handle European and Asian inbound leads.');
+  const [selectedToneArchetype, setSelectedToneArchetype] = useState<'tactical_operator' | 'empathetic_mentor' | 'visionary_founder' | 'enterprise_advisor'>('tactical_operator');
+  const [customLexicon, setCustomLexicon] = useState('growth sprint, funnel velocity, high-ticket, cohort');
+  const [customBannedTerms, setCustomBannedTerms] = useState('cheap, guru, synergy, hard sell, magic bullet');
 
   const [messages, setMessages] = useState<MessageItem[]>([]);
   const [activeTools, setActiveTools] = useState<ActiveToolItem[]>([]);
@@ -137,44 +140,71 @@ export const App: React.FC = () => {
     };
   }, []);
 
-  // System Prompts & Greetings for 6 Operating Personas
+  // System Prompts & Greetings Infused with Dynamic Client Brand Voice
   const getPersonaConfig = (persona: OperatingPersona) => {
+    const comp = prospectCompany || 'DesignAcademy Studio';
+    const toneLabel =
+      selectedToneArchetype === 'empathetic_mentor'
+        ? 'Empathetic Mentor'
+        : selectedToneArchetype === 'visionary_founder'
+        ? 'Visionary Founder'
+        : selectedToneArchetype === 'enterprise_advisor'
+        ? 'Enterprise Advisor'
+        : 'Tactical Operator';
+
+    const toneRule =
+      selectedToneArchetype === 'empathetic_mentor'
+        ? 'Speak with warmth, deep encouragement, and supportive guidance.'
+        : selectedToneArchetype === 'visionary_founder'
+        ? 'Speak with visionary enthusiasm and high conviction regarding AI and creative leverage.'
+        : selectedToneArchetype === 'enterprise_advisor'
+        ? 'Maintain a structured, consultative executive demeanor focused on ROI and risk mitigation.'
+        : 'Be direct, tactical, and relentlessly execution-focused.';
+
+    const brandVoiceInstructions = `You represent ${comp}. Tone: ${toneLabel} (${toneRule}). Signature vocabulary to incorporate: ${customLexicon}. Strictly avoid banned terms: ${customBannedTerms}.`;
+
     switch (persona) {
       case 'inbound':
         return {
-          title: 'After-Hours Inbound Admissions SDR',
-          prompt: 'You are Anna, the elite AI Growth Operator for an online education academy. Warmly qualify inbound prospects using BANT criteria, answer curriculum and pricing questions using get_product_knowledge, and schedule strategy consultations.',
-          greeting: "Hey there! Welcome to Alex's Growth Accelerator. What brings you to our program today?"
+          title: `After-Hours Inbound Admissions SDR (${comp})`,
+          prompt: `You are Anna, the elite AI Admissions Director for ${comp}. ${brandVoiceInstructions} Warmly qualify inbound prospects using BANT criteria, answer curriculum and pricing questions using get_product_knowledge, and schedule strategy consultations.`,
+          greeting: `Hey there! Welcome to ${comp}. I'm Anna, your AI admissions director. What brings you to our program today?`
         };
       case 'outbound':
         return {
-          title: 'Outbound Lead Reactivation Specialist',
-          prompt: 'You are Anna, conducting warm outreach to past course inquiries. Inquire about their launch progress, address hesitation, and offer an exclusive action-guarantee sprint.',
-          greeting: 'Hi there! Alex asked me to follow up regarding your creator funnel launch. How is your project progressing?'
+          title: `Outbound Lead Reactivation Specialist (${comp})`,
+          prompt: `You are Anna, conducting warm outreach on behalf of ${comp}. ${brandVoiceInstructions} Inquire about their launch progress, address hesitation with our 14-day action guarantee, and offer a private sprint.`,
+          greeting: `Hi there! Following up from ${comp} regarding your project. How is your launch progressing?`
         };
       case 'churn':
         return {
-          title: 'Churn Save & Margin Protection Guardrail',
-          prompt: 'You are the empathetic Retention Specialist for Alex’s Growth Mastermind. A member wants to cancel. Listen to their reason, offer to pause or apply our policy discount (up to 15%), and log their feedback.',
-          greeting: 'Hi Sarah, I see you requested to discuss your mastermind membership. How can I help today?'
+          title: `Churn Save & Margin Guardrail (${comp})`,
+          prompt: `You are the empathetic Retention Specialist for ${comp}. A member wants to cancel. Listen to their reason, offer to pause or apply our policy discount (up to 15%), and log their feedback.`,
+          greeting: `Hi Sarah, I see you requested to discuss your ${comp} membership. How can I help today?`
         };
       case 'onboarding':
         return {
-          title: 'VIP Student Onboarding Concierge',
-          prompt: 'You are Anna, the VIP Onboarding Concierge. Guide newly enrolled high-ticket members through their account activation, access to the private community, and schedule their 1-on-1 Kickoff Call.',
-          greeting: "Welcome to the Pro Mentorship family! I am here to help you get your workspace, community credentials, and 1-on-1 kickoff session locked in. Ready to get started?"
+          title: `VIP Student Onboarding Concierge (${comp})`,
+          prompt: `You are Anna, the VIP Onboarding Concierge for ${comp}. ${brandVoiceInstructions} Guide newly enrolled high-ticket members through workspace setup and schedule their 1-on-1 Kickoff Call.`,
+          greeting: `Welcome to the ${comp} family! I am here to help you get your workspace, community credentials, and 1-on-1 kickoff session locked in. Ready to get started?`
         };
       case 'affiliate':
         return {
-          title: 'Affiliate & Strategic Partner Scout',
-          prompt: 'You are Anna, vetting incoming partnership and affiliate inquiries. Gather their audience size, distribution channels, and revenue share expectations.',
-          greeting: 'Thanks for reaching out about our partner affiliate program. What niche and audience size are you currently reaching?'
+          title: `Affiliate & Strategic Partner Scout (${comp})`,
+          prompt: `You are Anna, vetting incoming partnership inquiries for ${comp}. ${brandVoiceInstructions}`,
+          greeting: `Thanks for reaching out about ${comp}'s partner program. What niche and audience size are you currently reaching?`
         };
       case 'diagnostic':
         return {
-          title: 'Executive Diagnostic Advisor ($10k+)',
-          prompt: 'You are Anna, senior growth architect for enterprise creator brands. Conduct a strategic discovery audit examining team structure, customer acquisition cost, and revenue bottlenecks.',
-          greeting: 'Welcome to the Executive Growth Diagnostic. Before we look at our $10k Accelerator, could you walk me through your current monthly revenue run-rate and primary growth bottleneck?'
+          title: `Executive Diagnostic Advisor ($10k+) (${comp})`,
+          prompt: `You are Anna, senior growth architect for ${comp}. Conduct a strategic discovery audit examining team structure, customer acquisition cost, and revenue bottlenecks.`,
+          greeting: `Welcome to the ${comp} Executive Diagnostic. Could you walk me through your current monthly revenue run-rate and primary growth bottleneck?`
+        };
+      default:
+        return {
+          title: `Admissions Director (${comp})`,
+          prompt: `You are Anna representing ${comp}. ${brandVoiceInstructions}`,
+          greeting: `Hello! Welcome to ${comp}. How can I assist you today?`
         };
     }
   };
@@ -195,7 +225,15 @@ export const App: React.FC = () => {
       ]);
 
       // 1. Fetch ephemeral token from backend
-      const tokenRes = await fetch('/api/voice/token', { method: 'POST' });
+      const tokenRes = await fetch('/api/voice/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          company: prospectCompany,
+          persona: selectedScenario,
+          toneArchetype: selectedToneArchetype
+        })
+      });
       const tokenData = await tokenRes.json();
 
       if (!tokenData.token) {
@@ -480,7 +518,8 @@ export const App: React.FC = () => {
             website: prospectWebsite,
             linkedIn: prospectLinkedIn,
             company: prospectCompany,
-            bio: prospectBio
+            bio: prospectBio,
+            toneArchetype: selectedToneArchetype
           }
         })
       });
@@ -579,7 +618,8 @@ export const App: React.FC = () => {
             },
             socialBioText: prospectBio,
             companyName: prospectCompany,
-            businessSummary: prospectBio
+            businessSummary: prospectBio,
+            toneArchetype: selectedToneArchetype
           }
         })
       });
@@ -593,12 +633,21 @@ export const App: React.FC = () => {
       const targetCompany = prospectCompany || prospectName || 'Client';
       const safeFolder = targetCompany.replace(/[^a-zA-Z0-9_-]/g, '_').replace(/_+/g, '_');
 
+      const toneDisplay =
+        selectedToneArchetype === 'empathetic_mentor'
+          ? 'Empathetic Mentor'
+          : selectedToneArchetype === 'visionary_founder'
+          ? 'Visionary Founder'
+          : selectedToneArchetype === 'enterprise_advisor'
+          ? 'Enterprise Advisor'
+          : 'Tactical Operator';
+
       setMessages((prev) => [
         ...prev,
         {
           id: `enrich_${Date.now()}`,
           speaker: 'system',
-          text: `📁 Prospect Dossier Saved to Vault: vault/Clients/${safeFolder}/Dossier.md | Indexed in Obsidian MOC & Knowledge Graph for ${prospectName} (${prospectWebsite}).`,
+          text: `📁 Dossier & Brand Voice Saved: vault/Clients/${safeFolder}/BrandVoice.md & Dossier.md | Calibrated as ${toneDisplay} for ${prospectName} (${prospectCompany || 'Brand'}).`,
           timestamp: new Date().toLocaleTimeString()
         }
       ]);
@@ -909,6 +958,68 @@ export const App: React.FC = () => {
               </button>
             </div>
 
+            {/* Brand Voice Layer Selector Bar */}
+            <div className="p-3.5 rounded-xl bg-indigo-950/30 border border-indigo-800/40 backdrop-blur-sm space-y-2.5">
+              <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                <div className="flex items-center space-x-2">
+                  <Sparkles className="w-4 h-4 text-indigo-400" />
+                  <span className="font-semibold text-slate-200">Active Brand Voice Persona:</span>
+                  <span className="font-mono text-indigo-300 font-semibold px-2 py-0.5 rounded bg-indigo-900/50 border border-indigo-700/50">
+                    {prospectCompany || 'DesignAcademy Studio'}
+                  </span>
+                </div>
+                <span className="text-[11px] text-slate-400 font-mono hidden sm:inline">
+                  Dynamically Infused into AssemblyAI (Anna) & Hermes Content Factory
+                </span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <button
+                  onClick={() => setSelectedToneArchetype('tactical_operator')}
+                  className={`px-3 py-2 rounded-lg text-xs text-left transition-all border ${
+                    selectedToneArchetype === 'tactical_operator'
+                      ? 'bg-indigo-600/30 border-indigo-400 text-indigo-200 shadow-sm'
+                      : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:border-slate-700'
+                  }`}
+                >
+                  <div className="font-semibold">⚡ Tactical Operator</div>
+                  <div className="text-[10px] text-slate-400">Direct & Metrics-Driven</div>
+                </button>
+                <button
+                  onClick={() => setSelectedToneArchetype('empathetic_mentor')}
+                  className={`px-3 py-2 rounded-lg text-xs text-left transition-all border ${
+                    selectedToneArchetype === 'empathetic_mentor'
+                      ? 'bg-indigo-600/30 border-indigo-400 text-indigo-200 shadow-sm'
+                      : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:border-slate-700'
+                  }`}
+                >
+                  <div className="font-semibold">🌱 Empathetic Mentor</div>
+                  <div className="text-[10px] text-slate-400">Warm & Guided Cohorts</div>
+                </button>
+                <button
+                  onClick={() => setSelectedToneArchetype('visionary_founder')}
+                  className={`px-3 py-2 rounded-lg text-xs text-left transition-all border ${
+                    selectedToneArchetype === 'visionary_founder'
+                      ? 'bg-indigo-600/30 border-indigo-400 text-indigo-200 shadow-sm'
+                      : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:border-slate-700'
+                  }`}
+                >
+                  <div className="font-semibold">🚀 Visionary Founder</div>
+                  <div className="text-[10px] text-slate-400">Next-Gen AI & Leverage</div>
+                </button>
+                <button
+                  onClick={() => setSelectedToneArchetype('enterprise_advisor')}
+                  className={`px-3 py-2 rounded-lg text-xs text-left transition-all border ${
+                    selectedToneArchetype === 'enterprise_advisor'
+                      ? 'bg-indigo-600/30 border-indigo-400 text-indigo-200 shadow-sm'
+                      : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:border-slate-700'
+                  }`}
+                >
+                  <div className="font-semibold">🏛️ Enterprise Advisor</div>
+                  <div className="text-[10px] text-slate-400">ROI, SLAs & Governance</div>
+                </button>
+              </div>
+            </div>
+
             {/* Scenario Configuration Bar (6 Personas) */}
             <div className="p-4 rounded-2xl bg-slate-900/50 border border-slate-800/80 backdrop-blur-xl space-y-3">
               <div className="flex items-center justify-between">
@@ -1020,7 +1131,23 @@ export const App: React.FC = () => {
             {/* Live Interaction HUD */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2">
-                <LiveTranscriptHUD messages={messages} activeTools={activeTools} onSendMessage={handleSendTextMessage} isSendingMessage={isSendingMessage} />
+                <LiveTranscriptHUD
+                  messages={messages}
+                  activeTools={activeTools}
+                  onSendMessage={handleSendTextMessage}
+                  isSendingMessage={isSendingMessage}
+                  activeBrandVoice={{
+                    companyName: prospectCompany || 'DesignAcademy Studio',
+                    toneLabel:
+                      selectedToneArchetype === 'empathetic_mentor'
+                        ? 'Empathetic Mentor'
+                        : selectedToneArchetype === 'visionary_founder'
+                        ? 'Visionary Founder'
+                        : selectedToneArchetype === 'enterprise_advisor'
+                        ? 'Enterprise Advisor'
+                        : 'Tactical Operator'
+                  }}
+                />
               </div>
 
               {/* Quick Interactive Simulator & Telemetry Sidebar */}
@@ -1229,6 +1356,60 @@ export const App: React.FC = () => {
                   placeholder="DesignAcademy Studio"
                   className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 focus:outline-none focus:border-cyan-500"
                 />
+              </div>
+
+              {/* Brand Voice Layer Configuration */}
+              <div className="p-3.5 rounded-xl bg-indigo-950/20 border border-indigo-800/40 space-y-3">
+                <div className="flex items-center space-x-2 text-indigo-300 font-semibold font-mono">
+                  <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+                  <span>Brand Voice & Persona Calibration</span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {[
+                    { id: 'tactical_operator', label: '⚡ Tactical Operator', desc: 'Direct & Metrics' },
+                    { id: 'empathetic_mentor', label: '🌱 Empathetic Mentor', desc: 'Warm & Guided' },
+                    { id: 'visionary_founder', label: '🚀 Visionary Founder', desc: 'Next-Gen AI' },
+                    { id: 'enterprise_advisor', label: '🏛️ Enterprise Advisor', desc: 'ROI & Governance' }
+                  ].map((t) => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => setSelectedToneArchetype(t.id as any)}
+                      className={`p-2 rounded-lg text-left transition-all border ${
+                        selectedToneArchetype === t.id
+                          ? 'bg-indigo-600/30 border-indigo-400 text-indigo-200 shadow-sm'
+                          : 'bg-slate-950 border-slate-800 text-slate-400 hover:border-slate-700'
+                      }`}
+                    >
+                      <div className="font-medium text-[11px]">{t.label}</div>
+                      <div className="text-[9px] text-slate-500">{t.desc}</div>
+                    </button>
+                  ))}
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 pt-1">
+                  <div className="space-y-1">
+                    <label className="text-slate-300 font-mono text-[11px]">Signature Lexicon (Favorite Words):</label>
+                    <input
+                      type="text"
+                      value={customLexicon}
+                      onChange={(e) => setCustomLexicon(e.target.value)}
+                      placeholder="growth sprint, cohort, velocity"
+                      className="w-full px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 focus:outline-none focus:border-indigo-500 font-mono text-xs"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-slate-300 font-mono text-[11px]">Banned Terms (Never Say):</label>
+                    <input
+                      type="text"
+                      value={customBannedTerms}
+                      onChange={(e) => setCustomBannedTerms(e.target.value)}
+                      placeholder="cheap, guru, synergy, hard sell"
+                      className="w-full px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 focus:outline-none focus:border-indigo-500 font-mono text-xs"
+                    />
+                  </div>
+                </div>
               </div>
 
               <div className="space-y-1">

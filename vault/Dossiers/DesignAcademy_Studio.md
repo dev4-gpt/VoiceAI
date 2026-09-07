@@ -11,7 +11,7 @@ linkedIn: "https://linkedin.com/in/jasonmiller-design"
 budgetRange: "5k_to_15k"
 qualificationScore: 85
 status: "inbound_qualified"
-updatedAt: "2026-09-07T02:01:44.921Z"
+updatedAt: "2026-09-07T02:12:38.398Z"
 tags:
   - client-dossier
   - revenue-os
@@ -69,5 +69,6 @@ Founder of DesignAcademy.io (15k UI/UX designer community, 120k newsletter reade
 ---
 
 ## 🔗 Bidirectional Vault Links
+- [[BrandVoice|🎙️ Brand Voice & Persona Matrix]]
 - [[../../Index|← Return to Vault Map of Content]]
 - [[../../Content-Packs/pack_cf_101|Associated Content Marketing Pack]]

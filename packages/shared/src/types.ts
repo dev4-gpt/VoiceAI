@@ -287,6 +287,7 @@ export interface CRMLead {
   status: LeadStatus;
   scheduledCallTime?: string;
   notes: string[];
+  brandVoice?: any;
   createdAt: string;
   updatedAt: string;
 }

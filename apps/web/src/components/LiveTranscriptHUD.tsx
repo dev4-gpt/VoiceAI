@@ -22,13 +22,18 @@ interface LiveTranscriptHUDProps {
   activeTools: ActiveToolItem[];
   onSendMessage?: (text: string) => Promise<void>;
   isSendingMessage?: boolean;
+  activeBrandVoice?: {
+    companyName: string;
+    toneLabel: string;
+  };
 }
 
 export const LiveTranscriptHUD: React.FC<LiveTranscriptHUDProps> = ({
   messages,
   activeTools,
   onSendMessage,
-  isSendingMessage = false
+  isSendingMessage = false,
+  activeBrandVoice
 }) => {
   const [typedInput, setTypedInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -50,14 +55,21 @@ export const LiveTranscriptHUD: React.FC<LiveTranscriptHUDProps> = ({
   return (
     <div className="flex flex-col h-full bg-slate-900/60 rounded-2xl border border-slate-800/80 backdrop-blur-xl overflow-hidden shadow-2xl">
       {/* HUD Header */}
-      <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-800/80 bg-slate-950/40">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-5 py-3.5 border-b border-slate-800/80 bg-slate-950/40">
         <div className="flex items-center space-x-2.5">
           <Bot className="w-5 h-5 text-cyan-400" />
           <h3 className="text-sm font-semibold tracking-wide text-slate-200">
             Real-Time Spoken Interaction Stream
           </h3>
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {activeBrandVoice && (
+            <span className="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded text-xs font-mono bg-indigo-950/80 text-indigo-300 border border-indigo-700/60 shadow-sm">
+              <Sparkles className="w-3 h-3 text-indigo-400" />
+              <span className="font-semibold">{activeBrandVoice.companyName}</span>
+              <span className="text-indigo-400/80">• {activeBrandVoice.toneLabel}</span>
+            </span>
+          )}
           <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-mono bg-cyan-950/80 text-cyan-400 border border-cyan-800/50">
             Full-Duplex VAD
           </span>

@@ -2,6 +2,7 @@ import type { CRMLead, ChurnRiskMember, TurnTelemetry } from '@voice-os/shared';
 import * as fs from 'fs';
 import * as path from 'path';
 import { graphDatabaseService } from './graphDatabaseService';
+import { brandVoiceService, ToneArchetype } from './brandVoiceService';
 
 class CRMStore {
   private leads: Map<string, CRMLead> = new Map();
@@ -114,6 +115,7 @@ class CRMStore {
     socialBioText?: string;
     companyName?: string;
     businessSummary?: string;
+    toneArchetype?: ToneArchetype;
     source: 'after_hours_inbound' | 'outbound_campaign' | 'web_callback';
   }): CRMLead {
     const existing = Array.from(this.leads.values()).find((l) => l.email.toLowerCase() === data.email.toLowerCase());
@@ -132,7 +134,7 @@ class CRMStore {
       existing.updatedAt = now;
       existing.notes.push(`Updated via voice inbound on ${now}`);
       this.leads.set(existing.id, existing);
-      this.syncLeadToVault(existing);
+      this.syncLeadToVault(existing, data.toneArchetype);
       return existing;
     }
 
@@ -156,7 +158,7 @@ class CRMStore {
     };
 
     this.leads.set(newLead.id, newLead);
-    this.syncLeadToVault(newLead);
+    this.syncLeadToVault(newLead, data.toneArchetype);
     return newLead;
   }
 
@@ -239,7 +241,14 @@ class CRMStore {
     return member;
   }
 
-  public syncLeadToVault(lead: CRMLead) {
+  public syncLeadToVault(lead: CRMLead, toneOverride?: ToneArchetype) {
+    try {
+      // Synthesize Brand Voice Matrix
+      const bv = brandVoiceService.analyzeAndSynthesizeBrandVoice(lead, toneOverride);
+      lead.brandVoice = bv;
+    } catch (e: any) {
+      console.error('[CRM Store Brand Voice Error]', e.message);
+    }
     try {
       const vaultBase = path.resolve(process.cwd(), 'vault');
       const safeFolder = (lead.companyName || lead.fullName || 'Client')
@@ -336,6 +345,7 @@ ${notesList}
 ---
 
 ## 🔗 Bidirectional Vault Links
+- [[BrandVoice|🎙️ Brand Voice & Persona Matrix]]
 - [[../../Index|← Return to Vault Map of Content]]
 - [[../../Content-Packs/pack_cf_101|Associated Content Marketing Pack]]
 `;

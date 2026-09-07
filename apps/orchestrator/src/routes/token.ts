@@ -1,9 +1,10 @@
 import { Router, Request, Response } from 'express';
 import { crmStore } from '../services/crmStore';
+import { brandVoiceService } from '../services/brandVoiceService';
 
 export const tokenRouter = Router();
 
-tokenRouter.post('/token', async (_req: Request, res: Response) => {
+tokenRouter.post('/token', async (req: Request, res: Response) => {
   const apiKey = process.env.ASSEMBLYAI_API_KEY;
 
   if (!apiKey) {
@@ -38,7 +39,9 @@ tokenRouter.post('/token', async (_req: Request, res: Response) => {
     }
 
     const data = (await response.json()) as any;
-    return res.json({ token: data.token, isDemo: false });
+    const company = (req.body && req.body.company) || 'DesignAcademy Studio';
+    const bv = brandVoiceService.getProfileByCompany(company);
+    return res.json({ token: data.token, isDemo: false, brandVoice: bv });
   } catch (err: any) {
     console.error('[Token Route Exception]', err);
     return res.status(500).json({ error: 'Internal server error during token generation', message: err.message });
@@ -78,27 +81,35 @@ tokenRouter.post('/chat', async (req: Request, res: Response) => {
   updatedLead.notes.push(`[Typed Interaction ${new Date().toLocaleTimeString()}]: "${text}"`);
   crmStore.syncLeadToVault(updatedLead);
 
-  // 2. Generate Anna's contextual spoken reply
+  // 2. Generate Anna's contextual spoken reply using Brand Voice DNA
   const safeName = (updatedLead?.companyName || updatedLead?.fullName || prospect?.company || 'Founder')
     .replace(/[^a-zA-Z0-9_-]/g, '_');
+  const companyName = updatedLead?.companyName || prospect?.company || 'your brand';
+  const bv = updatedLead?.brandVoice || brandVoiceService.getProfileByCompany(companyName);
+  const toneLabel = bv?.toneLabel || 'Tactical Operator';
+  const vaultPath = updatedLead ? `vault/Clients/${safeName}/Dossier.md` : null;
+  const brandVoiceVaultPath = updatedLead ? `vault/Clients/${safeName}/BrandVoice.md` : null;
+
   let reply = '';
 
   if (emailMatch || phoneMatch) {
-    reply = `Awesome! I've securely recorded your contact info (${prospectEmail || ''} ${prospectPhone ? '• ' + prospectPhone : ''}) and created your project dossier directly inside your Obsidian vault at vault/Clients/${safeName}/Dossier.md. What is your target launch timeline and budget range?`;
+    reply = `Awesome! I've securely recorded your contact info (${prospectEmail || ''} ${prospectPhone ? '• ' + prospectPhone : ''}) and calibrated the ${toneLabel} Brand Voice for ${companyName} directly inside your vault at ${vaultPath}. What is your target launch timeline and budget range?`;
   } else if (text.toLowerCase().includes('guarantee') || text.toLowerCase().includes('refund')) {
-    reply = `Great question! We offer an action-based 14-day guarantee. If you complete the core growth sprints and don't see results, we refund 100% of your investment. It eliminates the downside risk completely. How does that sound for your project?`;
+    reply = `Great question! For ${companyName}, ${bv?.objectionHandlingStrategy || 'we install our 14-day action-based guarantee: complete the core sprints and if you do not see results, 100% is refunded'}. It eliminates risk while preserving your high-ticket margins.`;
   } else if (text.toLowerCase().includes('price') || text.toLowerCase().includes('cost') || text.toLowerCase().includes('budget')) {
-    reply = `Our flagship Pro Mentorship Sprint is $2,997 (or $497/month for 6 months), which includes 1-on-1 sprint reviews and full funnel architecture. What budget range are you looking to allocate for this launch?`;
+    reply = `For ${companyName}'s offerings, our flagship implementation tier starts at $2,997 (or $497/mo), with high-ticket sprints tailored to your target audience (${bv?.targetAudience || 'high-intent founders'}). What budget are you planning for this launch?`;
   } else if (text.toLowerCase().includes('audience') || text.toLowerCase().includes('zero')) {
-    reply = `You don't need a massive audience to start. With our high-ticket conversion model, even a micro-community of 500 to 1,000 engaged followers can generate $10k to $30k per month. Tell me a bit more about what you're currently building!`;
+    reply = `With ${companyName}'s core positioning ("${bv?.coreValueProposition || 'high-leverage growth'}"), you do not need millions of followers. Even a focused community of 500 to 1,000 members can generate $10k to $30k per month. Tell me more about what you want to scale next!`;
   } else {
-    reply = `Got it! I understand you're building ${prospect?.company || 'this project'}. Our goal is to automate your inbound discovery and scale your high-ticket offerings. What's the main bottleneck you want to solve first?`;
+    reply = `Got it! As admissions director for ${companyName}, my goal is to align with your brand promise: "${bv?.coreValueProposition || 'scale your high-ticket offerings'}". What is the biggest operational bottleneck you want to solve first?`;
   }
 
   res.json({
     reply,
     lead: updatedLead,
-    vaultPath: updatedLead ? `vault/Clients/${safeName}/Dossier.md` : null
+    brandVoice: bv,
+    vaultPath,
+    brandVoiceVaultPath
   });
 });
 

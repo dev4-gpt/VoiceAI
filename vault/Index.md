@@ -35,6 +35,12 @@ graph TD
 
 ## 🗂️ Knowledge Vault Sections
 
+- [[Clients/NeuralCinema_AI/BrandVoice|Brand Voice: NeuralCinema AI (Tactical Operator)]]
+
+- [[Clients/NeuralCinema_AI/BrandVoice|Brand Voice: NeuralCinema AI (Visionary Founder)]]
+
+- [[Clients/DesignAcademy_Studio/BrandVoice|Brand Voice: DesignAcademy Studio (Enterprise Advisor)]]
+
 - [[Clients/NeuralCinema_AI/Dossier|Client Dossier: Elena Rostova (NeuralCinema AI)]] — Score 20/100.
 
 - [[Clients/Solopreneur_OS/Dossier|Client Dossier: Alex Rivera (Solopreneur OS)]] — Score 20/100.

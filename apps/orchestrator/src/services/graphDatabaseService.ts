@@ -11,7 +11,8 @@ export type NodeType =
   | 'ContentPack'
   | 'Asset'
   | 'SelfHealingEvent'
-  | 'Offer';
+  | 'Offer'
+  | 'BrandVoice';
 
 export type EdgeType =
   | 'QUALIFIED_AS'
@@ -22,7 +23,8 @@ export type EdgeType =
   | 'CONTAINS_ASSET'
   | 'HEALED_BY'
   | 'ASSOCIATED_WITH'
-  | 'SCHEDULED_FOR';
+  | 'SCHEDULED_FOR'
+  | 'HAS_BRAND_VOICE';
 
 export interface GraphNode {
   id: string;

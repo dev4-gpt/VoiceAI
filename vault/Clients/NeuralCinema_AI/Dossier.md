@@ -1,17 +1,17 @@
 ---
-id: "lead_1788746646363_quhdf"
+id: "lead_1788747240213_4s3iq"
 title: "Elena Rostova — NeuralCinema AI"
 type: "ClientDossier"
 clientName: "Elena Rostova"
 companyName: "NeuralCinema AI"
-email: "elena@neuralcinema.ai"
+email: "neuralcinemaai@inbound.lead"
 phone: "N/A"
 website: "https://neuralcinema.ai"
 linkedIn: "N/A"
 budgetRange: "unspecified"
 qualificationScore: 20
 status: "new"
-updatedAt: "2026-09-07T02:04:06.470Z"
+updatedAt: "2026-09-07T02:14:00.438Z"
 tags:
   - client-dossier
   - revenue-os
@@ -21,7 +21,7 @@ tags:
 
 # 👤 Client & Business Dossier: Elena Rostova
 **Organization / Community:** NeuralCinema AI  
-**Primary Contact:** [elena@neuralcinema.ai](mailto:elena@neuralcinema.ai) • Phone Pending  
+**Primary Contact:** [neuralcinemaai@inbound.lead](mailto:neuralcinemaai@inbound.lead) • Phone Pending  
 **Official Website:** [https://neuralcinema.ai](https://neuralcinema.ai)  
 **LinkedIn:** [N/A](#)  
 
@@ -31,20 +31,18 @@ tags:
 ---
 
 ## 🌐 Multi-Platform Social Footprint
-* **TWITTER:** [https://x.com/neuralcinema](https://x.com/neuralcinema)
-* **YOUTUBE:** [https://youtube.com/@neuralcinema](https://youtube.com/@neuralcinema)
-* **INSTAGRAM:** [https://instagram.com/neuralcinema](https://instagram.com/neuralcinema)
+* *No direct social links configured.*
 
 ---
 
 ## 📝 Audience Context & Strategic Bio Analysis
-AI Video Generation Studio with 45k YouTube subscribers and 15k newsletter readers. Looking to launch $4,000 enterprise AI film bootcamps.
+What is the price of your masterclass?
 
 ---
 
 ## 🎯 High-Ticket Growth Objectives & Core Needs
 * **Core Problem / Objective:** Scale high-ticket inbound funnel and automate 24/7 after-hours qualification.
-* **Business Summary:** 45k community, enterprise AI film bootcamps, needing 24/7 inbound qualification.
+* **Business Summary:** What is the price of your masterclass?
 * **Purchasing Authority:** `Decision Maker`
 * **Target Budget Range:** `$5,000 - $15,000`
 * **Implementation Timeline:** `2 Weeks`
@@ -60,10 +58,12 @@ AI Video Generation Studio with 45k YouTube subscribers and 15k newsletter reade
 ---
 
 ## 💬 Real-Time Activity Log & Voice Transcripts
-* Created via voice agent on 2026-09-07T02:04:06.362Z
+* Created via voice agent on 2026-09-07T02:14:00.210Z
+* [Typed Interaction 2:14:00 AM]: "What is the price of your masterclass?"
 
 ---
 
 ## 🔗 Bidirectional Vault Links
+- [[BrandVoice|🎙️ Brand Voice & Persona Matrix]]
 - [[../../Index|← Return to Vault Map of Content]]
 - [[../../Content-Packs/pack_cf_101|Associated Content Marketing Pack]]
