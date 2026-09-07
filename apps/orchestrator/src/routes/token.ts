@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { crmStore } from '../services/crmStore';
 import { brandVoiceService } from '../services/brandVoiceService';
+import { deepseekService } from '../services/deepseekService';
 
 export const tokenRouter = Router();
 
@@ -81,7 +82,7 @@ tokenRouter.post('/chat', async (req: Request, res: Response) => {
   updatedLead.notes.push(`[Typed Interaction ${new Date().toLocaleTimeString()}]: "${text}"`);
   crmStore.syncLeadToVault(updatedLead);
 
-  // 2. Generate Anna's contextual spoken reply using Brand Voice DNA
+  // 2. Generate Anna's contextual spoken reply using Live LLM (DeepSeek) & Brand Voice DNA
   const safeName = (updatedLead?.companyName || updatedLead?.fullName || prospect?.company || 'Founder')
     .replace(/[^a-zA-Z0-9_-]/g, '_');
   const companyName = updatedLead?.companyName || prospect?.company || 'your brand';
@@ -90,43 +91,65 @@ tokenRouter.post('/chat', async (req: Request, res: Response) => {
   const vaultPath = updatedLead ? `vault/Clients/${safeName}/Dossier.md` : null;
   const brandVoiceVaultPath = updatedLead ? `vault/Clients/${safeName}/BrandVoice.md` : null;
 
-  // Helper to extract a short, punchy 1-sentence value prop for voice dialogue (never dump raw URLs or paragraphs)
-  const getShortValueProp = (raw: string | undefined): string => {
-    if (!raw) return 'high-leverage autonomous AI operations';
-    const firstLine = raw.split('\n')[0].replace(/^[#-*\s]+/, '').replace(/^What This Is:\s*/i, '');
-    const sentence = firstLine.split('.')[0];
-    return sentence.length > 80 ? sentence.slice(0, 80) : sentence;
-  };
+  // Build rich conversational context
+  const systemPrompt = `You are Anna, the Autonomous AI Growth Operator and Admissions Director for "${companyName}".
+Client & Brand Context:
+- Active Client: ${updatedLead?.fullName || prospect?.name || companyName}
+- Company: ${companyName}
+- Commercial Retainers & Offerings: ${companyName.toLowerCase().includes('veloce') ? 'Base platform is $2,500 setup + $1,250/month for up to 5 seats. Strategy, content production, and full-service growth operations are quoted as custom add-ons.' : 'Flagship high-ticket sprint is $2,997 (or $497/mo) with a 14-day action-based refund guarantee.'}
+- Core Positioning & Dossier: ${bv?.coreValueProposition || prospect?.bio || 'Local-first operating layer with automated agent loops, persistent Obsidian memory, and 24/7 inbound voice qualification'}
+- Tone Archetype: ${toneLabel} (${bv?.toneDescription || 'Direct, metrics-driven, practitioner confidence'})
+- Signature Lexicon to weave in when relevant: ${bv?.signatureLexicon?.join(', ') || 'growth sprint, high-ticket, pipeline velocity'}
+- Strictly Banned Terms (NEVER use): ${bv?.bannedTerms?.join(', ') || 'cheap, guru, magic bullet, hard sell'}
 
-  const lowerText = text.toLowerCase();
+Rules for Voice Conversation:
+1. Speak in exactly 2 to 3 concise, punchy sentences (under 45 words total).
+2. Directly answer the user's specific statement or question with deep comprehension. Never repeat the same generic introduction.
+3. Write for natural spoken voice: do NOT output raw URLs, markdown bullets, hashtags, or bracketed text.
+4. Always end your reply with a sharp, natural qualifying question to move the conversation forward.`;
+
+  // Build multi-turn context from lead interaction history
+  const recentTurns: Array<{ role: 'user' | 'assistant'; content: string }> = [];
+  const interactionNotes = (updatedLead.notes || []).filter((n) => n.startsWith('[Typed Interaction'));
+  const recentHistory = interactionNotes.slice(-5);
+  for (const n of recentHistory) {
+    const match = n.match(/\]: "(.*)"$/);
+    if (match && match[1] && match[1] !== text) {
+      recentTurns.push({ role: 'user', content: match[1] });
+    }
+  }
+  recentTurns.push({ role: 'user', content: text });
+
   let reply = '';
 
-  if (emailMatch || phoneMatch) {
-    reply = `Awesome! I've securely recorded your details (${prospectEmail || ''}) and synced your ${toneLabel} brand voice into the vault. What is your target timeline and budget range for this launch?`;
-  } else if (
-    lowerText.includes('retainer') ||
-    lowerText.includes('offer') ||
-    lowerText.includes('package') ||
-    lowerText.includes('pricing') ||
-    lowerText.includes('price') ||
-    lowerText.includes('cost') ||
-    lowerText.includes('budget') ||
-    lowerText.includes('fee') ||
-    lowerText.includes('tier')
-  ) {
-    if (companyName.toLowerCase().includes('veloce')) {
-      reply = `For Veloce AgenticOS, our base operating retainer starts at $2,500 setup plus $1,250 a month for up to 5 seats, with custom quotes for full-service growth and agent execution. What's the biggest operational bottleneck you'd like to automate first?`;
-    } else {
-      reply = `For ${companyName}, our flagship high-ticket retainer starts at $2,997 (or $497/mo) tailored to high-intent founders. What budget range are you targeting for this sprint?`;
+  try {
+    const completion = await deepseekService.createCompletion({
+      model: 'deepseek-chat',
+      temperature: 0.4,
+      max_tokens: 120,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        ...recentTurns
+      ]
+    });
+
+    if (completion && completion.content) {
+      reply = completion.content
+        .replace(/^["']|["']$/g, '')
+        .replace(/\n+/g, ' ')
+        .trim();
     }
-  } else if (lowerText.includes('guarantee') || lowerText.includes('refund')) {
-    reply = `Great question! For ${companyName}, we install our 14-day action-based guarantee: complete the core sprints and if you don't see results, 100% is refunded. It removes risk while protecting your margins.`;
-  } else if (lowerText.includes('audience') || lowerText.includes('follower') || lowerText.includes('zero')) {
-    reply = `With our high-ticket model, you don't need millions of followers. A focused community of 500 to 1,000 members can reliably generate $10k to $30k a month. Tell me about your current audience size and niche!`;
-  } else if (lowerText.includes('what do you do') || lowerText.includes('how does it work') || lowerText.includes('capabilities')) {
-    reply = `We build autonomous AI growth operators for ${companyName}—qualifying leads around the clock, plugging pipeline leakage, and generating multi-channel content on autopilot. What's your current inbound flow like?`;
-  } else {
-    reply = `Got it! As admissions director for ${companyName}, my goal is to help you scale through ${getShortValueProp(bv?.coreValueProposition)}. What is the biggest operational bottleneck you want to solve first?`;
+  } catch (llmErr) {
+    console.warn('[DeepSeek Chat Completion Error, using fallback]', llmErr);
+  }
+
+  // High-fidelity fallback if LLM is unavailable
+  if (!reply) {
+    if (emailMatch || phoneMatch) {
+      reply = `Awesome! I've recorded your details (${prospectEmail || ''}) and calibrated your ${toneLabel} brand voice directly into your vault. What is your target timeline and budget range for this launch?`;
+    } else {
+      reply = `Understood! For ${companyName}, our system automates inbound qualification and retention so you can scale hands-off. What is the biggest bottleneck you'd like us to tackle first?`;
+    }
   }
 
   res.json({
