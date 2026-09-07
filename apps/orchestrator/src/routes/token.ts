@@ -90,18 +90,43 @@ tokenRouter.post('/chat', async (req: Request, res: Response) => {
   const vaultPath = updatedLead ? `vault/Clients/${safeName}/Dossier.md` : null;
   const brandVoiceVaultPath = updatedLead ? `vault/Clients/${safeName}/BrandVoice.md` : null;
 
+  // Helper to extract a short, punchy 1-sentence value prop for voice dialogue (never dump raw URLs or paragraphs)
+  const getShortValueProp = (raw: string | undefined): string => {
+    if (!raw) return 'high-leverage autonomous AI operations';
+    const firstLine = raw.split('\n')[0].replace(/^[#-*\s]+/, '').replace(/^What This Is:\s*/i, '');
+    const sentence = firstLine.split('.')[0];
+    return sentence.length > 80 ? sentence.slice(0, 80) : sentence;
+  };
+
+  const lowerText = text.toLowerCase();
   let reply = '';
 
   if (emailMatch || phoneMatch) {
-    reply = `Awesome! I've securely recorded your contact info (${prospectEmail || ''} ${prospectPhone ? '• ' + prospectPhone : ''}) and calibrated the ${toneLabel} Brand Voice for ${companyName} directly inside your vault at ${vaultPath}. What is your target launch timeline and budget range?`;
-  } else if (text.toLowerCase().includes('guarantee') || text.toLowerCase().includes('refund')) {
-    reply = `Great question! For ${companyName}, ${bv?.objectionHandlingStrategy || 'we install our 14-day action-based guarantee: complete the core sprints and if you do not see results, 100% is refunded'}. It eliminates risk while preserving your high-ticket margins.`;
-  } else if (text.toLowerCase().includes('price') || text.toLowerCase().includes('cost') || text.toLowerCase().includes('budget')) {
-    reply = `For ${companyName}'s offerings, our flagship implementation tier starts at $2,997 (or $497/mo), with high-ticket sprints tailored to your target audience (${bv?.targetAudience || 'high-intent founders'}). What budget are you planning for this launch?`;
-  } else if (text.toLowerCase().includes('audience') || text.toLowerCase().includes('zero')) {
-    reply = `With ${companyName}'s core positioning ("${bv?.coreValueProposition || 'high-leverage growth'}"), you do not need millions of followers. Even a focused community of 500 to 1,000 members can generate $10k to $30k per month. Tell me more about what you want to scale next!`;
+    reply = `Awesome! I've securely recorded your details (${prospectEmail || ''}) and synced your ${toneLabel} brand voice into the vault. What is your target timeline and budget range for this launch?`;
+  } else if (
+    lowerText.includes('retainer') ||
+    lowerText.includes('offer') ||
+    lowerText.includes('package') ||
+    lowerText.includes('pricing') ||
+    lowerText.includes('price') ||
+    lowerText.includes('cost') ||
+    lowerText.includes('budget') ||
+    lowerText.includes('fee') ||
+    lowerText.includes('tier')
+  ) {
+    if (companyName.toLowerCase().includes('veloce')) {
+      reply = `For Veloce AgenticOS, our base operating retainer starts at $2,500 setup plus $1,250 a month for up to 5 seats, with custom quotes for full-service growth and agent execution. What's the biggest operational bottleneck you'd like to automate first?`;
+    } else {
+      reply = `For ${companyName}, our flagship high-ticket retainer starts at $2,997 (or $497/mo) tailored to high-intent founders. What budget range are you targeting for this sprint?`;
+    }
+  } else if (lowerText.includes('guarantee') || lowerText.includes('refund')) {
+    reply = `Great question! For ${companyName}, we install our 14-day action-based guarantee: complete the core sprints and if you don't see results, 100% is refunded. It removes risk while protecting your margins.`;
+  } else if (lowerText.includes('audience') || lowerText.includes('follower') || lowerText.includes('zero')) {
+    reply = `With our high-ticket model, you don't need millions of followers. A focused community of 500 to 1,000 members can reliably generate $10k to $30k a month. Tell me about your current audience size and niche!`;
+  } else if (lowerText.includes('what do you do') || lowerText.includes('how does it work') || lowerText.includes('capabilities')) {
+    reply = `We build autonomous AI growth operators for ${companyName}—qualifying leads around the clock, plugging pipeline leakage, and generating multi-channel content on autopilot. What's your current inbound flow like?`;
   } else {
-    reply = `Got it! As admissions director for ${companyName}, my goal is to align with your brand promise: "${bv?.coreValueProposition || 'scale your high-ticket offerings'}". What is the biggest operational bottleneck you want to solve first?`;
+    reply = `Got it! As admissions director for ${companyName}, my goal is to help you scale through ${getShortValueProp(bv?.coreValueProposition)}. What is the biggest operational bottleneck you want to solve first?`;
   }
 
   res.json({
