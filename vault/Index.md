@@ -35,19 +35,15 @@ graph TD
 
 ## 🗂️ Knowledge Vault Sections
 
-- [[Infrastructure/Starred_Repositories_Architecture|🌟 Starred Repositories Architecture & Infrastructure Roadmap]]
-
-- [[Clients/NeuralCinema_AI/BrandVoice|Brand Voice: NeuralCinema AI (Tactical Operator)]]
-
-- [[Clients/NeuralCinema_AI/BrandVoice|Brand Voice: NeuralCinema AI (Visionary Founder)]]
+- [[Clients/DesignAcademy_Studio/Dossier|Client Dossier: Jason Miller (DesignAcademy Studio)]] — Score 85/100.
 
 - [[Clients/DesignAcademy_Studio/BrandVoice|Brand Voice: DesignAcademy Studio (Enterprise Advisor)]]
 
-- [[Clients/NeuralCinema_AI/Dossier|Client Dossier: Elena Rostova (NeuralCinema AI)]] — Score 20/100.
+- [[Guides/Private_Dossiers_and_Local_Vault_Setup|🔒 Private Dossiers, Local Vault Protection & Mac Restart Guide]]
+- [[Infrastructure/Starred_Repositories_Architecture|🌟 Starred Repositories Architecture & Infrastructure Roadmap]]
 
-- [[Clients/Solopreneur_OS/Dossier|Client Dossier: Alex Rivera (Solopreneur OS)]] — Score 20/100.
-
-- [[Clients/DesignAcademy_Studio/Dossier|Client Dossier: Jason Miller (DesignAcademy Studio)]] — Score 85/100.
+- [[Clients/DesignAcademy_Studio/BrandVoice|Brand Voice: DesignAcademy Studio (Tactical Operator / Public Demo)]]
+- [[Clients/DesignAcademy_Studio/Dossier|Client Dossier: Jason Miller (DesignAcademy Studio / Public Demo)]] — Score 85/100.
 
 - [[Leads/lead_jason_miller|Lead: Jason Miller]] — Score 85, $5k-$15k budget, booked for consultation.
 - [[Members/member_sarah_jenkins|Member: Sarah Jenkins]] — Retained mastermind member, 15% clamped discount applied.

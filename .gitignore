@@ -31,3 +31,16 @@ venv/
 __pycache__/
 *.pyc
 
+# Local Private Vaults (Keep DesignAcademy Studio public demo, ignore user/client dossiers)
+vault/Clients/*
+!vault/Clients/DesignAcademy_Studio/
+!vault/Clients/.gitkeep
+vault/Dossiers/*
+!vault/Dossiers/DesignAcademy_Studio.md
+!vault/Dossiers/.gitkeep
+vault/Leads/*
+!vault/Leads/lead_jm_901.md
+!vault/Leads/lead_jason_miller.md
+!vault/Leads/.gitkeep
+
+

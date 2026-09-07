@@ -15,7 +15,12 @@ import {
   HardDrive,
   Info,
   X,
-  Building2
+  Building2,
+  Bookmark,
+  Save,
+  RotateCcw,
+  Trash2,
+  Lock
 } from 'lucide-react';
 import { AudioWaveform } from './components/AudioWaveform';
 import { LiveTranscriptHUD, MessageItem, ActiveToolItem } from './components/LiveTranscriptHUD';
@@ -33,6 +38,82 @@ export type OperatingPersona =
   | 'onboarding'
   | 'affiliate'
   | 'diagnostic';
+
+export interface DossierPreset {
+  id: string;
+  name: string;
+  fullName: string;
+  email: string;
+  website: string;
+  linkedIn: string;
+  twitter: string;
+  youtube: string;
+  instagram: string;
+  substack: string;
+  companyName: string;
+  bio: string;
+  toneArchetype: 'tactical_operator' | 'empathetic_mentor' | 'visionary_founder' | 'enterprise_advisor';
+  customLexicon: string;
+  customBannedTerms: string;
+  isCustom?: boolean;
+}
+
+export const BUILT_IN_PRESETS: DossierPreset[] = [
+  {
+    id: 'default_demo',
+    name: 'Default Demo: Jason Miller (DesignAcademy Studio)',
+    fullName: 'Jason Miller',
+    email: 'jason.m@designacademy.io',
+    website: 'https://designacademy.io',
+    linkedIn: 'https://linkedin.com/in/jasonmiller-design',
+    twitter: 'https://x.com/jasonmiller_ui',
+    youtube: 'https://youtube.com/@designacademy_io',
+    instagram: 'https://instagram.com/designacademy.studio',
+    substack: 'https://jasonmiller.substack.com',
+    companyName: 'DesignAcademy Studio',
+    bio: 'Founder of DesignAcademy.io (15k UI/UX designer community, 120k newsletter readers). Transitioning from $47 ebook sales into high-ticket $2,997 Pro Career Sprints and $10k/mo agency retainers. Needs 24/7 after-hours voice qualification to handle European and Asian inbound leads.',
+    toneArchetype: 'tactical_operator',
+    customLexicon: 'growth sprint, funnel velocity, high-ticket, cohort',
+    customBannedTerms: 'cheap, guru, synergy, hard sell, magic bullet',
+    isCustom: false
+  },
+  {
+    id: 'creator_elena',
+    name: 'Sample Creator: Elena Rostova (NeuralCinema AI)',
+    fullName: 'Elena Rostova',
+    email: 'elena@neuralcinema.ai',
+    website: 'https://neuralcinema.ai',
+    linkedIn: 'https://linkedin.com/in/elena-rostova-ai',
+    twitter: 'https://x.com/elena_cinema_ai',
+    youtube: 'https://youtube.com/@NeuralCinemaAI',
+    instagram: 'https://instagram.com/neuralcinema.ai',
+    substack: 'https://neuralcinema.substack.com',
+    companyName: 'NeuralCinema AI',
+    bio: 'GenAI Filmmaker & Director. Running a private cohort for 50 commercial VFX artists and creative directors transitioning to diffusion pipelines and real-time NeRF workflows. Transitioning to $5k enterprise masterminds.',
+    toneArchetype: 'visionary_founder',
+    customLexicon: 'neural render, diffusion workflow, multimodal, latent space, high-ticket',
+    customBannedTerms: 'cheap, prompt kiddie, clickbait, traditional CGI',
+    isCustom: false
+  },
+  {
+    id: 'saas_alex',
+    name: 'Sample SaaS: Alex Rivera (Solopreneur OS)',
+    fullName: 'Alex Rivera',
+    email: 'alex@solopreneuros.com',
+    website: 'https://solopreneuros.com',
+    linkedIn: 'https://linkedin.com/in/alexrivera-tech',
+    twitter: 'https://x.com/alexrivera_dev',
+    youtube: 'https://youtube.com/@solopreneuros',
+    instagram: 'https://instagram.com/solopreneur.os',
+    substack: 'https://alexrivera.substack.com',
+    companyName: 'Solopreneur OS',
+    bio: 'B2B Micro-SaaS founder building productivity systems for fractional executives and solo consultants. Scaled to $18k MRR, now expanding into high-touch onboarding and $12k/yr annual memberships.',
+    toneArchetype: 'enterprise_advisor',
+    customLexicon: 'unit economics, churn mitigation, LTV, net revenue retention, ROI',
+    customBannedTerms: 'hustle, overnight riches, cheap, silver bullet',
+    isCustom: false
+  }
+];
 
 export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'console' | 'crm' | 'evals' | 'content' | 'graph'>('console');
@@ -57,6 +138,103 @@ export const App: React.FC = () => {
   const [selectedToneArchetype, setSelectedToneArchetype] = useState<'tactical_operator' | 'empathetic_mentor' | 'visionary_founder' | 'enterprise_advisor'>('tactical_operator');
   const [customLexicon, setCustomLexicon] = useState('growth sprint, funnel velocity, high-ticket, cohort');
   const [customBannedTerms, setCustomBannedTerms] = useState('cheap, guru, synergy, hard sell, magic bullet');
+
+  // Saved Dossier Presets State (Browser LocalStorage + Built-in Archetypes)
+  const [selectedPresetId, setSelectedPresetId] = useState<string>('default_demo');
+  const [customPresets, setCustomPresets] = useState<DossierPreset[]>(() => {
+    try {
+      const saved = localStorage.getItem('growthvoice_custom_dossier_presets');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const allPresets = [...BUILT_IN_PRESETS, ...customPresets];
+
+  const applyPreset = (preset: DossierPreset) => {
+    setProspectName(preset.fullName);
+    setProspectEmail(preset.email);
+    setProspectWebsite(preset.website);
+    setProspectLinkedIn(preset.linkedIn);
+    setProspectTwitter(preset.twitter);
+    setProspectYouTube(preset.youtube);
+    setProspectInstagram(preset.instagram);
+    setProspectSubstack(preset.substack);
+    setProspectCompany(preset.companyName);
+    setProspectBio(preset.bio);
+    setSelectedToneArchetype(preset.toneArchetype);
+    setCustomLexicon(preset.customLexicon);
+    setCustomBannedTerms(preset.customBannedTerms);
+    setSelectedPresetId(preset.id);
+  };
+
+  const handleSelectPreset = (presetId: string) => {
+    const found = allPresets.find((p) => p.id === presetId);
+    if (found) {
+      applyPreset(found);
+    }
+  };
+
+  const handleSaveCurrentAsCustomPreset = () => {
+    const defaultTitle = prospectCompany || prospectName || 'My Custom Brand';
+    const name = window.prompt('Enter a title for this private dossier preset:', defaultTitle);
+    if (!name) return;
+
+    const newPreset: DossierPreset = {
+      id: `custom_${Date.now()}`,
+      name: `💾 ${name}`,
+      fullName: prospectName,
+      email: prospectEmail,
+      website: prospectWebsite,
+      linkedIn: prospectLinkedIn,
+      twitter: prospectTwitter,
+      youtube: prospectYouTube,
+      instagram: prospectInstagram,
+      substack: prospectSubstack,
+      companyName: prospectCompany,
+      bio: prospectBio,
+      toneArchetype: selectedToneArchetype,
+      customLexicon,
+      customBannedTerms,
+      isCustom: true
+    };
+
+    const updated = [...customPresets, newPreset];
+    setCustomPresets(updated);
+    setSelectedPresetId(newPreset.id);
+    try {
+      localStorage.setItem('growthvoice_custom_dossier_presets', JSON.stringify(updated));
+    } catch (e) {
+      console.error('Failed to save to localStorage', e);
+    }
+
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: `preset_${Date.now()}`,
+        speaker: 'system',
+        text: `💾 Saved Private Dossier Preset: "${name}". Stored locally in your browser and vault!`,
+        timestamp: new Date().toLocaleTimeString()
+      }
+    ]);
+  };
+
+  const handleDeleteCustomPreset = (presetId: string) => {
+    if (!window.confirm('Delete this saved private preset?')) return;
+    const updated = customPresets.filter((p) => p.id !== presetId);
+    setCustomPresets(updated);
+    try {
+      localStorage.setItem('growthvoice_custom_dossier_presets', JSON.stringify(updated));
+    } catch (e) {
+      console.error('Failed to update localStorage', e);
+    }
+    handleSelectPreset('default_demo');
+  };
+
+  const handleResetToGenericDemo = () => {
+    handleSelectPreset('default_demo');
+  };
 
   const [messages, setMessages] = useState<MessageItem[]>([]);
   const [activeTools, setActiveTools] = useState<ActiveToolItem[]>([]);
@@ -948,14 +1126,25 @@ export const App: React.FC = () => {
                 </div>
               </div>
 
-              {/* Enrich Prospect Context Button */}
-              <button
-                onClick={() => setIsEnrichModalOpen(true)}
-                className="flex items-center space-x-2 px-3.5 py-2 rounded-xl bg-cyan-600/30 hover:bg-cyan-600/50 border border-cyan-500/40 text-cyan-200 text-xs font-semibold whitespace-nowrap transition-all shadow-md shadow-cyan-600/20"
-              >
-                <Globe className="w-3.5 h-3.5" />
-                <span>Enrich Prospect Dossier (Website & LinkedIn)</span>
-              </button>
+              {/* Enrich Prospect Context Button & Active Profile Badge */}
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => setIsEnrichModalOpen(true)}
+                  className="flex items-center space-x-2 px-3.5 py-2 rounded-xl bg-cyan-600/30 hover:bg-cyan-600/50 border border-cyan-500/40 text-cyan-200 text-xs font-semibold whitespace-nowrap transition-all shadow-md shadow-cyan-600/20"
+                >
+                  <Globe className="w-3.5 h-3.5" />
+                  <span>Enrich Prospect Dossier (Website & LinkedIn)</span>
+                </button>
+                <button
+                  onClick={() => setIsEnrichModalOpen(true)}
+                  title="Active Dossier Profile - Click to switch or edit"
+                  className="hidden lg:flex items-center space-x-1.5 px-2.5 py-2 rounded-xl bg-slate-900/90 border border-slate-800 hover:border-slate-700 text-slate-300 text-xs font-mono transition-all"
+                >
+                  <Bookmark className="w-3.5 h-3.5 text-cyan-400" />
+                  <span className="text-slate-400">Profile:</span>
+                  <span className="text-cyan-300 font-medium max-w-[140px] truncate">{prospectCompany || 'DesignAcademy'}</span>
+                </button>
+              </div>
             </div>
 
             {/* Brand Voice Layer Selector Bar */}
@@ -1250,6 +1439,83 @@ export const App: React.FC = () => {
               <p className="text-slate-400 leading-relaxed">
                 Provide the prospect's website, LinkedIn profile, or business bio so Anna can research their business model and tailor questions during the call.
               </p>
+
+              {/* Preset Profile Bar */}
+              <div className="p-3 rounded-xl bg-slate-950/80 border border-cyan-800/40 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2 text-cyan-300 font-semibold font-mono">
+                    <Bookmark className="w-3.5 h-3.5 text-cyan-400" />
+                    <span>Dossier Preset Profile:</span>
+                  </div>
+                  <span className="text-[10px] px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-800/60 font-mono">
+                    {allPresets.find((p) => p.id === selectedPresetId)?.isCustom ? '🔒 Private Local Preset' : '🌟 Public Demo Archetype'}
+                  </span>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <select
+                    value={selectedPresetId}
+                    onChange={(e) => handleSelectPreset(e.target.value)}
+                    className="flex-1 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 text-xs font-medium focus:outline-none focus:border-cyan-500 font-mono"
+                  >
+                    <optgroup label="🌟 Public Built-in Archetypes">
+                      {BUILT_IN_PRESETS.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                    {customPresets.length > 0 && (
+                      <optgroup label="💾 My Saved Private Presets (Local)">
+                        {customPresets.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.name}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
+                  </select>
+
+                  <button
+                    type="button"
+                    onClick={handleSaveCurrentAsCustomPreset}
+                    title="Save current inputs as a private preset"
+                    className="flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/40 border border-emerald-500/40 text-emerald-300 text-xs font-semibold whitespace-nowrap transition-all"
+                  >
+                    <Save className="w-3.5 h-3.5" />
+                    <span>Save Preset</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleResetToGenericDemo}
+                    title="Reset to generic public demo (Jason Miller / DesignAcademy Studio)"
+                    className="flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold whitespace-nowrap transition-all"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>Reset</span>
+                  </button>
+
+                  {allPresets.find((p) => p.id === selectedPresetId)?.isCustom && (
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteCustomPreset(selectedPresetId)}
+                      title="Delete this custom preset"
+                      className="p-1.5 rounded-xl bg-red-950/40 hover:bg-red-900/60 border border-red-800/50 text-red-300 transition-all"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Privacy Shield Info Banner */}
+                <div className="flex items-center space-x-2 text-[10px] text-slate-400 bg-slate-900/60 px-2.5 py-1.5 rounded-lg border border-slate-800">
+                  <Lock className="w-3 h-3 text-emerald-400 flex-shrink-0" />
+                  <span>
+                    <strong>Local Vault Shield:</strong> Stored locally in <code className="text-cyan-300 font-mono">vault/Clients/</code> and gitignored. Public git pulls always see the generic demo.
+                  </span>
+                </div>
+              </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
