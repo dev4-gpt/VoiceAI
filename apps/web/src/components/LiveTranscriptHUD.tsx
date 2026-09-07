@@ -84,7 +84,7 @@ export const LiveTranscriptHUD: React.FC<LiveTranscriptHUDProps> = ({
       </div>
 
       {/* Messages Scroll Area */}
-      <div className="flex-1 p-4 overflow-y-auto space-y-3.5 min-h-[300px] max-h-[380px]">
+      <div className="flex-1 p-4 overflow-y-auto space-y-3.5 min-h-[400px] max-h-[520px] custom-scrollbar">
         {messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-slate-500 text-sm space-y-2 py-16">
             <Bot className="w-8 h-8 text-slate-600 animate-pulse" />

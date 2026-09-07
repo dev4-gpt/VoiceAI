@@ -312,7 +312,7 @@ export const GraphViewHUD: React.FC = () => {
         </div>
 
         {/* Right Column: Open-Source Integrations & Topology */}
-        <div className="space-y-6">
+        <div className="flex flex-col h-[640px] space-y-4 overflow-y-auto custom-scrollbar">
           {/* Graphify Integration Card */}
           <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-5">
             <div className="flex items-center justify-between mb-3">

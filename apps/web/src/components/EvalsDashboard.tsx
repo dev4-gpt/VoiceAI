@@ -168,7 +168,13 @@ export const EvalsDashboard: React.FC = () => {
           >
             <div className="space-y-1">
               <div className="font-semibold text-slate-200">{t.name}</div>
-              <div className="font-mono text-[11px] text-slate-500">{t.graders}</div>
+              <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                {t.graders.split('|').map((g: string, gIdx: number) => (
+                  <span key={gIdx} className="px-2 py-0.5 rounded bg-emerald-950/60 border border-emerald-800/50 text-emerald-400 font-mono text-[10px] font-semibold">
+                    {g.trim()}
+                  </span>
+                ))}
+              </div>
             </div>
 
             <div className="flex items-center space-x-3 font-mono">

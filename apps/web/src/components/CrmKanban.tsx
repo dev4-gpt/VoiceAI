@@ -29,14 +29,14 @@ export const CrmKanban: React.FC<CrmKanbanProps> = ({ leads, members = [] }) => 
         </span>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-3.5 flex-1 overflow-x-auto">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 flex-1 overflow-x-auto">
         {COLUMNS.map((col) => {
           const colLeads = leads.filter((l) => l.status === col.key);
 
           return (
             <div
               key={col.key}
-              className="flex flex-col bg-slate-950/60 rounded-xl border border-slate-800/80 p-3 min-w-[210px]"
+              className="flex flex-col bg-slate-950/60 rounded-xl border border-slate-800/80 p-3.5 min-w-[260px] shadow-sm"
             >
               <div className="flex items-center justify-between pb-2.5 mb-2.5 border-b border-slate-800">
                 <span className={`text-xs font-semibold uppercase tracking-wider ${col.color.split(' ')[2]}`}>
@@ -47,7 +47,7 @@ export const CrmKanban: React.FC<CrmKanbanProps> = ({ leads, members = [] }) => 
                 </span>
               </div>
 
-              <div className="flex-1 space-y-2.5 overflow-y-auto max-h-[380px]">
+              <div className="flex-1 space-y-2.5 overflow-y-auto min-h-[440px] max-h-[560px] pr-1 custom-scrollbar">
                 {colLeads.length === 0 ? (
                   <div className="text-center py-8 text-xs text-slate-600 font-mono">
                     No records in stage

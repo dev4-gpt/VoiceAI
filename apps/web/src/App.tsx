@@ -1261,27 +1261,32 @@ export const App: React.FC = () => {
         {activeTab === 'console' && (
           <div className="space-y-6">
             {/* Explainer & Mental Model Banner */}
-            <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-950/40 via-slate-900/60 to-purple-950/40 border border-blue-800/40 backdrop-blur-xl flex items-center justify-between">
-              <div className="flex items-start space-x-3">
-                <Info className="w-5 h-5 text-cyan-400 flex-shrink-0 mt-0.5" />
+            <div className="p-4.5 rounded-2xl bg-gradient-to-r from-blue-950/40 via-slate-900/60 to-purple-950/40 border border-blue-800/40 backdrop-blur-xl flex flex-col xl:flex-row xl:items-center justify-between gap-4 shadow-xl">
+              <div className="flex items-start space-x-3.5 max-w-3xl">
+                <div className="p-2 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex-shrink-0 mt-0.5">
+                  <Info className="w-4 h-4" />
+                </div>
                 <div className="space-y-1">
-                  <h4 className="text-xs font-bold text-slate-100 uppercase tracking-wide">
-                    Live Roleplay & Simulator Architecture:
+                  <h4 className="text-xs font-bold text-slate-100 uppercase tracking-wider flex items-center space-x-2">
+                    <span>Live Roleplay & Simulator Architecture</span>
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-950/80 text-cyan-400 border border-cyan-800/60 font-semibold normal-case">
+                      Full-Duplex VAD
+                    </span>
                   </h4>
-                  <p className="text-xs text-slate-300 leading-relaxed max-w-4xl">
+                  <p className="text-xs text-slate-300 leading-relaxed">
                     In production, this voice widget lives on the <strong>Creator's website</strong>. When an after-hours <strong>Prospective Buyer</strong> speaks, <strong>Anna</strong> qualifies their BANT budget, books consultations, and saves the objection into the <strong>Persistent Knowledge Graph</strong> below.
                   </p>
                 </div>
               </div>
 
               {/* Client Manager Bar with Plus (+) & Minus (-) Controls */}
-              <div className="flex flex-wrap items-center gap-2">
-                <div className="flex items-center space-x-1 bg-slate-900/90 border border-slate-800 rounded-xl p-1 shadow-sm">
-                  <Bookmark className="w-3.5 h-3.5 text-cyan-400 ml-1.5 flex-shrink-0" />
+              <div className="flex flex-wrap items-center gap-2 self-start xl:self-center">
+                <div className="flex items-center space-x-1.5 bg-slate-900/90 border border-slate-800 rounded-xl p-1 shadow-sm">
+                  <Bookmark className="w-3.5 h-3.5 text-cyan-400 ml-2 flex-shrink-0" />
                   <select
                     value={selectedPresetId}
                     onChange={(e) => handleSelectPreset(e.target.value)}
-                    className="bg-transparent text-slate-200 text-xs font-medium focus:outline-none px-2 py-1 max-w-[170px] truncate font-mono cursor-pointer"
+                    className="bg-transparent text-slate-200 text-xs font-medium focus:outline-none px-2 py-1 max-w-[190px] truncate font-mono cursor-pointer"
                     title="Switch active client dossier"
                   >
                     <optgroup label="🌟 Public Demo Archetypes">
@@ -1307,10 +1312,10 @@ export const App: React.FC = () => {
                     type="button"
                     onClick={handleAddNewClient}
                     title="Add a new client dossier (+)"
-                    className="flex items-center space-x-1 px-2 py-1 rounded-lg bg-cyan-600/30 hover:bg-cyan-600/50 border border-cyan-500/50 text-cyan-200 text-xs font-semibold transition-all"
+                    className="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-cyan-600/30 hover:bg-cyan-600/50 border border-cyan-500/50 text-cyan-200 text-xs font-semibold transition-all shadow-sm"
                   >
                     <Plus className="w-3.5 h-3.5" />
-                    <span className="hidden sm:inline">Add</span>
+                    <span>Add</span>
                   </button>
 
                   {/* [-] Delete Client Button */}
@@ -1334,7 +1339,7 @@ export const App: React.FC = () => {
 
                 <button
                   onClick={() => setIsEnrichModalOpen(true)}
-                  className="flex items-center space-x-2 px-3 py-2 rounded-xl bg-cyan-600/30 hover:bg-cyan-600/50 border border-cyan-500/40 text-cyan-200 text-xs font-semibold whitespace-nowrap transition-all shadow-md shadow-cyan-600/20"
+                  className="flex items-center space-x-2 px-3.5 py-2 rounded-xl bg-cyan-600/30 hover:bg-cyan-600/50 border border-cyan-500/40 text-cyan-200 text-xs font-semibold whitespace-nowrap transition-all shadow-md shadow-cyan-600/20"
                 >
                   <Globe className="w-3.5 h-3.5" />
                   <span>Edit Dossier & Brand Voice</span>
@@ -1615,12 +1620,18 @@ export const App: React.FC = () => {
 
       {/* Prospect Dossier Enrichment Modal */}
       {isEnrichModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-6">
-          <div className="w-full max-w-lg bg-slate-900 border border-cyan-700/50 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between p-5 border-b border-slate-800 bg-slate-950/50">
-              <div className="flex items-center space-x-2 text-cyan-400">
-                <Globe className="w-4 h-4" />
-                <h3 className="text-sm font-bold text-white">Prospect Business Dossier & Website Context</h3>
+        <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+          <div className="w-full max-w-3xl bg-slate-900 border border-cyan-700/50 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] animate-in fade-in zoom-in-95 duration-150 my-auto">
+            {/* Sticky Header */}
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-950/80 flex-shrink-0">
+              <div className="flex items-center space-x-3 text-cyan-400">
+                <div className="p-2 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
+                  <Globe className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white">Prospect Business Dossier & Brand Voice Matrix</h3>
+                  <p className="text-[11px] text-slate-400">Calibrate client website context, audience persona, and RAG knowledge for Anna</p>
+                </div>
               </div>
               <button
                 onClick={() => setIsEnrichModalOpen(false)}
@@ -1630,7 +1641,7 @@ export const App: React.FC = () => {
               </button>
             </div>
 
-            <form onSubmit={handleEnrichProspect} className="p-6 space-y-4 text-xs">
+            <form id="dossier-form" onSubmit={handleEnrichProspect} className="p-6 space-y-4 text-xs overflow-y-auto flex-1 custom-scrollbar">
               <p className="text-slate-400 leading-relaxed">
                 Provide the prospect's website, LinkedIn profile, or business bio so Anna can research their business model and tailor questions during the call.
               </p>
@@ -2087,23 +2098,32 @@ export const App: React.FC = () => {
                 />
               </div>
 
-              <div className="pt-2 flex items-center justify-end space-x-2">
+            </form>
+
+            {/* Sticky Modal Action Footer */}
+            <div className="px-6 py-3.5 border-t border-slate-800 bg-slate-950/90 flex flex-col sm:flex-row items-center justify-between gap-3 flex-shrink-0">
+              <div className="flex items-center space-x-2 text-[11px] text-slate-400 font-mono">
+                <Lock className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                <span>Stored locally in <code className="text-cyan-300">vault/Clients/</code> • Zero Git Leakage</span>
+              </div>
+              <div className="flex items-center space-x-2.5 w-full sm:w-auto justify-end">
                 <button
                   type="button"
                   onClick={() => setIsEnrichModalOpen(false)}
-                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold"
+                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold transition-all"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex items-center space-x-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold shadow-lg shadow-cyan-500/20"
+                  form="dossier-form"
+                  className="flex items-center space-x-2 px-5 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-bold shadow-lg shadow-cyan-500/20 transition-all cursor-pointer"
                 >
                   <UserCheck className="w-4 h-4" />
                   <span>Save & Feed to Voice Agent</span>
                 </button>
               </div>
-            </form>
+            </div>
           </div>
         </div>
       )}
