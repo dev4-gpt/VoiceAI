@@ -174,13 +174,73 @@ export interface GeneratedContentPack {
   };
 }
 
+// ============================================================================
+// SOP Engine: High-Volume Lead Gen & Personalized Outreach Types
+// ============================================================================
+
+export interface SocialPlatformLinks {
+  twitter?: string;
+  linkedin?: string;
+  youtube?: string;
+  instagram?: string;
+  substack?: string;
+  tiktok?: string;
+  podcast?: string;
+  other?: string;
+}
+
+export interface ConversionAuditPillar {
+  pillarName: string;
+  scoreOutOf10: number;
+  finding: string;
+  recommendation: string;
+  impactLevel: 'critical' | 'high' | 'medium';
+}
+
+export interface LeadMagnetAudit {
+  companyOrCreator: string;
+  website?: string;
+  socialLinks?: SocialPlatformLinks;
+  socialBioAnalysis?: {
+    identifiedNiche: string;
+    estimatedAudienceTier: string;
+    channelStrengths: string[];
+    monetizationAngle: string;
+  };
+  triggerEvent: string; // e.g. "Hiring first SDR", "Launched $2,997 cohort", "Scaling past $20k MRR"
+  leadMagnetTitle: string; // e.g. "The 24/7 Inbound Conversion Blueprint & Revenue Leakage Audit"
+  executiveSummary: string;
+  auditScore: number; // 0 - 100
+  estimatedAnnualRevenueLeakageUsd: number;
+  pillars: ConversionAuditPillar[]; // The 5-Point Inbound Conversion Audit
+  outreachSequence: {
+    coldEmail: {
+      subject: string;
+      bodyMarkdown: string;
+    };
+    linkedInMessage: {
+      hook: string;
+      body: string;
+    };
+    spokenAudioScript: {
+      intro: string;
+      triggerHook: string;
+      valueDrop: string;
+      frictionlessCallToAction: string;
+    };
+  };
+  freeAssetPreviewMarkdown: string;
+}
+
 export interface ContentFactoryJob {
   id: string;
   topic: string;
-  requestedBySpeaker: 'creator' | 'voice_agent_inbound';
+  jobType?: 'content_pack' | 'lead_magnet_audit';
+  requestedBySpeaker: 'creator' | 'voice_agent_inbound' | 'sdr_outbound';
   status: JobStatus;
   researchLanes: ResearchLaneResult[];
   contentPack?: GeneratedContentPack;
+  leadMagnetAudit?: LeadMagnetAudit;
   selfHealingLogs: SelfHealingAttempt[];
   verificationScore: number; // 0 - 100
   humanApproved: boolean;
@@ -214,6 +274,8 @@ export interface CRMLead {
   phone?: string;
   website?: string;
   linkedIn?: string;
+  socialLinks?: SocialPlatformLinks;
+  socialBioText?: string;
   companyName?: string;
   businessSummary?: string;
   source: 'after_hours_inbound' | 'outbound_campaign' | 'web_callback';

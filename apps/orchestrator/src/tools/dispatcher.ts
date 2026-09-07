@@ -26,13 +26,18 @@ export class ToolDispatcher {
           email: args.email,
           website: args.website,
           linkedIn: args.linkedIn,
+          socialLinks: args.socialLinks,
+          socialBioText: args.socialBioText,
           companyName: args.companyName,
           businessSummary: args.businessSummary,
           source: 'after_hours_inbound'
         });
+        const platformsList = args.socialLinks
+          ? Object.keys(args.socialLinks).filter((k) => (args.socialLinks as any)[k]).join(', ')
+          : 'None specified';
         return {
           status: 'success',
-          message: `Dossier enriched for ${lead.fullName}: Website (${args.website || 'N/A'}), LinkedIn (${args.linkedIn || 'N/A'}), Business (${args.companyName || 'Verified'}). Profile active in RAG memory.`,
+          message: `Dossier enriched for ${lead.fullName}: Website (${args.website || 'N/A'}), LinkedIn (${args.linkedIn || 'N/A'}), Socials (${platformsList}), Business (${args.companyName || 'Verified'}). Profile active in RAG memory.`,
           leadId: lead.id,
           lead
         };

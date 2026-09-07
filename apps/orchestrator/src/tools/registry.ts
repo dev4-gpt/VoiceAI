@@ -31,6 +31,7 @@ export const VOICE_AGENT_TOOLS: FlatToolDefinition[] = [
         fullName: { type: 'string', description: "The prospect's name if known" },
         website: { type: 'string', description: "The prospect's company or portfolio website URL" },
         linkedIn: { type: 'string', description: "The prospect's LinkedIn profile URL" },
+        socialBioText: { type: 'string', description: "Prospect's multi-platform social bio, audience size, or about-me summary" },
         companyName: { type: 'string', description: "The prospect's company or community name" },
         businessSummary: { type: 'string', description: "Brief overview of what they do and their audience or revenue" }
       },

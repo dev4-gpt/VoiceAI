@@ -27,6 +27,28 @@ contentRouter.post('/trigger', async (req: Request, res: Response) => {
   });
 });
 
+contentRouter.post('/audit', async (req: Request, res: Response) => {
+  const { companyOrCreator, website, triggerEvent, socialLinks, socialBioText, speaker } = req.body;
+  if (!companyOrCreator) {
+    return res.status(400).json({ error: 'Company or Creator name is required to run conversion audit' });
+  }
+
+  const job = await contentFactoryEngine.startAuditJob({
+    companyOrCreator,
+    website,
+    triggerEvent: triggerEvent || 'Scaling high-ticket inbound funnel',
+    socialLinks,
+    socialBioText,
+    requestedBySpeaker: speaker || 'sdr_outbound'
+  });
+
+  res.json({
+    status: 'queued',
+    message: `SOP Outbound Lead Magnet & Conversion Audit queued for "${companyOrCreator}". Analysis will stream into Content Studio.`,
+    jobId: job.id
+  });
+});
+
 contentRouter.post('/jobs/:id/approve', (req: Request, res: Response) => {
   const job = contentFactoryEngine.approveJob(req.params.id);
   if (!job) return res.status(404).json({ error: 'Job not found' });

@@ -75,6 +75,69 @@ export const CrmKanban: React.FC<CrmKanbanProps> = ({ leads, members = [] }) => 
 
                       <div className="text-[11px] text-slate-400 font-mono truncate">{lead.email}</div>
 
+                      {lead.companyName && (
+                        <div className="text-[11px] text-slate-300 font-medium truncate">
+                          {lead.companyName}
+                        </div>
+                      )}
+
+                      {lead.socialLinks && (
+                        <div className="flex items-center space-x-1 pt-0.5 text-slate-400">
+                          {lead.socialLinks.twitter && (
+                            <a
+                              href={lead.socialLinks.twitter}
+                              target="_blank"
+                              rel="noreferrer"
+                              title="Twitter / X"
+                              className="hover:text-cyan-400"
+                            >
+                              <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-950 border border-slate-800 text-cyan-300">
+                                𝕏
+                              </span>
+                            </a>
+                          )}
+                          {lead.socialLinks.linkedin && (
+                            <a
+                              href={lead.socialLinks.linkedin}
+                              target="_blank"
+                              rel="noreferrer"
+                              title="LinkedIn"
+                              className="hover:text-blue-400"
+                            >
+                              <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-950 border border-slate-800 text-blue-300">
+                                in
+                              </span>
+                            </a>
+                          )}
+                          {lead.socialLinks.youtube && (
+                            <a
+                              href={lead.socialLinks.youtube}
+                              target="_blank"
+                              rel="noreferrer"
+                              title="YouTube"
+                              className="hover:text-red-400"
+                            >
+                              <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-950 border border-slate-800 text-red-300">
+                                ▶
+                              </span>
+                            </a>
+                          )}
+                          {lead.socialLinks.substack && (
+                            <a
+                              href={lead.socialLinks.substack}
+                              target="_blank"
+                              rel="noreferrer"
+                              title="Substack"
+                              className="hover:text-amber-400"
+                            >
+                              <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-950 border border-slate-800 text-amber-300">
+                                ✉
+                              </span>
+                            </a>
+                          )}
+                        </div>
+                      )}
+
                       {lead.budgetRange && (
                         <div className="flex items-center space-x-1.5 text-[11px] text-cyan-400">
                           <Award className="w-3 h-3" />

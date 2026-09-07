@@ -33,6 +33,44 @@ class CRMStore {
     ];
 
     testMembers.forEach((m) => this.members.set(m.memberId, m));
+
+    // Seed realistic archetype lead with social links and bio
+    const now = new Date().toISOString();
+    const demoLead: CRMLead = {
+      id: 'lead_jm_901',
+      fullName: 'Jason Miller',
+      email: 'jason.m@designacademy.io',
+      phone: '+1 (555) 438-9201',
+      website: 'https://designacademy.io',
+      linkedIn: 'https://linkedin.com/in/jasonmiller-design',
+      socialLinks: {
+        twitter: 'https://x.com/jasonmiller_ui',
+        linkedin: 'https://linkedin.com/in/jasonmiller-design',
+        youtube: 'https://youtube.com/@designacademy_io',
+        instagram: 'https://instagram.com/designacademy.studio',
+        substack: 'https://jasonmiller.substack.com'
+      },
+      socialBioText:
+        'Founder of DesignAcademy.io (15k UI/UX designer community, 120k newsletter readers). Transitioning from $47 ebook sales into high-ticket $2,997 Pro Career Sprints and $10k/mo agency retainers. Needs 24/7 after-hours voice qualification to handle European and Asian inbound leads.',
+      companyName: 'DesignAcademy Studio',
+      businessSummary: '15k community members, $47-$2,997 product suite, expanding into enterprise design sprints',
+      source: 'after_hours_inbound',
+      budgetRange: '5k_to_15k',
+      coreNeed: 'Automate 24/7 after-hours inbound qualification & reduce lead dropoff',
+      authority: 'decision_maker',
+      timelineWeeks: 3,
+      qualificationScore: 85,
+      status: 'inbound_qualified',
+      scheduledCallTime: 'Tomorrow at 2:00 PM EST',
+      notes: [
+        'Voice Agent (Anna) qualified lead via 24/7 inbound channel.',
+        'Budget confirmed: $5,000 - $15,000. Core need: after-hours qualification for international timezones.',
+        'Social Footprint Analyzed: 120k Substack + 15k Community. High-intent founder archetype.'
+      ],
+      createdAt: now,
+      updatedAt: now
+    };
+    this.leads.set(demoLead.id, demoLead);
   }
 
   public getLeads(): CRMLead[] {
@@ -59,6 +97,17 @@ class CRMStore {
     phone?: string;
     website?: string;
     linkedIn?: string;
+    socialLinks?: {
+      twitter?: string;
+      linkedin?: string;
+      youtube?: string;
+      instagram?: string;
+      substack?: string;
+      tiktok?: string;
+      podcast?: string;
+      other?: string;
+    };
+    socialBioText?: string;
     companyName?: string;
     businessSummary?: string;
     source: 'after_hours_inbound' | 'outbound_campaign' | 'web_callback';
@@ -71,6 +120,8 @@ class CRMStore {
       existing.phone = data.phone || existing.phone;
       existing.website = data.website || existing.website;
       existing.linkedIn = data.linkedIn || existing.linkedIn;
+      if (data.socialLinks) existing.socialLinks = { ...existing.socialLinks, ...data.socialLinks };
+      if (data.socialBioText) existing.socialBioText = data.socialBioText;
       existing.companyName = data.companyName || existing.companyName;
       existing.businessSummary = data.businessSummary || existing.businessSummary;
       existing.source = data.source || existing.source;
@@ -87,6 +138,8 @@ class CRMStore {
       phone: data.phone,
       website: data.website,
       linkedIn: data.linkedIn,
+      socialLinks: data.socialLinks,
+      socialBioText: data.socialBioText,
       companyName: data.companyName,
       businessSummary: data.businessSummary,
       source: data.source,

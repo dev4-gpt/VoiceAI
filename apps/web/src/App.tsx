@@ -47,8 +47,12 @@ export const App: React.FC = () => {
   const [prospectEmail, setProspectEmail] = useState('jason.m@designacademy.io');
   const [prospectWebsite, setProspectWebsite] = useState('https://designacademy.io');
   const [prospectLinkedIn, setProspectLinkedIn] = useState('https://linkedin.com/in/jasonmiller-design');
+  const [prospectTwitter, setProspectTwitter] = useState('https://x.com/jasonmiller_ui');
+  const [prospectYouTube, setProspectYouTube] = useState('https://youtube.com/@designacademy_io');
+  const [prospectInstagram, setProspectInstagram] = useState('https://instagram.com/designacademy.studio');
+  const [prospectSubstack, setProspectSubstack] = useState('https://jasonmiller.substack.com');
   const [prospectCompany, setProspectCompany] = useState('DesignAcademy Studio');
-  const [prospectBio, setProspectBio] = useState('UI/UX design mentorship community with 15k audience, wanting $10k/mo retainers');
+  const [prospectBio, setProspectBio] = useState('Founder of DesignAcademy.io (15k UI/UX designer community, 120k newsletter readers). Transitioning from $47 ebook sales into high-ticket $2,997 Pro Career Sprints and $10k/mo agency retainers. Needs 24/7 after-hours voice qualification to handle European and Asian inbound leads.');
 
   const [messages, setMessages] = useState<MessageItem[]>([]);
   const [activeTools, setActiveTools] = useState<ActiveToolItem[]>([]);
@@ -359,7 +363,7 @@ export const App: React.FC = () => {
     setIsUserSpeaking(false);
   };
 
-  // Submit Prospect Website / LinkedIn Context Enrichment
+  // Submit Prospect Website / Social Platforms Context Enrichment
   const handleEnrichProspect = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -373,6 +377,14 @@ export const App: React.FC = () => {
             email: prospectEmail,
             website: prospectWebsite,
             linkedIn: prospectLinkedIn,
+            socialLinks: {
+              twitter: prospectTwitter,
+              linkedin: prospectLinkedIn,
+              youtube: prospectYouTube,
+              instagram: prospectInstagram,
+              substack: prospectSubstack
+            },
+            socialBioText: prospectBio,
             companyName: prospectCompany,
             businessSummary: prospectBio
           }
@@ -563,6 +575,26 @@ export const App: React.FC = () => {
       console.log('[Content Factory Triggered]', data);
     } catch (e: any) {
       console.error(e.message);
+    }
+  };
+
+  const handleTriggerAuditJob = async (params: {
+    companyOrCreator: string;
+    website?: string;
+    triggerEvent: string;
+    socialLinks?: any;
+    socialBioText?: string;
+  }) => {
+    try {
+      const res = await fetch('/api/content/audit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...params, speaker: 'sdr_outbound' })
+      });
+      const data = await res.json();
+      console.log('[SOP Audit Queued]', data);
+    } catch (err: any) {
+      console.error('[SOP Audit Error]', err.message);
     }
   };
 
@@ -865,6 +897,7 @@ export const App: React.FC = () => {
           <ContentFactoryStudio
             jobs={jobs}
             onTriggerJob={handleTriggerContentJob}
+            onTriggerAudit={handleTriggerAuditJob}
             onApproveJob={handleApproveContentJob}
           />
         )}
@@ -930,18 +963,62 @@ export const App: React.FC = () => {
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="text-slate-300 font-mono flex items-center space-x-1.5">
-                  <Linkedin className="w-3.5 h-3.5 text-blue-400" />
-                  <span>LinkedIn Profile URL:</span>
-                </label>
-                <input
-                  type="url"
-                  value={prospectLinkedIn}
-                  onChange={(e) => setProspectLinkedIn(e.target.value)}
-                  placeholder="https://linkedin.com/in/..."
-                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 focus:outline-none focus:border-cyan-500"
-                />
+              <div className="grid grid-cols-2 gap-2.5">
+                <div className="space-y-1">
+                  <label className="text-slate-300 font-mono flex items-center space-x-1.5">
+                    <Linkedin className="w-3.5 h-3.5 text-blue-400" />
+                    <span>LinkedIn:</span>
+                  </label>
+                  <input
+                    type="url"
+                    value={prospectLinkedIn}
+                    onChange={(e) => setProspectLinkedIn(e.target.value)}
+                    placeholder="https://linkedin.com/in/..."
+                    className="w-full px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 focus:outline-none focus:border-cyan-500 font-mono text-xs"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-slate-300 font-mono flex items-center space-x-1.5">
+                    <span className="text-cyan-400 font-bold">𝕏</span>
+                    <span>Twitter/X:</span>
+                  </label>
+                  <input
+                    type="url"
+                    value={prospectTwitter}
+                    onChange={(e) => setProspectTwitter(e.target.value)}
+                    placeholder="https://x.com/..."
+                    className="w-full px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 focus:outline-none focus:border-cyan-500 font-mono text-xs"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                <div className="space-y-1">
+                  <label className="text-slate-300 font-mono flex items-center space-x-1.5">
+                    <span className="text-red-400 font-bold">▶</span>
+                    <span>YouTube:</span>
+                  </label>
+                  <input
+                    type="url"
+                    value={prospectYouTube}
+                    onChange={(e) => setProspectYouTube(e.target.value)}
+                    placeholder="https://youtube.com/@..."
+                    className="w-full px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 focus:outline-none focus:border-cyan-500 font-mono text-xs"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-slate-300 font-mono flex items-center space-x-1.5">
+                    <span className="text-amber-400 font-bold">✉</span>
+                    <span>Substack / Newsletter:</span>
+                  </label>
+                  <input
+                    type="url"
+                    value={prospectSubstack}
+                    onChange={(e) => setProspectSubstack(e.target.value)}
+                    placeholder="https://....substack.com"
+                    className="w-full px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 focus:outline-none focus:border-cyan-500 font-mono text-xs"
+                  />
+                </div>
               </div>
 
               <div className="space-y-1">
@@ -959,12 +1036,16 @@ export const App: React.FC = () => {
               </div>
 
               <div className="space-y-1">
-                <label className="text-slate-300 font-mono">Business Summary / Bio:</label>
+                <label className="text-slate-300 font-mono flex items-center justify-between">
+                  <span>Client Social Footprint & Audience Bio Context (For Analysis):</span>
+                  <span className="text-[10px] text-cyan-400 font-normal">Feeds RAG & Voice Agent</span>
+                </label>
                 <textarea
-                  rows={2}
+                  rows={3}
                   value={prospectBio}
                   onChange={(e) => setProspectBio(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 focus:outline-none focus:border-cyan-500"
+                  placeholder="Paste client social links, follower stats, community size (Discord/Skool/Substack), current offer tiers, and key audience pain points..."
+                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 focus:outline-none focus:border-cyan-500 font-mono text-xs leading-relaxed"
                 />
               </div>
 
