@@ -42,6 +42,19 @@ tokenRouter.post('/token', async (req: Request, res: Response) => {
     const data = (await response.json()) as any;
     const company = (req.body && req.body.company) || 'DesignAcademy Studio';
     const bv = brandVoiceService.getProfileByCompany(company);
+
+    if (req.body && Array.isArray(req.body.history) && req.body.history.length > 0) {
+      const lead = crmStore.getLeads().find(
+        (l) => l.companyName === company || l.fullName.includes(company)
+      );
+      if (lead) {
+        lead.notes.push(
+          `[Voice Stream Handoff ${new Date().toLocaleTimeString()}]: Transitioned from text chat to live voice stream with ${req.body.history.length} turns in context.`
+        );
+        crmStore.syncLeadToVault(lead);
+      }
+    }
+
     return res.json({ token: data.token, isDemo: false, brandVoice: bv });
   } catch (err: any) {
     console.error('[Token Route Exception]', err);

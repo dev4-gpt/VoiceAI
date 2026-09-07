@@ -849,11 +849,33 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
       setIsCalling(true);
       const personaConfig = getPersonaConfig(selectedScenario);
 
-      setMessages([
+      // Extract recent dialogue turns to bridge context into the live voice session
+      const priorChatTurns = messages.filter(
+        (m) => (m.speaker === 'user' || m.speaker === 'agent') && m.text && m.text.trim()
+      );
+      const hasPriorConversation = priorChatTurns.length > 0;
+      const priorConversationSummary = priorChatTurns
+        .slice(-8)
+        .map((m) => `${m.speaker === 'user' ? 'Prospect' : 'Anna (Growth AI)'}: "${m.text}"`)
+        .join('\n');
+
+      let dynamicPrompt = personaConfig.prompt;
+      let dynamicGreeting = personaConfig.greeting;
+
+      if (hasPriorConversation) {
+        dynamicPrompt += `\n\nCONTINUING CONVERSATION CONTEXT (You are seamlessly continuing an active conversation with this user who just transitioned from text chat to live voice. DO NOT introduce yourself from scratch. Directly reference and build upon what was already discussed):\n${priorConversationSummary}\n\nMaintain conversation flow and answer their points directly.`;
+
+        dynamicGreeting = `Hey ${prospectName || 'there'}! I've got our discussion notes right in front of me. Let's continue directly—what should we focus on next for ${prospectCompany || 'your business'}?`;
+      }
+
+      setMessages((prev) => [
+        ...prev,
         {
-          id: 'sys_1',
+          id: `sys_voice_start_${Date.now()}`,
           speaker: 'system',
-          text: `Minting short-lived session token with AssemblyAI Voice Agent API (${personaConfig.title})...`,
+          text: hasPriorConversation
+            ? `🎙️ Switched to Live Voice Stream (${personaConfig.title}) — Retaining ${priorChatTurns.length} conversation turns in memory.`
+            : `🎙️ Connecting Live Voice Stream with AssemblyAI (${personaConfig.title})...`,
           timestamp: new Date().toLocaleTimeString()
         }
       ]);
@@ -865,7 +887,11 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
         body: JSON.stringify({
           company: prospectCompany,
           persona: selectedScenario,
-          toneArchetype: selectedToneArchetype
+          toneArchetype: selectedToneArchetype,
+          history: priorChatTurns.slice(-8).map((t) => ({
+            role: t.speaker === 'user' ? 'user' : 'assistant',
+            content: t.text
+          }))
         })
       });
       const tokenData = await tokenRes.json();
@@ -877,9 +903,9 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
       setMessages((prev) => [
         ...prev,
         {
-          id: 'sys_2',
+          id: `sys_voice_connected_${Date.now()}`,
           speaker: 'system',
-          text: `Token minted successfully. Connecting to AssemblyAI WebSocket (universal-3-5-pro)...`,
+          text: `Voice session authenticated. Connecting to AssemblyAI WebSocket (universal-3-5-pro)...`,
           timestamp: new Date().toLocaleTimeString()
         }
       ]);
@@ -911,8 +937,8 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
         const sessionUpdate = {
           type: 'session.update',
           session: {
-            system_prompt: personaConfig.prompt,
-            greeting: personaConfig.greeting,
+            system_prompt: dynamicPrompt,
+            greeting: dynamicGreeting,
             output: {
               voice: 'anna',
               format: { encoding: 'audio/pcm' }
@@ -939,14 +965,18 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
         setMessages((prev) => [
           ...prev,
           {
-            id: 'agent_greet',
+            id: `agent_greet_${Date.now()}`,
             speaker: 'agent',
-            text: personaConfig.greeting,
+            text: dynamicGreeting,
             timestamp: new Date().toLocaleTimeString()
           }
         ]);
         setIsAgentSpeaking(true);
-        setTimeout(() => setIsAgentSpeaking(false), 2400);
+        if (tokenData.isDemo) {
+          speakTurnIfEnabled(dynamicGreeting, () => setIsAgentSpeaking(false));
+        } else {
+          setTimeout(() => setIsAgentSpeaking(false), 2400);
+        }
       };
 
       ws.onmessage = (evt) => {
