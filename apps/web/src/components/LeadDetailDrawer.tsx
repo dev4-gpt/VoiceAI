@@ -47,7 +47,7 @@ export const LeadDetailDrawer: React.FC<LeadDetailDrawerProps> = ({
       <div
         className={`w-full max-w-md p-6 flex flex-col h-full shadow-2xl overflow-y-auto custom-scrollbar border-l transition-all ${
           isGlass
-            ? 'bg-white/95 backdrop-blur-2xl border-slate-200 text-slate-800'
+            ? 'bg-[#fdfcf9]/95 backdrop-blur-2xl border-l border-[#e8e4dc] text-slate-800'
             : 'bg-slate-950/95 border-slate-800 text-slate-100'
         }`}
         onClick={(e) => e.stopPropagation()}
@@ -55,7 +55,7 @@ export const LeadDetailDrawer: React.FC<LeadDetailDrawerProps> = ({
         {/* Header */}
         <div
           className={`flex items-center justify-between border-b pb-4 mb-5 ${
-            isGlass ? 'border-slate-200/80' : 'border-slate-800/80'
+            isGlass ? 'border-[#e8e4dc]/80' : 'border-slate-800/80'
           }`}
         >
           <div className="flex items-center space-x-2.5">
@@ -75,7 +75,7 @@ export const LeadDetailDrawer: React.FC<LeadDetailDrawerProps> = ({
             onClick={onClose}
             className={`p-1.5 rounded-lg transition-all ${
               isGlass
-                ? 'bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-900'
+                ? 'bg-[#f7f3ea] hover:bg-[#ede6d8] text-slate-700 hover:text-slate-900'
                 : 'bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white'
             }`}
           >
@@ -172,7 +172,7 @@ export const LeadDetailDrawer: React.FC<LeadDetailDrawerProps> = ({
 
           {/* Social Profiles */}
           {lead.socialLinks && (
-            <div className={`p-3.5 rounded-xl border space-y-2 ${isGlass ? 'bg-slate-50/80 border-slate-200/80' : 'bg-slate-900/60 border-slate-800/80'}`}>
+            <div className={`p-3.5 rounded-xl border space-y-2 ${isGlass ? 'bg-[#f7f3ea]/80 border-[#e5e0d6]' : 'bg-slate-900/60 border-slate-800/80'}`}>
               <div className={`text-xs font-mono uppercase tracking-wider ${isGlass ? 'text-slate-500' : 'text-slate-400'}`}>Verified Social Handles</div>
               <div className="flex flex-wrap gap-2 pt-1">
                 {lead.socialLinks.twitter && (
@@ -181,7 +181,7 @@ export const LeadDetailDrawer: React.FC<LeadDetailDrawerProps> = ({
                     target="_blank"
                     rel="noreferrer"
                     className={`px-2.5 py-1 rounded-lg border text-xs font-mono flex items-center space-x-1 ${
-                      isGlass ? 'bg-white border-slate-200 text-sky-700 shadow-xs' : 'bg-slate-900 hover:bg-slate-800 border-slate-700 text-cyan-300'
+                      isGlass ? 'bg-[#fdfcf9] border-[#e2ded5] text-sky-800 shadow-2xs' : 'bg-slate-900 hover:bg-slate-800 border-slate-700 text-cyan-300'
                     }`}
                   >
                     <span>𝕏 Twitter</span>
@@ -193,7 +193,7 @@ export const LeadDetailDrawer: React.FC<LeadDetailDrawerProps> = ({
                     target="_blank"
                     rel="noreferrer"
                     className={`px-2.5 py-1 rounded-lg border text-xs font-mono flex items-center space-x-1 ${
-                      isGlass ? 'bg-white border-slate-200 text-blue-700 shadow-xs' : 'bg-slate-900 hover:bg-slate-800 border-slate-700 text-blue-400'
+                      isGlass ? 'bg-[#fdfcf9] border-[#e2ded5] text-blue-800 shadow-2xs' : 'bg-slate-900 hover:bg-slate-800 border-slate-700 text-blue-400'
                     }`}
                   >
                     <span>LinkedIn</span>
@@ -205,7 +205,7 @@ export const LeadDetailDrawer: React.FC<LeadDetailDrawerProps> = ({
                     target="_blank"
                     rel="noreferrer"
                     className={`px-2.5 py-1 rounded-lg border text-xs font-mono flex items-center space-x-1 ${
-                      isGlass ? 'bg-white border-slate-200 text-red-700 shadow-xs' : 'bg-slate-900 hover:bg-slate-800 border-slate-700 text-red-400'
+                      isGlass ? 'bg-[#fdfcf9] border-[#e2ded5] text-red-800 shadow-2xs' : 'bg-slate-900 hover:bg-slate-800 border-slate-700 text-red-400'
                     }`}
                   >
                     <span>YouTube</span>
@@ -217,13 +217,13 @@ export const LeadDetailDrawer: React.FC<LeadDetailDrawerProps> = ({
 
           {/* AI Voice Qualification Notes */}
           {lead.notes && (
-            <div className={`p-3.5 rounded-xl border space-y-2 ${isGlass ? 'bg-slate-50/80 border-slate-200/80' : 'bg-slate-900/60 border-slate-800/80'}`}>
+            <div className={`p-3.5 rounded-xl border space-y-2 ${isGlass ? 'bg-[#f7f3ea]/80 border-[#e5e0d6]' : 'bg-slate-900/60 border-slate-800/80'}`}>
               <div className="flex items-center space-x-1.5 text-xs font-mono uppercase tracking-wider">
                 <MessageSquare className={`w-3.5 h-3.5 ${isGlass ? 'text-purple-600' : 'text-purple-400'}`} />
                 <span className={isGlass ? 'text-slate-700' : 'text-slate-400'}>Voice Agent Call Transcript Summary</span>
               </div>
               <p className={`text-xs leading-relaxed p-3 rounded-lg border font-mono ${
-                isGlass ? 'bg-white border-slate-200 text-slate-800 shadow-xs' : 'bg-slate-950/80 border-slate-800 text-slate-300'
+                isGlass ? 'bg-[#fdfcf9] border-[#e2ded5] text-slate-800 shadow-2xs' : 'bg-slate-950/80 border-slate-800 text-slate-300'
               }`}>
                 {lead.notes}
               </p>

@@ -57,11 +57,11 @@ export const LiveTranscriptHUD: React.FC<LiveTranscriptHUDProps> = ({
 
   return (
     <div className={`flex flex-col h-full rounded-2xl border backdrop-blur-xl overflow-hidden shadow-2xl transition-all ${
-      isGlass ? 'bg-white/80 border-slate-200/90 shadow-[0_12px_40px_rgba(0,0,0,0.05)] text-slate-800' : 'bg-slate-900/60 border-slate-800/80 text-slate-100'
+      isGlass ? 'bg-[#fdfcf9]/85 border-[#e8e4dc]/90 shadow-[0_12px_40px_rgba(40,30,20,0.04)] text-slate-800' : 'bg-slate-900/60 border-slate-800/80 text-slate-100'
     }`}>
       {/* HUD Header */}
       <div className={`flex flex-wrap items-center justify-between gap-2 px-5 py-3.5 border-b ${
-        isGlass ? 'border-slate-200/80 bg-slate-50/80' : 'border-slate-800/80 bg-slate-950/40'
+        isGlass ? 'border-[#e8e4dc]/80 bg-[#f7f3ea]/80' : 'border-slate-800/80 bg-slate-950/40'
       }`}>
         <div className="flex items-center space-x-2.5">
           <Bot className={`w-5 h-5 ${isGlass ? 'text-sky-600' : 'text-cyan-400'}`} />
@@ -132,7 +132,7 @@ export const LiveTranscriptHUD: React.FC<LiveTranscriptHUDProps> = ({
                       ? 'bg-slate-100/90 border border-slate-200 text-slate-600 text-xs italic'
                       : 'bg-slate-800/60 border border-slate-700/50 text-slate-400 text-xs italic'
                     : isGlass
-                    ? 'bg-white border border-slate-200/90 text-slate-800 rounded-tl-none shadow-xs'
+                    ? 'bg-[#fdfcf9] border border-[#e8e4dc] text-slate-800 rounded-tl-none shadow-xs'
                     : 'bg-slate-800/80 border border-slate-700/60 text-slate-100 rounded-tl-none'
                 }`}
               >
@@ -219,7 +219,7 @@ export const LiveTranscriptHUD: React.FC<LiveTranscriptHUDProps> = ({
             onClick={() => setTypedInput('My email is founder@mygrowthproject.com and phone is +1 (555) 234-5678')}
             className={`px-2 py-0.5 rounded border text-xs transition-all flex-shrink-0 ${
               isGlass
-                ? 'bg-white hover:bg-sky-50 border-slate-200 text-sky-800 shadow-xs'
+                ? 'bg-[#fdfcf9] hover:bg-white border-[#e2ded5] text-sky-850 shadow-2xs'
                 : 'bg-slate-900 hover:bg-slate-800 border-slate-800 text-cyan-300 hover:text-cyan-200'
             }`}
           >
@@ -230,7 +230,7 @@ export const LiveTranscriptHUD: React.FC<LiveTranscriptHUDProps> = ({
             onClick={() => setTypedInput('We have 15,000 members and $5,000 budget, looking to launch a $2,997 program in 3 weeks')}
             className={`px-2 py-0.5 rounded border text-xs transition-all flex-shrink-0 ${
               isGlass
-                ? 'bg-white hover:bg-purple-50 border-slate-200 text-purple-800 shadow-xs'
+                ? 'bg-[#fdfcf9] hover:bg-white border-[#e2ded5] text-purple-850 shadow-2xs'
                 : 'bg-slate-900 hover:bg-slate-800 border-slate-800 text-purple-300 hover:text-purple-200'
             }`}
           >
@@ -241,7 +241,7 @@ export const LiveTranscriptHUD: React.FC<LiveTranscriptHUDProps> = ({
             onClick={() => setTypedInput('How does your 14-day action-based guarantee work?')}
             className={`px-2 py-0.5 rounded border text-xs transition-all flex-shrink-0 ${
               isGlass
-                ? 'bg-white hover:bg-amber-50 border-slate-200 text-amber-800 shadow-xs'
+                ? 'bg-[#fdfcf9] hover:bg-white border-[#e2ded5] text-amber-850 shadow-2xs'
                 : 'bg-slate-900 hover:bg-slate-800 border-slate-800 text-amber-300 hover:text-amber-200'
             }`}
           >
@@ -259,7 +259,7 @@ export const LiveTranscriptHUD: React.FC<LiveTranscriptHUDProps> = ({
               placeholder="Type your email, phone, project details, or questions to Anna..."
               className={`w-full pl-3.5 pr-20 py-2.5 rounded-xl border text-xs font-mono transition-all ${
                 isGlass
-                  ? 'bg-white border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-sky-500 shadow-xs'
+                  ? 'bg-[#fdfcf9] border-[#e2ded5] text-slate-900 placeholder-slate-400 focus:outline-none focus:border-sky-600 shadow-xs'
                   : 'bg-slate-900 border-slate-800 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500'
               }`}
             />

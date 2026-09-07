@@ -89,7 +89,7 @@ export const GraphViewHUD: React.FC<GraphViewHUDProps> = ({ theme = 'glass' }) =
       {/* Top Banner */}
       <div className={`border rounded-2xl p-6 backdrop-blur-xl shadow-xl transition-all ${
         isGlass
-          ? 'bg-white/80 border-slate-200/90 text-slate-800 shadow-[0_10px_35px_rgba(0,0,0,0.04)]'
+          ? 'bg-[#fdfcf9]/80 border-[#e8e4dc]/90 text-slate-800 shadow-[0_10px_35px_rgba(40,30,20,0.04)]'
           : 'bg-slate-900/90 border-slate-800 text-white'
       }`}>
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -204,7 +204,7 @@ export const GraphViewHUD: React.FC<GraphViewHUDProps> = ({ theme = 'glass' }) =
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column: Node Explorer */}
         <div className={`border rounded-2xl p-5 flex flex-col h-[640px] shadow-xl backdrop-blur-xl ${
-          isGlass ? 'bg-white/80 border-slate-200/90 text-slate-800 shadow-[0_10px_35px_rgba(0,0,0,0.04)]' : 'bg-slate-900/80 border-slate-800 text-white'
+          isGlass ? 'bg-[#fdfcf9]/80 border-[#e8e4dc]/90 text-slate-800 shadow-[0_10px_35px_rgba(40,30,20,0.04)]' : 'bg-slate-900/80 border-slate-800 text-white'
         }`}>
           <div className="flex items-center justify-between mb-4">
             <h3 className={`text-sm font-semibold flex items-center gap-2 ${isGlass ? 'text-slate-900' : 'text-white'}`}>
@@ -225,7 +225,7 @@ export const GraphViewHUD: React.FC<GraphViewHUDProps> = ({ theme = 'glass' }) =
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className={`w-full border rounded-lg pl-8 pr-3 py-1.5 text-xs font-mono transition-all ${
                   isGlass
-                    ? 'bg-white border-slate-200 text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-500 shadow-xs'
+                    ? 'bg-[#fdfcf9] border-[#e2ded5] text-slate-900 placeholder-slate-400 focus:outline-none focus:border-emerald-600 shadow-xs'
                     : 'bg-slate-950 border-slate-800 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500/50'
                 }`}
               />
@@ -292,7 +292,7 @@ export const GraphViewHUD: React.FC<GraphViewHUDProps> = ({ theme = 'glass' }) =
 
         {/* Middle Column: Selected Node Details & Wikilinks */}
         <div className={`border rounded-2xl p-5 flex flex-col h-[640px] overflow-y-auto shadow-xl backdrop-blur-xl ${
-          isGlass ? 'bg-white/80 border-slate-200/90 text-slate-800 shadow-[0_10px_35px_rgba(0,0,0,0.04)]' : 'bg-slate-900/80 border-slate-800 text-white'
+          isGlass ? 'bg-[#fdfcf9]/80 border-[#e8e4dc]/90 text-slate-800 shadow-[0_10px_35px_rgba(40,30,20,0.04)]' : 'bg-slate-900/80 border-slate-800 text-white'
         }`}>
           {selectedNode ? (
             <div className="space-y-4">
@@ -312,7 +312,7 @@ export const GraphViewHUD: React.FC<GraphViewHUDProps> = ({ theme = 'glass' }) =
 
               {/* Obsidian Callout Preview */}
               <div className={`p-3 rounded-r-lg border-l-4 border-indigo-500 ${
-                isGlass ? 'bg-slate-50/90 text-slate-700 border border-slate-200' : 'bg-slate-950 text-slate-300'
+                isGlass ? 'bg-[#f7f3ea]/80 text-slate-700 border border-[#e5e0d6]' : 'bg-slate-950 text-slate-300'
               }`}>
                 <div className={`text-xs font-bold uppercase tracking-wider mb-1 ${
                   isGlass ? 'text-indigo-700' : 'text-indigo-400'
@@ -332,7 +332,7 @@ export const GraphViewHUD: React.FC<GraphViewHUDProps> = ({ theme = 'glass' }) =
                   Node Properties
                 </h4>
                 <div className={`rounded-lg border overflow-hidden divide-y ${
-                  isGlass ? 'bg-slate-50/90 border-slate-200 divide-slate-200/80' : 'bg-slate-950 border-slate-800/80 divide-slate-800/60'
+                  isGlass ? 'bg-[#f7f3ea]/80 border-[#e5e0d6] divide-[#e5e0d6]' : 'bg-slate-950 border-slate-800/80 divide-slate-800/60'
                 }`}>
                   {Object.entries(selectedNode.properties).map(([k, v]) => (
                     <div key={k} className="p-2.5 flex items-center justify-between text-xs">
@@ -400,7 +400,7 @@ export const GraphViewHUD: React.FC<GraphViewHUDProps> = ({ theme = 'glass' }) =
         <div className="flex flex-col h-[640px] space-y-4 overflow-y-auto custom-scrollbar">
           {/* Graphify Integration Card */}
           <div className={`border rounded-2xl p-5 shadow-xl backdrop-blur-xl ${
-            isGlass ? 'bg-white/80 border-slate-200/90 text-slate-800 shadow-[0_10px_35px_rgba(0,0,0,0.04)]' : 'bg-slate-900/80 border-slate-800 text-white'
+            isGlass ? 'bg-[#fdfcf9]/80 border-[#e8e4dc]/90 text-slate-800 shadow-[0_10px_35px_rgba(40,30,20,0.04)]' : 'bg-slate-900/80 border-slate-800 text-white'
           }`}>
             <div className="flex items-center justify-between mb-3">
               <h3 className={`text-sm font-semibold flex items-center gap-2 ${isGlass ? 'text-slate-900' : 'text-white'}`}>
@@ -435,7 +435,7 @@ export const GraphViewHUD: React.FC<GraphViewHUDProps> = ({ theme = 'glass' }) =
 
           {/* Open-Source Tool Ecosystem */}
           <div className={`border rounded-2xl p-5 shadow-xl backdrop-blur-xl ${
-            isGlass ? 'bg-white/80 border-slate-200/90 text-slate-800 shadow-[0_10px_35px_rgba(0,0,0,0.04)]' : 'bg-slate-900/80 border-slate-800 text-white'
+            isGlass ? 'bg-[#fdfcf9]/80 border-[#e8e4dc]/90 text-slate-800 shadow-[0_10px_35px_rgba(40,30,20,0.04)]' : 'bg-slate-900/80 border-slate-800 text-white'
           }`}>
             <h3 className={`text-sm font-semibold flex items-center gap-2 mb-3 ${isGlass ? 'text-slate-900' : 'text-white'}`}>
               <FolderGit2 className={`w-4 h-4 ${isGlass ? 'text-sky-600' : 'text-sky-400'}`} />

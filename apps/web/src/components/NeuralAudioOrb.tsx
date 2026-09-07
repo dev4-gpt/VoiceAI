@@ -243,14 +243,14 @@ export const NeuralAudioOrb: React.FC<NeuralAudioOrbProps> = ({
     <div
       className={`relative w-full rounded-3xl overflow-hidden transition-all duration-300 ${
         isGlass
-          ? 'bg-white/60 backdrop-blur-2xl border border-white/85 shadow-[0_12px_40px_rgba(31,38,135,0.06)]'
+          ? 'bg-[#fdfcf9]/75 backdrop-blur-2xl border border-[#e8e4dc]/90 shadow-[0_12px_40px_rgba(40,30,20,0.04)]'
           : 'bg-slate-950/80 border border-cyan-800/40 shadow-2xl'
       }`}
     >
       {/* Top Telemetry Strip */}
       <div
         className={`flex items-center justify-between px-6 py-3.5 border-b ${
-          isGlass ? 'border-slate-200/60 bg-white/40' : 'border-cyan-900/40 bg-slate-900/60'
+          isGlass ? 'border-[#e8e4dc]/80 bg-[#f7f3ea]/60' : 'border-cyan-900/40 bg-slate-900/60'
         }`}
       >
         <div className="flex items-center space-x-2.5">
@@ -300,7 +300,7 @@ export const NeuralAudioOrb: React.FC<NeuralAudioOrbProps> = ({
           <div
             className={`px-3 py-1 rounded-xl text-[10px] font-mono font-medium backdrop-blur-md shadow-sm border ${
               isGlass
-                ? 'bg-white/80 border-white/90 text-slate-700'
+                ? 'bg-[#fdfcf9]/85 border-[#e8e4dc]/90 text-slate-700'
                 : 'bg-slate-900/80 border-cyan-900/50 text-cyan-300'
             }`}
           >
@@ -312,7 +312,7 @@ export const NeuralAudioOrb: React.FC<NeuralAudioOrbProps> = ({
           <div
             className={`px-3 py-1 rounded-xl text-[10px] font-mono font-medium backdrop-blur-md shadow-sm border ${
               isGlass
-                ? 'bg-white/80 border-white/90 text-slate-700'
+                ? 'bg-[#fdfcf9]/85 border-[#e8e4dc]/90 text-slate-700'
                 : 'bg-slate-900/80 border-emerald-900/50 text-emerald-300'
             }`}
           >

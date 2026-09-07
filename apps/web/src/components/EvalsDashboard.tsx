@@ -123,7 +123,7 @@ export const EvalsDashboard: React.FC<EvalsDashboardProps> = ({ theme = 'glass' 
 
   return (
     <div className={`flex flex-col h-full rounded-2xl border backdrop-blur-xl p-5 shadow-2xl space-y-5 relative overflow-hidden transition-all ${
-      isGlass ? 'bg-white/80 border-slate-200/90 shadow-[0_12px_40px_rgba(0,0,0,0.05)] text-slate-800' : 'bg-slate-900/60 border-slate-800/80 text-slate-100'
+      isGlass ? 'bg-[#fdfcf9]/80 border-[#e8e4dc]/90 shadow-[0_12px_40px_rgba(40,30,20,0.04)] text-slate-800' : 'bg-slate-900/60 border-slate-800/80 text-slate-100'
     }`}>
       {/* Running Radar Overlay */}
       {isRunning && (
@@ -148,7 +148,7 @@ export const EvalsDashboard: React.FC<EvalsDashboardProps> = ({ theme = 'glass' 
 
       {/* Top Header */}
       <div className={`flex flex-wrap items-center justify-between gap-3 border-b pb-4 ${
-        isGlass ? 'border-slate-200/80' : 'border-slate-800'
+        isGlass ? 'border-[#e8e4dc]/80' : 'border-slate-800'
       }`}>
         <div>
           <div className="flex items-center space-x-2.5">
@@ -202,7 +202,7 @@ export const EvalsDashboard: React.FC<EvalsDashboardProps> = ({ theme = 'glass' 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
         {/* Metric 1: pass@5 */}
         <div className={`p-3.5 rounded-xl border relative overflow-hidden shadow-sm ${
-          isGlass ? 'bg-white/90 border-slate-200' : 'bg-slate-950/80 border-slate-800'
+          isGlass ? 'bg-[#fdfcf9] border-[#e8e4dc]' : 'bg-slate-950/80 border-slate-800'
         }`}>
           <div className={`text-xs font-mono flex items-center space-x-1.5 ${isGlass ? 'text-slate-600' : 'text-slate-400'}`}>
             <CheckCircle className={`w-3.5 h-3.5 ${isGlass ? 'text-emerald-600' : 'text-emerald-400'}`} />
@@ -216,7 +216,7 @@ export const EvalsDashboard: React.FC<EvalsDashboardProps> = ({ theme = 'glass' 
 
         {/* Metric 2: pass^5 */}
         <div className={`p-3.5 rounded-xl border relative overflow-hidden shadow-sm ${
-          isGlass ? 'bg-white/90 border-slate-200' : 'bg-slate-950/80 border-slate-800'
+          isGlass ? 'bg-[#fdfcf9] border-[#e8e4dc]' : 'bg-slate-950/80 border-slate-800'
         }`}>
           <div className={`text-xs font-mono flex items-center space-x-1.5 ${isGlass ? 'text-slate-600' : 'text-slate-400'}`}>
             <ShieldCheck className={`w-3.5 h-3.5 ${isGlass ? 'text-purple-600' : 'text-purple-400'}`} />
@@ -230,7 +230,7 @@ export const EvalsDashboard: React.FC<EvalsDashboardProps> = ({ theme = 'glass' 
 
         {/* Metric 3: TTFA Latency with Sparkline */}
         <div className={`p-3.5 rounded-xl border relative overflow-hidden shadow-sm group ${
-          isGlass ? 'bg-white/90 border-sky-200' : 'bg-slate-950/80 border-cyan-500/30'
+          isGlass ? 'bg-[#fdfcf9] border-sky-200' : 'bg-slate-950/80 border-cyan-500/30'
         }`}>
           {/* Subtle Sparkline SVG in Background */}
           <svg className={`absolute bottom-1 right-2 w-28 h-10 opacity-30 ${isGlass ? 'text-sky-500' : 'text-cyan-400'}`} viewBox="0 0 100 30">
@@ -258,7 +258,7 @@ export const EvalsDashboard: React.FC<EvalsDashboardProps> = ({ theme = 'glass' 
 
         {/* Metric 4: Turn p95 Latency with Sparkline */}
         <div className={`p-3.5 rounded-xl border relative overflow-hidden shadow-sm group ${
-          isGlass ? 'bg-white/90 border-amber-200' : 'bg-slate-950/80 border-amber-500/30'
+          isGlass ? 'bg-[#fdfcf9] border-amber-200' : 'bg-slate-950/80 border-amber-500/30'
         }`}>
           {/* Subtle Sparkline SVG in Background */}
           <svg className={`absolute bottom-1 right-2 w-28 h-10 opacity-30 ${isGlass ? 'text-amber-500' : 'text-amber-400'}`} viewBox="0 0 100 30">
@@ -302,7 +302,7 @@ export const EvalsDashboard: React.FC<EvalsDashboardProps> = ({ theme = 'glass' 
               key={task.id}
               className={`rounded-xl border transition-all overflow-hidden ${
                 isGlass
-                  ? 'bg-white/85 border-slate-200/90 hover:border-slate-300 shadow-xs'
+                  ? 'bg-[#fdfcf9] border-[#e8e4dc] hover:border-[#d8cfbd] shadow-xs'
                   : 'bg-slate-950/70 border-slate-800 hover:border-slate-700'
               }`}
             >
@@ -373,7 +373,7 @@ export const EvalsDashboard: React.FC<EvalsDashboardProps> = ({ theme = 'glass' 
                         key={trial.trialNumber}
                         className={`p-3 rounded-lg border space-y-1.5 font-mono text-xs ${
                           isGlass
-                            ? 'bg-white border-slate-200 text-slate-800 shadow-xs'
+                            ? 'bg-[#fdfcf9] border-[#e5e0d6] text-slate-800 shadow-xs'
                             : 'bg-slate-900/90 border-slate-800 text-slate-300'
                         }`}
                       >

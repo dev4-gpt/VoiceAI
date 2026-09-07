@@ -37,14 +37,14 @@ export const AmbientVercelShader: React.FC<AmbientVercelShaderProps> = ({ theme 
     window.addEventListener('resize', handleResize);
 
     // Floating 3D Geometric Reference Primitives for Glassmorphism
-    // (Required so frosted glass layers have vibrant shapes to refract and blur)
+    // Warm editorial luxury palette (champagne gold, soft peach coral, warm sage, ecru mauve)
     const orbs = [
       {
         baseX: 0.18,
         baseY: 0.25,
         radius: 220,
-        colorCore: 'rgba(167, 139, 250, 0.45)', // Soft lavender / violet
-        colorAura: 'rgba(192, 132, 252, 0.0)',
+        colorCore: 'rgba(245, 158, 11, 0.24)', // Warm champagne amber
+        colorAura: 'rgba(251, 191, 36, 0.0)',
         speedX: 0.0008,
         speedY: 0.0011,
         phase: 0.0
@@ -53,8 +53,8 @@ export const AmbientVercelShader: React.FC<AmbientVercelShaderProps> = ({ theme 
         baseX: 0.82,
         baseY: 0.35,
         radius: 260,
-        colorCore: 'rgba(56, 189, 248, 0.40)', // Icy cyan / sky blue
-        colorAura: 'rgba(14, 165, 233, 0.0)',
+        colorCore: 'rgba(251, 146, 60, 0.22)', // Soft peach / coral
+        colorAura: 'rgba(249, 115, 22, 0.0)',
         speedX: 0.001,
         speedY: 0.0007,
         phase: 1.5
@@ -63,8 +63,8 @@ export const AmbientVercelShader: React.FC<AmbientVercelShaderProps> = ({ theme 
         baseX: 0.5,
         baseY: 0.75,
         radius: 280,
-        colorCore: 'rgba(45, 212, 191, 0.35)', // Soft mint / aquamarine
-        colorAura: 'rgba(20, 184, 166, 0.0)',
+        colorCore: 'rgba(52, 211, 153, 0.18)', // Soft warm sage
+        colorAura: 'rgba(16, 185, 129, 0.0)',
         speedX: 0.0007,
         speedY: 0.0009,
         phase: 3.2
@@ -73,8 +73,8 @@ export const AmbientVercelShader: React.FC<AmbientVercelShaderProps> = ({ theme 
         baseX: 0.35,
         baseY: 0.6,
         radius: 190,
-        colorCore: 'rgba(251, 146, 60, 0.25)', // Soft peach / rose quartz
-        colorAura: 'rgba(249, 115, 22, 0.0)',
+        colorCore: 'rgba(168, 140, 220, 0.20)', // Soft warm mauve / ecru lilac
+        colorAura: 'rgba(192, 132, 252, 0.0)',
         speedX: 0.0012,
         speedY: 0.0006,
         phase: 4.7
@@ -115,15 +115,15 @@ export const AmbientVercelShader: React.FC<AmbientVercelShaderProps> = ({ theme 
 
       if (theme === 'glass') {
         // ==========================================
-        // 💎 LUCID DATA SPACE (Light Glassmorphism)
+        // 💎 LUCID CREAM DATA SPACE (Warm Editorial Alabaster)
         // ==========================================
 
-        // 1. High-Key Ambient Skybox Gradient
+        // 1. Warm Editorial Cream Skybox Gradient
         const skybox = ctx.createLinearGradient(0, 0, width, height);
-        skybox.addColorStop(0, '#f8fafc'); // Crisp pearl
-        skybox.addColorStop(0.35, '#f1f5f9'); // Soft slate
-        skybox.addColorStop(0.7, '#eef2ff'); // Icy lavender tint
-        skybox.addColorStop(1, '#f0fdf4'); // Faint mint tint
+        skybox.addColorStop(0, '#faf8f5'); // Warm cream linen
+        skybox.addColorStop(0.35, '#f6f3ec'); // Soft warm ecru / ivory
+        skybox.addColorStop(0.7, '#f1ece1'); // Warm alabaster cream
+        skybox.addColorStop(1, '#f5f0e6'); // Faint warm linen tint
         ctx.fillStyle = skybox;
         ctx.fillRect(0, 0, width, height);
 
@@ -136,7 +136,7 @@ export const AmbientVercelShader: React.FC<AmbientVercelShaderProps> = ({ theme 
 
           const grad = ctx.createRadialGradient(curX, curY, 0, curX, curY, orb.radius);
           grad.addColorStop(0, orb.colorCore);
-          grad.addColorStop(0.65, orb.colorCore.replace(/[\d.]+\)$/, '0.12)'));
+          grad.addColorStop(0.65, orb.colorCore.replace(/[\d.]+\)$/, '0.10)'));
           grad.addColorStop(1, orb.colorAura);
 
           ctx.fillStyle = grad;
@@ -153,7 +153,7 @@ export const AmbientVercelShader: React.FC<AmbientVercelShaderProps> = ({ theme 
             curY,
             orb.radius * 0.7
           );
-          specGrad.addColorStop(0, 'rgba(255, 255, 255, 0.45)');
+          specGrad.addColorStop(0, 'rgba(255, 255, 255, 0.40)');
           specGrad.addColorStop(1, 'rgba(255, 255, 255, 0.0)');
           ctx.fillStyle = specGrad;
           ctx.beginPath();
@@ -170,16 +170,16 @@ export const AmbientVercelShader: React.FC<AmbientVercelShaderProps> = ({ theme 
           mouseY,
           Math.max(width * 0.45, 500)
         );
-        spotlight.addColorStop(0, 'rgba(255, 255, 255, 0.6)');
-        spotlight.addColorStop(0.4, 'rgba(224, 242, 254, 0.3)');
-        spotlight.addColorStop(0.8, 'rgba(238, 242, 255, 0.08)');
+        spotlight.addColorStop(0, 'rgba(255, 255, 255, 0.40)');
+        spotlight.addColorStop(0.4, 'rgba(254, 243, 199, 0.16)'); // Warm champagne highlight
+        spotlight.addColorStop(0.8, 'rgba(253, 230, 138, 0.04)');
         spotlight.addColorStop(1, 'transparent');
 
         ctx.fillStyle = spotlight;
         ctx.fillRect(0, 0, width, height);
 
-        // 4. Subtle Architectural Reference Grid
-        ctx.strokeStyle = 'rgba(148, 163, 184, 0.12)';
+        // 4. Subtle Warm Architectural Reference Grid
+        ctx.strokeStyle = 'rgba(180, 165, 145, 0.12)';
         ctx.lineWidth = 1;
 
         const gridSize = 70;
@@ -194,7 +194,7 @@ export const AmbientVercelShader: React.FC<AmbientVercelShaderProps> = ({ theme 
         }
         ctx.stroke();
 
-        // 5. Ambient Luminous Dust Particles
+        // 5. Ambient Luminous Dust Particles (Warm Ecru)
         particles.forEach((p) => {
           p.x += p.speedX;
           p.y += p.speedY;
@@ -204,7 +204,7 @@ export const AmbientVercelShader: React.FC<AmbientVercelShaderProps> = ({ theme 
           if (p.y < 0) p.y = height;
           if (p.y > height) p.y = 0;
 
-          ctx.fillStyle = `rgba(100, 116, 139, ${p.opacity * 0.4})`;
+          ctx.fillStyle = `rgba(130, 115, 95, ${p.opacity * 0.35})`;
           ctx.beginPath();
           ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
           ctx.fill();

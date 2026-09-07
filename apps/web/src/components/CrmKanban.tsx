@@ -45,14 +45,14 @@ export const CrmKanban: React.FC<CrmKanbanProps> = ({ leads, members = [], onSim
     <div
       className={`flex flex-col h-full rounded-2xl p-5 transition-all border backdrop-blur-xl ${
         isGlass
-          ? 'bg-white/75 border-slate-200/80 shadow-[0_12px_40px_rgba(31,38,135,0.06)] text-slate-800'
+          ? 'bg-[#fdfcf9]/80 border-[#e8e4dc]/90 shadow-[0_12px_40px_rgba(40,30,20,0.04)] text-slate-800'
           : 'bg-slate-900/60 border-slate-800/80 shadow-2xl text-slate-100'
       }`}
     >
       {/* Top Header */}
       <div
         className={`flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b ${
-          isGlass ? 'border-slate-200/70' : 'border-slate-800/80'
+          isGlass ? 'border-[#e8e4dc]/80' : 'border-slate-800/80'
         }`}
       >
         <div className="flex items-center space-x-2.5">
@@ -106,10 +106,10 @@ export const CrmKanban: React.FC<CrmKanbanProps> = ({ leads, members = [], onSim
             <div
               key={col.key}
               className={`flex flex-col rounded-xl p-3.5 min-w-[260px] shadow-sm border ${
-                isGlass ? 'bg-slate-50/70 border-slate-200/80' : 'bg-slate-950/60 border-slate-800/80'
+                isGlass ? 'bg-[#f7f3ea]/80 border-[#e5e0d6]' : 'bg-slate-950/60 border-slate-800/80'
               }`}
             >
-              <div className={`flex items-center justify-between pb-2.5 mb-2.5 border-b ${isGlass ? 'border-slate-200/80' : 'border-slate-800'}`}>
+              <div className={`flex items-center justify-between pb-2.5 mb-2.5 border-b ${isGlass ? 'border-[#e5e0d6]' : 'border-slate-800'}`}>
                 <span className={`text-xs font-semibold uppercase tracking-wider ${
                   isGlass
                     ? col.key === 'inbound_qualified' ? 'text-sky-700' : col.key === 'call_scheduled' ? 'text-emerald-700' : col.key === 'enrolled' ? 'text-purple-700' : 'text-slate-700'
@@ -118,7 +118,7 @@ export const CrmKanban: React.FC<CrmKanbanProps> = ({ leads, members = [], onSim
                   {col.label}
                 </span>
                 <span className={`text-xs font-mono px-2 py-0.5 rounded-full ${
-                  isGlass ? 'bg-white border border-slate-200 text-slate-700 shadow-xs' : 'bg-slate-800 text-slate-400'
+                  isGlass ? 'bg-[#fdfcf9] border border-[#e5e0d6] text-slate-800 shadow-2xs' : 'bg-slate-800 text-slate-400'
                 }`}>
                   {colLeads.length}
                 </span>
@@ -157,7 +157,7 @@ export const CrmKanban: React.FC<CrmKanbanProps> = ({ leads, members = [], onSim
                         onClick={() => setSelectedLead(lead)}
                         className={`group p-3.5 rounded-xl transition-all shadow-xs hover:shadow-md space-y-2 cursor-pointer relative overflow-hidden border ${
                           isGlass
-                            ? 'bg-white/95 hover:bg-white border-slate-200/90 hover:border-sky-400 text-slate-800'
+                            ? 'bg-[#fdfcf9] hover:bg-white border-[#e5e0d6] hover:border-sky-500 text-slate-800 shadow-2xs'
                             : 'bg-slate-900/90 hover:bg-slate-850 border-slate-800 hover:border-cyan-500/50 text-slate-100'
                         }`}
                       >

@@ -1193,7 +1193,7 @@ export const App: React.FC = () => {
             {/* Explainer & Mental Model Banner */}
             <div className={`p-4.5 rounded-2xl flex flex-col xl:flex-row xl:items-center justify-between gap-4 transition-all border backdrop-blur-xl ${
               isGlass
-                ? "bg-white/65 border-white/85 shadow-[0_8px_30px_rgba(31,38,135,0.06)] text-slate-800"
+                ? "bg-[#fdfcf9]/80 border-[#e8e4dc]/90 shadow-[0_8px_30px_rgba(40,30,20,0.03)] text-slate-800"
                 : "bg-gradient-to-r from-blue-950/40 via-slate-900/60 to-purple-950/40 border-blue-800/40 shadow-xl text-slate-100"
             }`}>
               <div className="flex items-start space-x-3.5 max-w-3xl">
@@ -1216,7 +1216,7 @@ export const App: React.FC = () => {
               {/* Client Manager Bar with Plus (+) & Minus (-) Controls */}
               <div className="flex flex-wrap items-center gap-2 self-start xl:self-center">
                 <div className={`flex items-center space-x-1.5 rounded-xl p-1 shadow-sm border ${
-                  isGlass ? 'bg-white/90 border-slate-200' : 'bg-slate-900/90 border-slate-800'
+                  isGlass ? 'bg-[#faf7f0]/90 border-[#e5e0d6]' : 'bg-slate-900/90 border-slate-800'
                 }`}>
                   <Bookmark className={`w-3.5 h-3.5 ml-2 flex-shrink-0 ${isGlass ? 'text-sky-600' : 'text-cyan-400'}`} />
                   <select
@@ -1229,7 +1229,7 @@ export const App: React.FC = () => {
                   >
                     <optgroup label="🌟 Public Demo Archetypes">
                       {BUILT_IN_PRESETS.map((p) => (
-                        <option key={p.id} value={p.id} className={isGlass ? 'bg-white text-slate-800' : 'bg-slate-900 text-slate-200'}>
+                        <option key={p.id} value={p.id} className={isGlass ? 'bg-[#faf7f0] text-slate-800' : 'bg-slate-900 text-slate-200'}>
                           {p.companyName || p.name}
                         </option>
                       ))}
@@ -1237,7 +1237,7 @@ export const App: React.FC = () => {
                     {customPresets.length > 0 && (
                       <optgroup label="💾 My Saved Clients (Local)">
                         {customPresets.map((p) => (
-                          <option key={p.id} value={p.id} className={isGlass ? 'bg-white text-slate-800' : 'bg-slate-900 text-slate-200'}>
+                          <option key={p.id} value={p.id} className={isGlass ? 'bg-[#faf7f0] text-slate-800' : 'bg-slate-900 text-slate-200'}>
                             {p.companyName || p.name}
                           </option>
                         ))}
@@ -1293,14 +1293,14 @@ export const App: React.FC = () => {
 
             {/* Brand Voice Layer Selector Bar */}
             <div className={`p-3.5 rounded-xl space-y-2.5 backdrop-blur-sm transition-all border ${
-              isGlass ? "bg-white/80 border-slate-200/90 shadow-sm text-slate-800" : "bg-indigo-950/30 border-indigo-800/40 text-slate-100"
+              isGlass ? "bg-[#fdfcf9]/85 border-[#e8e4dc]/90 shadow-sm text-slate-800" : "bg-indigo-950/30 border-indigo-800/40 text-slate-100"
             }`}>
               <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
                 <div className="flex items-center space-x-2">
                   <Sparkles className="w-4 h-4 text-indigo-500" />
                   <span className={`font-semibold ${isGlass ? 'text-slate-800' : 'text-slate-200'}`}>Active Brand Voice Persona:</span>
                   <span className={`font-mono font-semibold px-2 py-0.5 rounded border ${
-                    isGlass ? 'bg-indigo-50 border-indigo-200 text-indigo-800' : 'bg-indigo-900/50 border-indigo-700/50 text-indigo-300'
+                    isGlass ? 'bg-[#f5f0e6] border-[#e0d8ca] text-indigo-900' : 'bg-indigo-900/50 border-indigo-700/50 text-indigo-300'
                   }`}>
                     {prospectCompany || 'DesignAcademy Studio'}
                   </span>
@@ -1315,7 +1315,7 @@ export const App: React.FC = () => {
                   className={`px-3 py-2 rounded-lg text-xs text-left transition-all border ${
                     selectedToneArchetype === 'tactical_operator'
                       ? (isGlass ? 'bg-indigo-50 border-indigo-300 text-indigo-900 shadow-xs' : 'bg-indigo-600/30 border-indigo-400 text-indigo-200 shadow-sm')
-                      : (isGlass ? 'bg-slate-50/80 border-slate-200 text-slate-700 hover:border-slate-300' : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:border-slate-700')
+                      : (isGlass ? 'bg-[#f7f3eb]/70 border-[#e5e0d6] text-slate-700 hover:border-[#d9d3c5]' : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:border-slate-700')
                   }`}
                 >
                   <div className="font-semibold">⚡ Tactical Operator</div>
@@ -1326,7 +1326,7 @@ export const App: React.FC = () => {
                   className={`px-3 py-2 rounded-lg text-xs text-left transition-all border ${
                     selectedToneArchetype === 'empathetic_mentor'
                       ? (isGlass ? 'bg-indigo-50 border-indigo-300 text-indigo-900 shadow-xs' : 'bg-indigo-600/30 border-indigo-400 text-indigo-200 shadow-sm')
-                      : (isGlass ? 'bg-slate-50/80 border-slate-200 text-slate-700 hover:border-slate-300' : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:border-slate-700')
+                      : (isGlass ? 'bg-[#f7f3eb]/70 border-[#e5e0d6] text-slate-700 hover:border-[#d9d3c5]' : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:border-slate-700')
                   }`}
                 >
                   <div className="font-semibold">🌱 Empathetic Mentor</div>
@@ -1337,7 +1337,7 @@ export const App: React.FC = () => {
                   className={`px-3 py-2 rounded-lg text-xs text-left transition-all border ${
                     selectedToneArchetype === 'visionary_founder'
                       ? (isGlass ? 'bg-indigo-50 border-indigo-300 text-indigo-900 shadow-xs' : 'bg-indigo-600/30 border-indigo-400 text-indigo-200 shadow-sm')
-                      : (isGlass ? 'bg-slate-50/80 border-slate-200 text-slate-700 hover:border-slate-300' : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:border-slate-700')
+                      : (isGlass ? 'bg-[#f7f3eb]/70 border-[#e5e0d6] text-slate-700 hover:border-[#d9d3c5]' : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:border-slate-700')
                   }`}
                 >
                   <div className="font-semibold">🚀 Visionary Founder</div>
@@ -1348,7 +1348,7 @@ export const App: React.FC = () => {
                   className={`px-3 py-2 rounded-lg text-xs text-left transition-all border ${
                     selectedToneArchetype === 'enterprise_advisor'
                       ? (isGlass ? 'bg-indigo-50 border-indigo-300 text-indigo-900 shadow-xs' : 'bg-indigo-600/30 border-indigo-400 text-indigo-200 shadow-sm')
-                      : (isGlass ? 'bg-slate-50/80 border-slate-200 text-slate-700 hover:border-slate-300' : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:border-slate-700')
+                      : (isGlass ? 'bg-[#f7f3eb]/70 border-[#e5e0d6] text-slate-700 hover:border-[#d9d3c5]' : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:border-slate-700')
                   }`}
                 >
                   <div className="font-semibold">🏛️ Enterprise Advisor</div>
@@ -1359,7 +1359,7 @@ export const App: React.FC = () => {
 
             {/* Scenario Configuration Bar (6 Personas) */}
             <div className={`p-4 rounded-2xl backdrop-blur-xl space-y-3 border ${
-              isGlass ? 'bg-white/80 border-slate-200/90 shadow-sm' : 'bg-slate-900/50 border-slate-800/80'
+              isGlass ? 'bg-[#fdfcf9]/85 border-[#e8e4dc]/90 shadow-sm' : 'bg-slate-900/50 border-slate-800/80'
             }`}>
               <div className="flex items-center justify-between">
                 <span className={`text-xs font-mono uppercase ${isGlass ? 'text-slate-500 font-semibold' : 'text-slate-400'}`}>Operating Persona (Switch Voice Mindset):</span>
@@ -1374,7 +1374,7 @@ export const App: React.FC = () => {
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                     selectedScenario === 'inbound'
                       ? (isGlass ? 'bg-cyan-50 text-cyan-800 border border-cyan-300 font-semibold shadow-xs' : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm')
-                      : (isGlass ? 'bg-slate-50/80 text-slate-700 border border-slate-200 hover:border-slate-300' : 'bg-slate-950/60 text-slate-400 border border-slate-800 hover:border-slate-700')
+                      : (isGlass ? 'bg-[#f7f3eb]/70 text-slate-700 border border-[#e5e0d6] hover:border-[#d9d3c5]' : 'bg-slate-950/60 text-slate-400 border border-slate-800 hover:border-slate-700')
                   }`}
                 >
                   🎯 Inbound Admissions SDR
@@ -1384,7 +1384,7 @@ export const App: React.FC = () => {
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                     selectedScenario === 'outbound'
                       ? (isGlass ? 'bg-cyan-50 text-cyan-800 border border-cyan-300 font-semibold shadow-xs' : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm')
-                      : (isGlass ? 'bg-slate-50/80 text-slate-700 border border-slate-200 hover:border-slate-300' : 'bg-slate-950/60 text-slate-400 border border-slate-800 hover:border-slate-700')
+                      : (isGlass ? 'bg-[#f7f3eb]/70 text-slate-700 border border-[#e5e0d6] hover:border-[#d9d3c5]' : 'bg-slate-950/60 text-slate-400 border border-slate-800 hover:border-slate-700')
                   }`}
                 >
                   🔄 Outbound Reactivation
@@ -1394,7 +1394,7 @@ export const App: React.FC = () => {
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                     selectedScenario === 'churn'
                       ? (isGlass ? 'bg-purple-50 text-purple-800 border border-purple-300 font-semibold shadow-xs' : 'bg-purple-500/20 text-purple-300 border border-purple-500/40 shadow-sm')
-                      : (isGlass ? 'bg-slate-50/80 text-slate-700 border border-slate-200 hover:border-slate-300' : 'bg-slate-950/60 text-slate-400 border border-slate-800 hover:border-slate-700')
+                      : (isGlass ? 'bg-[#f7f3eb]/70 text-slate-700 border border-[#e5e0d6] hover:border-[#d9d3c5]' : 'bg-slate-950/60 text-slate-400 border border-slate-800 hover:border-slate-700')
                   }`}
                 >
                   🛡️ Churn Save & Margin Clamping
@@ -1404,7 +1404,7 @@ export const App: React.FC = () => {
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                     selectedScenario === 'onboarding'
                       ? (isGlass ? 'bg-emerald-50 text-emerald-800 border border-emerald-300 font-semibold shadow-xs' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm')
-                      : (isGlass ? 'bg-slate-50/80 text-slate-700 border border-slate-200 hover:border-slate-300' : 'bg-slate-950/60 text-slate-400 border border-slate-800 hover:border-slate-700')
+                      : (isGlass ? 'bg-[#f7f3eb]/70 text-slate-700 border border-[#e5e0d6] hover:border-[#d9d3c5]' : 'bg-slate-950/60 text-slate-400 border border-slate-800 hover:border-slate-700')
                   }`}
                 >
                   🎓 VIP Student Onboarding
@@ -1414,7 +1414,7 @@ export const App: React.FC = () => {
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                     selectedScenario === 'affiliate'
                       ? (isGlass ? 'bg-amber-50 text-amber-900 border border-amber-300 font-semibold shadow-xs' : 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm')
-                      : (isGlass ? 'bg-slate-50/80 text-slate-700 border border-slate-200 hover:border-slate-300' : 'bg-slate-950/60 text-slate-400 border border-slate-800 hover:border-slate-700')
+                      : (isGlass ? 'bg-[#f7f3eb]/70 text-slate-700 border border-[#e5e0d6] hover:border-[#d9d3c5]' : 'bg-slate-950/60 text-slate-400 border border-slate-800 hover:border-slate-700')
                   }`}
                 >
                   🤝 Affiliate & Partner Scout
@@ -1424,7 +1424,7 @@ export const App: React.FC = () => {
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                     selectedScenario === 'diagnostic'
                       ? (isGlass ? 'bg-blue-50 text-blue-800 border border-blue-300 font-semibold shadow-xs' : 'bg-blue-500/20 text-blue-300 border border-blue-500/40 shadow-sm')
-                      : (isGlass ? 'bg-slate-50/80 text-slate-700 border border-slate-200 hover:border-slate-300' : 'bg-slate-950/60 text-slate-400 border border-slate-800 hover:border-slate-700')
+                      : (isGlass ? 'bg-[#f7f3eb]/70 text-slate-700 border border-[#e5e0d6] hover:border-[#d9d3c5]' : 'bg-slate-950/60 text-slate-400 border border-slate-800 hover:border-slate-700')
                   }`}
                 >
                   💼 Executive Diagnostic ($10k+)
@@ -1432,7 +1432,7 @@ export const App: React.FC = () => {
               </div>
 
               {/* Call Action Bar */}
-              <div className={`pt-2 flex items-center justify-between border-t ${isGlass ? 'border-slate-200' : 'border-slate-800/80'}`}>
+              <div className={`pt-2 flex items-center justify-between border-t ${isGlass ? 'border-[#e8e4dc]' : 'border-slate-800/80'}`}>
                 <div className={`flex items-center space-x-2 text-[11px] font-mono ${isGlass ? 'text-slate-600' : 'text-slate-400'}`}>
                   <HardDrive className={`w-3.5 h-3.5 ${isGlass ? 'text-emerald-600' : 'text-emerald-400'}`} />
                   <span>Persistent Graph Storage: Active (Zero data loss on reload)</span>
@@ -1468,7 +1468,7 @@ export const App: React.FC = () => {
                   <span className="uppercase font-semibold">Front-and-Center Audio Engine</span>
                 </div>
                 <div className={`flex items-center space-x-1 p-0.5 rounded-lg border text-[11px] font-mono ${
-                  isGlass ? 'bg-white border-slate-200 shadow-2xs' : 'bg-slate-900 border-slate-800'
+                  isGlass ? 'bg-[#fdfcf9] border-[#e2ded5] shadow-2xs' : 'bg-slate-900 border-slate-800'
                 }`}>
                   <button
                     onClick={() => setAudioVisualizerType('orb')}
@@ -1538,7 +1538,7 @@ export const App: React.FC = () => {
               {/* Quick Interactive Simulator & Telemetry Sidebar */}
               <div className="space-y-4">
                 <div className={`p-4 rounded-2xl border backdrop-blur-xl space-y-3 ${
-                  isGlass ? 'bg-white/80 border-slate-200/90 text-slate-800 shadow-md' : 'bg-slate-900/60 border-slate-800/80 text-slate-200 shadow-xl'
+                  isGlass ? 'bg-[#fdfcf9]/85 border-[#e8e4dc]/90 text-slate-800 shadow-md' : 'bg-slate-900/60 border-slate-800/80 text-slate-200 shadow-xl'
                 }`}>
                   <div className={`flex items-center justify-between text-xs font-mono ${isGlass ? 'text-cyan-700' : 'text-cyan-400'}`}>
                     <div className="flex items-center space-x-2">
@@ -1560,7 +1560,7 @@ export const App: React.FC = () => {
                         setTimeout(() => setActiveSimulationKey(null), 2500);
                       }}
                       className={`group p-3 rounded-xl border cursor-pointer transition-all space-y-1.5 relative overflow-hidden ${
-                        isGlass ? 'bg-slate-50 hover:bg-white border-slate-200 hover:border-cyan-400 shadow-xs' : 'bg-slate-950/80 hover:bg-slate-900/90 border-slate-800 hover:border-cyan-500/50 shadow-sm'
+                        isGlass ? 'bg-[#f7f3eb]/70 hover:bg-[#fdfcf9] border-[#e5e0d6] hover:border-cyan-500/70 shadow-xs' : 'bg-slate-950/80 hover:bg-slate-900/90 border-slate-800 hover:border-cyan-500/50 shadow-sm'
                       }`}
                     >
                       <div className="flex items-center justify-between">
@@ -1598,7 +1598,7 @@ export const App: React.FC = () => {
                         setTimeout(() => setActiveSimulationKey(null), 2500);
                       }}
                       className={`group p-3 rounded-xl border cursor-pointer transition-all space-y-1.5 relative overflow-hidden ${
-                        isGlass ? 'bg-slate-50 hover:bg-white border-slate-200 hover:border-amber-400 shadow-xs' : 'bg-slate-950/80 hover:bg-slate-900/90 border-slate-800 hover:border-amber-500/50 shadow-sm'
+                        isGlass ? 'bg-[#f7f3eb]/70 hover:bg-[#fdfcf9] border-[#e5e0d6] hover:border-amber-500/70 shadow-xs' : 'bg-slate-950/80 hover:bg-slate-900/90 border-slate-800 hover:border-amber-500/50 shadow-sm'
                       }`}
                     >
                       <div className="flex items-center justify-between">
@@ -1636,7 +1636,7 @@ export const App: React.FC = () => {
                         setTimeout(() => setActiveSimulationKey(null), 2500);
                       }}
                       className={`group p-3 rounded-xl border cursor-pointer transition-all space-y-1.5 relative overflow-hidden ${
-                        isGlass ? 'bg-slate-50 hover:bg-white border-slate-200 hover:border-purple-400 shadow-xs' : 'bg-slate-950/80 hover:bg-slate-900/90 border-slate-800 hover:border-purple-500/50 shadow-sm'
+                        isGlass ? 'bg-[#f7f3eb]/70 hover:bg-[#fdfcf9] border-[#e5e0d6] hover:border-purple-500/70 shadow-xs' : 'bg-slate-950/80 hover:bg-slate-900/90 border-slate-800 hover:border-purple-500/50 shadow-sm'
                       }`}
                     >
                       <div className="flex items-center justify-between">
@@ -1670,7 +1670,7 @@ export const App: React.FC = () => {
 
                 {/* System Guardrail Status */}
                 <div className={`p-4 rounded-2xl border backdrop-blur-xl space-y-2.5 ${
-                  isGlass ? 'bg-white/80 border-slate-200/90 text-slate-800 shadow-sm' : 'bg-slate-900/60 border-slate-800/80 text-slate-300 shadow-sm'
+                  isGlass ? 'bg-[#fdfcf9]/85 border-[#e8e4dc]/90 text-slate-800 shadow-sm' : 'bg-slate-900/60 border-slate-800/80 text-slate-300 shadow-sm'
                 }`}>
                   <div className={`flex items-center space-x-2 text-xs font-mono ${isGlass ? 'text-emerald-700' : 'text-emerald-400'}`}>
                     <ShieldAlert className="w-4 h-4" />
@@ -1699,7 +1699,7 @@ export const App: React.FC = () => {
   return (
     <div
       className={`min-h-screen flex flex-col relative overflow-x-hidden transition-colors duration-300 ${
-        isGlass ? 'bg-[#f8fafc] text-slate-800' : 'bg-[#05070f] text-slate-100'
+        isGlass ? 'bg-[#faf8f5] text-slate-800' : 'bg-[#05070f] text-slate-100'
       }`}
     >
       {/* Vercel-Grade Ambient GPU Background Shader Canvas */}
@@ -1709,7 +1709,7 @@ export const App: React.FC = () => {
       <header
         className={`px-6 py-4 flex flex-wrap items-center justify-between gap-4 sticky top-0 z-50 transition-all border-b backdrop-blur-2xl ${
           isGlass
-            ? 'bg-white/75 border-slate-200/80 text-slate-900 shadow-sm'
+            ? 'bg-[#fdfcf9]/85 border-[#e8e4dc]/90 text-slate-900 shadow-[0_4px_20px_rgba(40,30,20,0.03)]'
             : 'bg-slate-950/70 border-slate-800/80 text-slate-100'
         }`}
       >
@@ -1735,23 +1735,23 @@ export const App: React.FC = () => {
             onClick={() => setTheme(theme === 'glass' ? 'cyber' : 'glass')}
             className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-mono font-semibold transition-all border ${
               isGlass
-                ? 'bg-white/90 hover:bg-white border-slate-300 text-slate-800 shadow-sm'
+                ? 'bg-[#faf7f0]/90 hover:bg-white border-[#e2ded5] text-slate-800 shadow-2xs'
                 : 'bg-cyan-950/60 hover:bg-cyan-900/60 border-cyan-800/60 text-cyan-300'
             }`}
             title="Toggle between Lucid Glass (Light) and Obsidian Cyber (Dark)"
           >
             <Sparkles className={`w-3.5 h-3.5 ${isGlass ? 'text-sky-600' : 'text-cyan-400'}`} />
-            <span>{isGlass ? '💎 Lucid Glass' : '🌑 Obsidian'}</span>
+            <span>{isGlass ? '💎 Lucid Cream' : '🌑 Obsidian'}</span>
           </button>
           {/* Odyssey Mode vs Tactical Console Switcher */}
           <div className={`flex items-center space-x-1 p-1 rounded-2xl border ${
-            isGlass ? 'bg-slate-100/90 border-slate-200 shadow-2xs' : 'bg-slate-900/90 border-cyan-800/60 shadow-inner'
+            isGlass ? 'bg-[#f4efe6]/90 border-[#e5e0d6] shadow-2xs' : 'bg-slate-900/90 border-cyan-800/60 shadow-inner'
           }`}>
             <button
               onClick={() => setViewMode('odyssey')}
               className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-mono font-semibold transition-all ${
                 viewMode === 'odyssey'
-                  ? (isGlass ? 'bg-white text-sky-900 border border-sky-300/80 shadow-xs' : 'bg-gradient-to-r from-cyan-500/30 to-purple-500/30 border border-cyan-400 text-cyan-200 shadow-[0_0_15px_rgba(6,182,212,0.4)]')
+                  ? (isGlass ? 'bg-[#fdfcf9] text-sky-950 border border-sky-300/80 shadow-xs' : 'bg-gradient-to-r from-cyan-500/30 to-purple-500/30 border border-cyan-400 text-cyan-200 shadow-[0_0_15px_rgba(6,182,212,0.4)]')
                   : (isGlass ? 'text-slate-600 hover:text-slate-900' : 'text-slate-400 hover:text-slate-200')
               }`}
               title="3D Spatial Z-Depth Odyssey Mode (Continuous Camera Dive into AI Core)"
@@ -1763,7 +1763,7 @@ export const App: React.FC = () => {
               onClick={() => setViewMode('tactical')}
               className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-mono font-semibold transition-all ${
                 viewMode === 'tactical'
-                  ? (isGlass ? 'bg-white text-slate-900 border border-slate-300/80 shadow-xs' : 'bg-slate-800 border border-slate-700 text-slate-100 shadow-sm')
+                  ? (isGlass ? 'bg-[#fdfcf9] text-slate-900 border border-[#d8d2c5] shadow-xs' : 'bg-slate-800 border border-slate-700 text-slate-100 shadow-sm')
                   : (isGlass ? 'text-slate-600 hover:text-slate-900' : 'text-slate-400 hover:text-slate-200')
               }`}
               title="Tactical Flat Console Workstation"
@@ -1777,7 +1777,7 @@ export const App: React.FC = () => {
             className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-mono font-semibold transition-all border ${
               is3DSpatialMode
                 ? (isGlass ? 'bg-sky-50 border-sky-300 text-sky-800 shadow-xs' : 'bg-cyan-500/20 border-cyan-400 text-cyan-300 shadow-[0_0_15px_rgba(6,182,212,0.4)]')
-                : (isGlass ? 'bg-white border-slate-200 text-slate-600 hover:text-slate-900' : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200')
+                : (isGlass ? 'bg-[#fdfcf9] border-[#e2ded5] text-slate-700 hover:text-slate-900' : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200')
             }`}
             title="Toggle 3D Spatial Depth Perspective (Cindy Zhu Scrollytelling Depth)"
           >
@@ -1786,13 +1786,13 @@ export const App: React.FC = () => {
           </button>
 
           <div className={`flex items-center space-x-1 p-1 rounded-xl border ${
-            isGlass ? 'bg-slate-100/90 border-slate-200 shadow-2xs' : 'bg-slate-900/90 border-slate-800'
+            isGlass ? 'bg-[#f4efe6]/90 border-[#e5e0d6] shadow-2xs' : 'bg-slate-900/90 border-slate-800'
           }`}>
             <button
               onClick={() => setActiveTab('console')}
               className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 activeTab === 'console'
-                  ? (isGlass ? 'bg-white text-sky-900 border border-sky-200 font-semibold shadow-xs' : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm')
+                  ? (isGlass ? 'bg-[#fdfcf9] text-sky-950 border border-sky-200 font-semibold shadow-xs' : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm')
                   : (isGlass ? 'text-slate-600 hover:text-slate-900' : 'text-slate-400 hover:text-slate-200')
               }`}
             >
@@ -1803,7 +1803,7 @@ export const App: React.FC = () => {
               onClick={() => setActiveTab('crm')}
               className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 activeTab === 'crm'
-                  ? (isGlass ? 'bg-white text-emerald-900 border border-emerald-200 font-semibold shadow-xs' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm')
+                  ? (isGlass ? 'bg-[#fdfcf9] text-emerald-950 border border-emerald-200 font-semibold shadow-xs' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm')
                   : (isGlass ? 'text-slate-600 hover:text-slate-900' : 'text-slate-400 hover:text-slate-200')
               }`}
             >
@@ -1814,7 +1814,7 @@ export const App: React.FC = () => {
               onClick={() => setActiveTab('content')}
               className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 activeTab === 'content'
-                  ? (isGlass ? 'bg-white text-purple-900 border border-purple-200 font-semibold shadow-xs' : 'bg-purple-500/20 text-purple-300 border border-purple-500/40 shadow-sm')
+                  ? (isGlass ? 'bg-[#fdfcf9] text-purple-950 border border-purple-200 font-semibold shadow-xs' : 'bg-purple-500/20 text-purple-300 border border-purple-500/40 shadow-sm')
                   : (isGlass ? 'text-slate-600 hover:text-slate-900' : 'text-slate-400 hover:text-slate-200')
               }`}
             >
@@ -1825,7 +1825,7 @@ export const App: React.FC = () => {
               onClick={() => setActiveTab('evals')}
               className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 activeTab === 'evals'
-                  ? (isGlass ? 'bg-white text-blue-900 border border-blue-200 font-semibold shadow-xs' : 'bg-blue-500/20 text-blue-300 border border-blue-500/40 shadow-sm')
+                  ? (isGlass ? 'bg-[#fdfcf9] text-blue-950 border border-blue-200 font-semibold shadow-xs' : 'bg-blue-500/20 text-blue-300 border border-blue-500/40 shadow-sm')
                   : (isGlass ? 'text-slate-600 hover:text-slate-900' : 'text-slate-400 hover:text-slate-200')
               }`}
             >
@@ -1836,7 +1836,7 @@ export const App: React.FC = () => {
               onClick={() => setActiveTab('graph')}
               className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 activeTab === 'graph'
-                  ? (isGlass ? 'bg-white text-emerald-900 border border-emerald-200 font-semibold shadow-xs' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm')
+                  ? (isGlass ? 'bg-[#fdfcf9] text-emerald-950 border border-emerald-200 font-semibold shadow-xs' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm')
                   : (isGlass ? 'text-slate-600 hover:text-slate-900' : 'text-slate-400 hover:text-slate-200')
               }`}
             >

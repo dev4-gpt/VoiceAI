@@ -136,7 +136,7 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
       {/* Top Banner: Dual Engine Switcher & Quick Launch */}
       <div className={`flex flex-col md:flex-row items-start md:items-center justify-between p-5 rounded-2xl border backdrop-blur-xl shadow-2xl gap-4 transition-all ${
         isGlass
-          ? 'bg-white/80 border-slate-200/90 shadow-[0_10px_35px_rgba(0,0,0,0.04)] text-slate-800'
+          ? 'bg-[#fdfcf9]/80 border-[#e8e4dc]/90 shadow-[0_12px_40px_rgba(40,30,20,0.04)] text-slate-800'
           : 'bg-gradient-to-r from-purple-950/40 via-slate-900/60 to-cyan-950/40 border-purple-800/40 text-slate-100'
       }`}>
         <div className="space-y-1">
@@ -348,7 +348,7 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
             }`}>
               {/* Header & Approval Gate */}
               <div className={`flex items-start justify-between border-b pb-4 ${
-                isGlass ? 'border-slate-200/80' : 'border-slate-800'
+                isGlass ? 'border-[#e8e4dc]/80' : 'border-slate-800'
               }`}>
                 <div>
                   <div className={`flex items-center space-x-2 text-xs font-mono uppercase ${
@@ -629,7 +629,7 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
               </div>
 
               {/* SOP 3-Touch Outreach Deliverables Switcher */}
-              <div className={`border-t pt-3 space-y-3 ${isGlass ? 'border-slate-200/80' : 'border-slate-800'}`}>
+              <div className={`border-t pt-3 space-y-3 ${isGlass ? 'border-[#e8e4dc]/80' : 'border-slate-800'}`}>
                 <div className="flex items-center justify-between">
                   <div className="flex flex-wrap items-center gap-2">
                     <button

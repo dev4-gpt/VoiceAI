@@ -172,10 +172,10 @@ export const Spatial3DOdyssey: React.FC<Spatial3DOdysseyProps> = ({
 
   // Glass chamber styling tokens
   const chamberBoxClass = isGlass
-    ? 'w-full max-w-6xl max-h-[85vh] overflow-y-auto custom-scrollbar scrollable-chamber-content bg-white/80 border border-slate-200/80 rounded-3xl p-5 shadow-[0_20px_50px_rgba(15,23,42,0.06)] backdrop-blur-2xl text-slate-800'
+    ? 'w-full max-w-6xl max-h-[85vh] overflow-y-auto custom-scrollbar scrollable-chamber-content bg-[#fdfcf9]/85 border border-[#e8e4dc]/90 rounded-3xl p-5 shadow-[0_20px_60px_rgba(40,30,20,0.04)] backdrop-blur-2xl text-slate-800'
     : 'w-full max-w-6xl max-h-[85vh] overflow-y-auto custom-scrollbar scrollable-chamber-content bg-slate-950/80 border border-cyan-800/40 rounded-3xl p-5 shadow-[0_30px_90px_rgba(0,0,0,0.9)] backdrop-blur-2xl text-slate-100';
 
-  const headerBorderClass = isGlass ? 'border-slate-200/70 pb-4 mb-4' : 'border-cyan-800/30 pb-4 mb-4';
+  const headerBorderClass = isGlass ? 'border-[#e8e4dc]/80 pb-4 mb-4' : 'border-cyan-800/30 pb-4 mb-4';
 
   return (
     <div
@@ -193,7 +193,7 @@ export const Spatial3DOdyssey: React.FC<Spatial3DOdysseyProps> = ({
         <div
           className={`flex items-center space-x-3 px-4 py-2 rounded-2xl shadow-lg backdrop-blur-2xl border ${
             isGlass
-              ? 'bg-white/75 border-white/90 text-slate-900 shadow-[0_8px_32px_rgba(31,38,135,0.07)]'
+              ? 'bg-[#fdfcf9]/85 border-[#e8e4dc]/90 text-slate-900 shadow-[0_8px_32px_rgba(40,30,20,0.04)]'
               : 'bg-slate-950/80 border-cyan-800/60 text-slate-100 shadow-[0_10px_30px_rgba(0,0,0,0.8)]'
           }`}
         >
@@ -234,7 +234,7 @@ export const Spatial3DOdyssey: React.FC<Spatial3DOdysseyProps> = ({
         {/* Center: Interactive Stratum Warp Pills */}
         <div
           className={`flex items-center space-x-1.5 p-1.5 rounded-2xl shadow-lg backdrop-blur-2xl border ${
-            isGlass ? 'bg-white/75 border-white/90' : 'bg-slate-950/80 border-slate-800/80'
+            isGlass ? 'bg-[#fdfcf9]/85 border-[#e8e4dc]/90' : 'bg-slate-950/80 border-slate-800/80'
           }`}
         >
           {STRATA.map((stratum, idx) => {
@@ -264,7 +264,7 @@ export const Spatial3DOdyssey: React.FC<Spatial3DOdysseyProps> = ({
         {/* Right: Depth Scrubber & Exit Control */}
         <div
           className={`flex items-center space-x-2 px-3 py-1.5 rounded-2xl shadow-lg backdrop-blur-2xl border ${
-            isGlass ? 'bg-white/75 border-white/90' : 'bg-slate-950/80 border-slate-800/80'
+            isGlass ? 'bg-[#fdfcf9]/85 border-[#e8e4dc]/90' : 'bg-slate-950/80 border-slate-800/80'
           }`}
         >
           <div className="flex items-center space-x-2 mr-2">
@@ -306,7 +306,7 @@ export const Spatial3DOdyssey: React.FC<Spatial3DOdysseyProps> = ({
       <div
         className={`absolute bottom-4 left-1/2 -translate-x-1/2 z-40 pointer-events-none flex items-center space-x-2 backdrop-blur-xl px-4 py-1.5 rounded-full text-[11px] font-mono shadow-xl border ${
           isGlass
-            ? 'bg-white/85 border-white/95 text-slate-700'
+            ? 'bg-[#fdfcf9]/90 border-[#e8e4dc]/95 text-slate-700'
             : 'bg-slate-950/80 border-cyan-800/40 text-slate-300'
         }`}
       >
@@ -335,11 +335,11 @@ export const Spatial3DOdyssey: React.FC<Spatial3DOdysseyProps> = ({
           <div className={chamberBoxClass}>
             {/* Sleek Waypoint Breadcrumb */}
             <div className={`flex items-center justify-between px-3.5 py-2 rounded-xl mb-4 border ${
-              isGlass ? 'bg-sky-50/70 border-sky-200/80 text-slate-800' : 'bg-cyan-950/40 border-cyan-800/40 text-slate-200'
+              isGlass ? 'bg-[#f6f2ea]/90 border-[#e5e0d6] text-slate-800' : 'bg-cyan-950/40 border-cyan-800/40 text-slate-200'
             }`}>
               <div className="flex items-center space-x-2.5">
                 <div className={`p-1.5 rounded-lg border ${
-                  isGlass ? 'bg-white border-sky-200 text-sky-600' : 'bg-cyan-500/20 border-cyan-400/40 text-cyan-300'
+                  isGlass ? 'bg-[#fdfcf9] border-sky-200 text-sky-700' : 'bg-cyan-500/20 border-cyan-400/40 text-cyan-300'
                 }`}>
                   <Mic className="w-3.5 h-3.5" />
                 </div>
@@ -354,7 +354,7 @@ export const Spatial3DOdyssey: React.FC<Spatial3DOdysseyProps> = ({
               <button
                 onClick={() => handleWarpToStratum(1800)}
                 className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-mono font-semibold transition-all border ${
-                  isGlass ? 'bg-white hover:bg-sky-50 border-sky-200 text-sky-800 shadow-2xs' : 'bg-cyan-600/20 hover:bg-cyan-600/40 border-cyan-500/50 text-cyan-200'
+                  isGlass ? 'bg-[#fdfcf9] hover:bg-white border-[#e2ded5] text-sky-900 shadow-2xs' : 'bg-cyan-600/20 hover:bg-cyan-600/40 border-cyan-500/50 text-cyan-200'
                 }`}
               >
                 <span>Warp to CRM (Z = -1,800m)</span>
@@ -375,11 +375,11 @@ export const Spatial3DOdyssey: React.FC<Spatial3DOdysseyProps> = ({
           <div className={chamberBoxClass}>
             {/* Sleek Waypoint Breadcrumb */}
             <div className={`flex items-center justify-between px-3.5 py-2 rounded-xl mb-4 border ${
-              isGlass ? 'bg-emerald-50/70 border-emerald-200/80 text-slate-800' : 'bg-emerald-950/40 border-emerald-800/40 text-slate-200'
+              isGlass ? 'bg-[#f4f6ef]/90 border-[#dce3d5] text-slate-800' : 'bg-emerald-950/40 border-emerald-800/40 text-slate-200'
             }`}>
               <div className="flex items-center space-x-2.5">
                 <div className={`p-1.5 rounded-lg border ${
-                  isGlass ? 'bg-white border-emerald-200 text-emerald-600' : 'bg-emerald-500/20 border-emerald-400/40 text-emerald-300'
+                  isGlass ? 'bg-[#fdfcf9] border-emerald-200 text-emerald-700' : 'bg-emerald-500/20 border-emerald-400/40 text-emerald-300'
                 }`}>
                   <Database className="w-3.5 h-3.5" />
                 </div>
@@ -395,7 +395,7 @@ export const Spatial3DOdyssey: React.FC<Spatial3DOdysseyProps> = ({
                 <button
                   onClick={() => handleWarpToStratum(0)}
                   className={`px-2.5 py-1 rounded-lg text-xs font-mono border ${
-                    isGlass ? 'bg-white hover:bg-slate-100 border-slate-200 text-slate-700' : 'bg-slate-900 border-slate-700 text-slate-300'
+                    isGlass ? 'bg-[#fdfcf9] hover:bg-white border-[#e2ded5] text-slate-700' : 'bg-slate-900 border-slate-700 text-slate-300'
                   }`}
                 >
                   ↑ Surface
@@ -403,7 +403,7 @@ export const Spatial3DOdyssey: React.FC<Spatial3DOdysseyProps> = ({
                 <button
                   onClick={() => handleWarpToStratum(3600)}
                   className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-mono font-semibold transition-all border ${
-                    isGlass ? 'bg-white hover:bg-emerald-50 border-emerald-200 text-emerald-800 shadow-2xs' : 'bg-emerald-600/20 hover:bg-emerald-600/40 border-emerald-500/50 text-emerald-200'
+                    isGlass ? 'bg-[#fdfcf9] hover:bg-white border-[#e2ded5] text-emerald-900 shadow-2xs' : 'bg-emerald-600/20 hover:bg-emerald-600/40 border-emerald-500/50 text-emerald-200'
                   }`}
                 >
                   <span>Warp to Hermes Studio</span>
@@ -425,11 +425,11 @@ export const Spatial3DOdyssey: React.FC<Spatial3DOdysseyProps> = ({
           <div className={chamberBoxClass}>
             {/* Sleek Waypoint Breadcrumb */}
             <div className={`flex items-center justify-between px-3.5 py-2 rounded-xl mb-4 border ${
-              isGlass ? 'bg-purple-50/70 border-purple-200/80 text-slate-800' : 'bg-purple-950/40 border-purple-800/40 text-slate-200'
+              isGlass ? 'bg-[#f6f2f7]/90 border-[#e4dbe8] text-slate-800' : 'bg-purple-950/40 border-purple-800/40 text-slate-200'
             }`}>
               <div className="flex items-center space-x-2.5">
                 <div className={`p-1.5 rounded-lg border ${
-                  isGlass ? 'bg-white border-purple-200 text-purple-600' : 'bg-purple-500/20 border-purple-400/40 text-purple-300'
+                  isGlass ? 'bg-[#fdfcf9] border-purple-200 text-purple-700' : 'bg-purple-500/20 border-purple-400/40 text-purple-300'
                 }`}>
                   <Sparkles className="w-3.5 h-3.5" />
                 </div>
@@ -445,7 +445,7 @@ export const Spatial3DOdyssey: React.FC<Spatial3DOdysseyProps> = ({
                 <button
                   onClick={() => handleWarpToStratum(1800)}
                   className={`px-2.5 py-1 rounded-lg text-xs font-mono border ${
-                    isGlass ? 'bg-white hover:bg-slate-100 border-slate-200 text-slate-700' : 'bg-slate-900 border-slate-700 text-slate-300'
+                    isGlass ? 'bg-[#fdfcf9] hover:bg-white border-[#e2ded5] text-slate-700' : 'bg-slate-900 border-slate-700 text-slate-300'
                   }`}
                 >
                   ↑ CRM
@@ -453,7 +453,7 @@ export const Spatial3DOdyssey: React.FC<Spatial3DOdysseyProps> = ({
                 <button
                   onClick={() => handleWarpToStratum(5400)}
                   className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-mono font-semibold transition-all border ${
-                    isGlass ? 'bg-white hover:bg-purple-50 border-purple-200 text-purple-800 shadow-2xs' : 'bg-purple-600/20 hover:bg-purple-600/40 border-purple-500/50 text-purple-200'
+                    isGlass ? 'bg-[#fdfcf9] hover:bg-white border-[#e2ded5] text-purple-900 shadow-2xs' : 'bg-purple-600/20 hover:bg-purple-600/40 border-purple-500/50 text-purple-200'
                   }`}
                 >
                   <span>Warp to Evals Matrix</span>
@@ -475,11 +475,11 @@ export const Spatial3DOdyssey: React.FC<Spatial3DOdysseyProps> = ({
           <div className={chamberBoxClass}>
             {/* Sleek Waypoint Breadcrumb */}
             <div className={`flex items-center justify-between px-3.5 py-2 rounded-xl mb-4 border ${
-              isGlass ? 'bg-blue-50/70 border-blue-200/80 text-slate-800' : 'bg-blue-950/40 border-blue-800/40 text-slate-200'
+              isGlass ? 'bg-[#f3f5f9]/90 border-[#dae1ec] text-slate-800' : 'bg-blue-950/40 border-blue-800/40 text-slate-200'
             }`}>
               <div className="flex items-center space-x-2.5">
                 <div className={`p-1.5 rounded-lg border ${
-                  isGlass ? 'bg-white border-blue-200 text-blue-600' : 'bg-blue-500/20 border-blue-400/40 text-blue-300'
+                  isGlass ? 'bg-[#fdfcf9] border-blue-200 text-blue-700' : 'bg-blue-500/20 border-blue-400/40 text-blue-300'
                 }`}>
                   <BarChart3 className="w-3.5 h-3.5" />
                 </div>
@@ -495,7 +495,7 @@ export const Spatial3DOdyssey: React.FC<Spatial3DOdysseyProps> = ({
                 <button
                   onClick={() => handleWarpToStratum(3600)}
                   className={`px-2.5 py-1 rounded-lg text-xs font-mono border ${
-                    isGlass ? 'bg-white hover:bg-slate-100 border-slate-200 text-slate-700' : 'bg-slate-900 border-slate-700 text-slate-300'
+                    isGlass ? 'bg-[#fdfcf9] hover:bg-white border-[#e2ded5] text-slate-700' : 'bg-slate-900 border-slate-700 text-slate-300'
                   }`}
                 >
                   ↑ Synthesizer
@@ -503,7 +503,7 @@ export const Spatial3DOdyssey: React.FC<Spatial3DOdysseyProps> = ({
                 <button
                   onClick={() => handleWarpToStratum(7200)}
                   className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-mono font-semibold transition-all border ${
-                    isGlass ? 'bg-white hover:bg-blue-50 border-blue-200 text-blue-800 shadow-2xs' : 'bg-blue-600/20 hover:bg-blue-600/40 border-blue-500/50 text-blue-200'
+                    isGlass ? 'bg-[#fdfcf9] hover:bg-white border-[#e2ded5] text-blue-900 shadow-2xs' : 'bg-blue-600/20 hover:bg-blue-600/40 border-blue-500/50 text-blue-200'
                   }`}
                 >
                   <span>Warp to Knowledge Vault</span>
@@ -525,11 +525,11 @@ export const Spatial3DOdyssey: React.FC<Spatial3DOdysseyProps> = ({
           <div className={chamberBoxClass}>
             {/* Sleek Waypoint Breadcrumb */}
             <div className={`flex items-center justify-between px-3.5 py-2 rounded-xl mb-4 border ${
-              isGlass ? 'bg-emerald-50/70 border-emerald-200/80 text-slate-800' : 'bg-emerald-950/40 border-emerald-800/40 text-slate-200'
+              isGlass ? 'bg-[#f4f6ef]/90 border-[#dce3d5] text-slate-800' : 'bg-emerald-950/40 border-emerald-800/40 text-slate-200'
             }`}>
               <div className="flex items-center space-x-2.5">
                 <div className={`p-1.5 rounded-lg border ${
-                  isGlass ? 'bg-white border-emerald-200 text-emerald-600' : 'bg-emerald-500/20 border-emerald-400/40 text-emerald-300'
+                  isGlass ? 'bg-[#fdfcf9] border-emerald-200 text-emerald-700' : 'bg-emerald-500/20 border-emerald-400/40 text-emerald-300'
                 }`}>
                   <GitFork className="w-3.5 h-3.5" />
                 </div>
@@ -544,7 +544,7 @@ export const Spatial3DOdyssey: React.FC<Spatial3DOdysseyProps> = ({
               <button
                 onClick={() => handleWarpToStratum(0)}
                 className={`flex items-center space-x-1 px-2.5 py-1 rounded-lg text-xs font-mono font-semibold transition-all border ${
-                  isGlass ? 'bg-white hover:bg-slate-100 border-slate-200 text-slate-800 shadow-2xs' : 'bg-emerald-600/20 hover:bg-emerald-600/40 border-emerald-500/50 text-emerald-200'
+                  isGlass ? 'bg-[#fdfcf9] hover:bg-white border-[#e2ded5] text-slate-800 shadow-2xs' : 'bg-emerald-600/20 hover:bg-emerald-600/40 border-emerald-500/50 text-emerald-200'
                 }`}
               >
                 <span>↑ Ascent to Surface (Z = 0m)</span>
