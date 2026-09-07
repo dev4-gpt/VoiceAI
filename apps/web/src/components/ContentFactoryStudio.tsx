@@ -267,17 +267,29 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
 
               {/* Self-Healing Loop Log Card */}
               {selectedJob.selfHealingLogs && selectedJob.selfHealingLogs.length > 0 && (
-                <div className="p-3.5 rounded-xl bg-amber-950/30 border border-amber-500/40 space-y-2 mt-3">
-                  <div className="flex items-center space-x-2 text-xs font-mono text-amber-300 font-semibold">
-                    <AlertTriangle className="w-4 h-4 text-amber-400" />
-                    <span>Autonomous Self-Healing Loop Triggered:</span>
+                <div className="p-3.5 rounded-xl bg-slate-950/90 border border-amber-500/50 space-y-2 mt-3 shadow-xl relative overflow-hidden">
+                  <div className="absolute top-0 right-0 px-2 py-0.5 rounded-bl bg-amber-500/20 text-[9px] font-mono font-bold text-amber-300 border-b border-l border-amber-500/30 flex items-center space-x-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
+                    <span>DSPy AUTONOMOUS REPAIR</span>
                   </div>
-                  {selectedJob.selfHealingLogs.map((log, lIdx) => (
-                    <div key={lIdx} className="text-[11px] text-slate-300 font-mono space-y-1">
-                      <div className="text-red-300">⚠️ Detected: {log.issueDetected}</div>
-                      <div className="text-emerald-300">✅ Healed: {log.repairApplied}</div>
-                    </div>
-                  ))}
+                  <div className="flex items-center space-x-2 text-xs font-mono text-amber-300 font-semibold">
+                    <AlertTriangle className="w-4 h-4 text-amber-400 animate-pulse" />
+                    <span>DeepSeek-R1 Self-Healing Engine:</span>
+                  </div>
+                  <div className="bg-black/80 rounded-lg p-3 border border-slate-800 space-y-2 font-mono text-[11px]">
+                    {selectedJob.selfHealingLogs.map((log, lIdx) => (
+                      <div key={lIdx} className="space-y-1">
+                        <div className="text-rose-400 flex items-start space-x-1.5">
+                          <span className="text-rose-500 font-bold">▶ FAULT:</span>
+                          <span>{log.issueDetected}</span>
+                        </div>
+                        <div className="text-emerald-400 flex items-start space-x-1.5 bg-emerald-950/30 p-1.5 rounded border border-emerald-500/20">
+                          <span className="text-emerald-500 font-bold">✔ REPAIRED:</span>
+                          <span>{log.repairApplied}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -331,37 +343,81 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
                 )}
               </div>
 
-              {/* KPI Metrics Strip */}
+              {/* KPI Metrics Strip with Circular Radial Gauge and Leakage Flow Meter */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div className="p-3.5 rounded-xl bg-rose-950/30 border border-rose-500/40 space-y-1">
-                  <div className="flex items-center space-x-1.5 text-xs font-mono text-rose-400">
-                    <TrendingDown className="w-4 h-4" />
-                    <span>Annual Inbound Leakage</span>
+                {/* 1. Annual Revenue Leakage with Visual Flow Meter */}
+                <div className="p-3.5 rounded-xl bg-gradient-to-br from-rose-950/40 via-slate-900 to-slate-950 border border-rose-500/40 space-y-2 shadow-lg relative overflow-hidden">
+                  <div className="flex items-center justify-between text-xs font-mono text-rose-400">
+                    <div className="flex items-center space-x-1.5">
+                      <TrendingDown className="w-4 h-4" />
+                      <span>Annual Inbound Leakage</span>
+                    </div>
+                    <span className="px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 text-[10px] font-bold">CRITICAL</span>
                   </div>
-                  <div className="text-xl font-bold text-rose-200">
-                    ${audit.estimatedAnnualRevenueLeakageUsd?.toLocaleString() || '114,000'} / yr
+                  <div className="text-2xl font-bold text-rose-200 tracking-tight font-mono">
+                    ${audit.estimatedAnnualRevenueLeakageUsd?.toLocaleString() || '114,000'} <span className="text-xs font-normal text-rose-400">/ yr</span>
                   </div>
-                  <p className="text-[10px] text-slate-400">Lost due to after-hours delay & unqualified dropoff</p>
+                  {/* Dynamic Visual Leakage Bar */}
+                  <div className="space-y-1">
+                    <div className="h-2 w-full bg-slate-800 rounded-full overflow-hidden flex">
+                      <div className="h-full bg-gradient-to-r from-rose-600 via-rose-500 to-amber-500 w-[78%] rounded-full animate-pulse" />
+                    </div>
+                    <div className="flex justify-between text-[9px] font-mono text-slate-400">
+                      <span>Lost: $9.5k/mo</span>
+                      <span className="text-rose-400 font-bold">Dropoff Rate: 68%</span>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="p-3.5 rounded-xl bg-amber-950/30 border border-amber-500/40 space-y-1">
-                  <div className="flex items-center space-x-1.5 text-xs font-mono text-amber-400">
-                    <ShieldAlert className="w-4 h-4" />
-                    <span>Conversion Audit Score</span>
+                {/* 2. Circular Radial Audit Gauge */}
+                <div className="p-3.5 rounded-xl bg-gradient-to-br from-amber-950/40 via-slate-900 to-slate-950 border border-amber-500/40 flex items-center justify-between shadow-lg">
+                  <div className="space-y-1">
+                    <div className="flex items-center space-x-1.5 text-xs font-mono text-amber-400">
+                      <ShieldAlert className="w-4 h-4" />
+                      <span>Audit Score</span>
+                    </div>
+                    <div className="text-lg font-bold text-amber-200">
+                      {audit.auditScore || 42} <span className="text-xs text-slate-400 font-normal">/ 100</span>
+                    </div>
+                    <p className="text-[10px] text-amber-300/80 font-mono">3 of 5 Pillars Need AI</p>
                   </div>
-                  <div className="text-xl font-bold text-amber-200">
-                    {audit.auditScore || 42} <span className="text-sm font-normal text-slate-400">/ 100</span>
+
+                  {/* Circular SVG Gauge */}
+                  <div className="relative w-16 h-16 flex items-center justify-center flex-shrink-0">
+                    <svg className="w-16 h-16 transform -rotate-90">
+                      <circle cx="32" cy="32" r="24" stroke="currentColor" strokeWidth="5" fill="transparent" className="text-slate-800" />
+                      <circle
+                        cx="32"
+                        cy="32"
+                        r="24"
+                        stroke="currentColor"
+                        strokeWidth="5"
+                        fill="transparent"
+                        strokeDasharray={2 * Math.PI * 24}
+                        strokeDashoffset={2 * Math.PI * 24 - ((audit.auditScore || 42) / 100) * (2 * Math.PI * 24)}
+                        strokeLinecap="round"
+                        className="text-amber-400 drop-shadow-[0_0_6px_rgba(251,191,36,0.6)]"
+                      />
+                    </svg>
+                    <span className="absolute font-mono text-xs font-bold text-white">
+                      {audit.auditScore || 42}%
+                    </span>
                   </div>
-                  <p className="text-[10px] text-slate-400">Critical: 3 of 5 pillars require immediate automation</p>
                 </div>
 
-                <div className="p-3.5 rounded-xl bg-cyan-950/30 border border-cyan-500/40 space-y-1">
-                  <div className="flex items-center space-x-1.5 text-xs font-mono text-cyan-400">
-                    <Clock className="w-4 h-4" />
-                    <span>Response Time Latency</span>
+                {/* 3. Response Time Latency Meter */}
+                <div className="p-3.5 rounded-xl bg-gradient-to-br from-cyan-950/40 via-slate-900 to-slate-950 border border-cyan-500/40 space-y-2 shadow-lg">
+                  <div className="flex items-center justify-between text-xs font-mono text-cyan-400">
+                    <div className="flex items-center space-x-1.5">
+                      <Clock className="w-4 h-4" />
+                      <span>Response Latency</span>
+                    </div>
+                    <span className="text-[10px] font-mono text-slate-400">Target: &lt;5m</span>
                   </div>
-                  <div className="text-xl font-bold text-cyan-200">&gt; 14 Hours</div>
-                  <p className="text-[10px] text-slate-400">Target: &lt;5 mins for 21x higher pipeline conversion</p>
+                  <div className="text-2xl font-bold text-cyan-200 font-mono tracking-tight">&gt; 14 Hours</div>
+                  <div className="flex items-center space-x-1.5 text-[10px] font-mono text-emerald-400 bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-500/20">
+                    <span>Anna Voice: Instant &lt;410ms</span>
+                  </div>
                 </div>
               </div>
 
@@ -435,44 +491,67 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
                 </div>
               )}
 
-              {/* 5-Point Inbound Conversion Audit Pillars */}
+              {/* 5-Point Inbound Conversion Audit Pillars with Segmented Glowing Progress Meters */}
               <div className="space-y-2">
-                <div className="text-xs font-mono font-semibold uppercase text-slate-400">
-                  5-Point Inbound Conversion Audit Scorecard:
+                <div className="flex items-center justify-between text-xs font-mono font-semibold uppercase text-slate-400">
+                  <span>5-Point Inbound Conversion Audit Scorecard:</span>
+                  <span className="text-cyan-400 text-[11px]">Segmented Reliability Meters</span>
                 </div>
-                <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
-                  {audit.pillars?.map((pillar, pIdx) => (
-                    <div
-                      key={pIdx}
-                      className="p-3 rounded-xl bg-slate-950/70 border border-slate-800/80 space-y-1.5"
-                    >
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="font-semibold text-slate-200">{pillar.pillarName}</span>
-                        <div className="flex items-center space-x-2">
-                          <span
-                            className={`text-[10px] font-mono uppercase px-1.5 py-0.5 rounded font-bold ${
-                              pillar.impactLevel === 'critical'
-                                ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
-                                : pillar.impactLevel === 'high'
-                                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                                : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
-                            }`}
-                          >
-                            {pillar.impactLevel}
-                          </span>
-                          <span className="font-mono text-xs font-bold text-slate-300">
-                            {pillar.scoreOutOf10}/10
-                          </span>
+                <div className="space-y-2 max-h-60 overflow-y-auto pr-1 custom-scrollbar">
+                  {audit.pillars?.map((pillar, pIdx) => {
+                    const score = pillar.scoreOutOf10 || 5;
+                    const isCritical = pillar.impactLevel === 'critical';
+                    const isHigh = pillar.impactLevel === 'high';
+                    const barColor = isCritical ? 'bg-rose-500' : isHigh ? 'bg-amber-500' : 'bg-emerald-500';
+
+                    return (
+                      <div
+                        key={pIdx}
+                        className="p-3 rounded-xl bg-slate-950/70 border border-slate-800/80 hover:border-slate-700 transition-all space-y-2"
+                      >
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-semibold text-slate-200">{pillar.pillarName}</span>
+                          <div className="flex items-center space-x-2">
+                            <span
+                              className={`text-[10px] font-mono uppercase px-1.5 py-0.5 rounded font-bold ${
+                                isCritical
+                                  ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                                  : isHigh
+                                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                                  : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
+                              }`}
+                            >
+                              {pillar.impactLevel}
+                            </span>
+                            <span className="font-mono text-xs font-bold text-slate-300">
+                              {score}/10
+                            </span>
+                          </div>
                         </div>
+
+                        {/* Segmented 10-step progress meter */}
+                        <div className="flex items-center space-x-1 py-0.5">
+                          {Array.from({ length: 10 }).map((_, idx) => (
+                            <div
+                              key={idx}
+                              className={`h-1.5 flex-1 rounded-sm transition-all ${
+                                idx < score
+                                  ? `${barColor} shadow-[0_0_4px_currentColor]`
+                                  : 'bg-slate-800'
+                              }`}
+                            />
+                          ))}
+                        </div>
+
+                        <p className="text-[11px] text-slate-400">
+                          <span className="text-slate-500 font-semibold">Finding:</span> {pillar.finding}
+                        </p>
+                        <p className="text-[11px] text-emerald-400">
+                          <span className="text-emerald-500/70 font-semibold">Remedy:</span> {pillar.recommendation}
+                        </p>
                       </div>
-                      <p className="text-[11px] text-slate-400">
-                        <span className="text-slate-500 font-semibold">Finding:</span> {pillar.finding}
-                      </p>
-                      <p className="text-[11px] text-emerald-400">
-                        <span className="text-emerald-500/70 font-semibold">Remedy:</span> {pillar.recommendation}
-                      </p>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
 

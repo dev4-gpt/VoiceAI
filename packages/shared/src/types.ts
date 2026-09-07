@@ -286,6 +286,7 @@ export interface CRMLead {
   qualificationScore: number; // 0 - 100
   status: LeadStatus;
   scheduledCallTime?: string;
+  matchedOffer?: string;
   notes: string[];
   brandVoice?: any;
   createdAt: string;

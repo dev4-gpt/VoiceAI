@@ -31,6 +31,8 @@ import {
   Tag
 } from 'lucide-react';
 import { AudioWaveform } from './components/AudioWaveform';
+import { NeuralAudioOrb } from './components/NeuralAudioOrb';
+import { AmbientVercelShader } from './components/AmbientVercelShader';
 import { LiveTranscriptHUD, MessageItem, ActiveToolItem } from './components/LiveTranscriptHUD';
 import { CrmKanban } from './components/CrmKanban';
 import { EvalsDashboard } from './components/EvalsDashboard';
@@ -137,6 +139,9 @@ export const App: React.FC = () => {
   const [isUserSpeaking, setIsUserSpeaking] = useState(false);
   const [selectedScenario, setSelectedScenario] = useState<OperatingPersona>('inbound');
   const [isSendingMessage, setIsSendingMessage] = useState(false);
+  const [is3DSpatialMode, setIs3DSpatialMode] = useState(false);
+  const [audioVisualizerType, setAudioVisualizerType] = useState<'orb' | 'waveform'>('orb');
+  const [activeSimulationKey, setActiveSimulationKey] = useState<string | null>(null);
 
   // Prospect Enrichment State: Initialized to Generic Public Demo (Jason Miller / DesignAcademy Studio)
   const [isEnrichModalOpen, setIsEnrichModalOpen] = useState(false);
@@ -1178,9 +1183,12 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#080C14] text-slate-100 flex flex-col">
+    <div className="min-h-screen bg-[#05070f] text-slate-100 flex flex-col relative overflow-x-hidden">
+      {/* Vercel-Grade Ambient GPU Background Shader Canvas */}
+      <AmbientVercelShader />
+
       {/* Top Navigation Bar */}
-      <header className="border-b border-slate-800/80 bg-slate-950/70 backdrop-blur-xl px-6 py-4 flex items-center justify-between sticky top-0 z-50">
+      <header className="border-b border-slate-800/80 bg-slate-950/70 backdrop-blur-xl px-6 py-4 flex flex-wrap items-center justify-between gap-4 sticky top-0 z-50">
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-purple-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
             <Zap className="w-5 h-5 text-white" />
@@ -1196,68 +1204,95 @@ export const App: React.FC = () => {
           </div>
         </div>
 
-        {/* Tab Switcher */}
-        <div className="flex items-center space-x-1 bg-slate-900/90 p-1 rounded-xl border border-slate-800">
+        {/* Tab Switcher & 3D Spatial Controls */}
+        <div className="flex items-center space-x-2">
           <button
-            onClick={() => setActiveTab('console')}
-            className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
-              activeTab === 'console'
-                ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm'
-                : 'text-slate-400 hover:text-slate-200'
+            onClick={() => setIs3DSpatialMode(!is3DSpatialMode)}
+            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-mono font-semibold transition-all border ${
+              is3DSpatialMode
+                ? 'bg-cyan-500/20 border-cyan-400 text-cyan-300 shadow-[0_0_15px_rgba(6,182,212,0.4)]'
+                : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-slate-200'
             }`}
+            title="Toggle 3D Spatial Depth Perspective (Cindy Zhu Scrollytelling Depth)"
           >
-            <Mic className="w-3.5 h-3.5" />
-            <span>Voice Console</span>
+            <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+            <span>{is3DSpatialMode ? '3D Depth: ON' : '3D Depth: OFF'}</span>
           </button>
-          <button
-            onClick={() => setActiveTab('crm')}
-            className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
-              activeTab === 'crm'
-                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <Database className="w-3.5 h-3.5" />
-            <span>Revenue CRM ({leads.length})</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('content')}
-            className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
-              activeTab === 'content'
-                ? 'bg-purple-500/20 text-purple-300 border border-purple-500/40 shadow-sm'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <Sparkles className="w-3.5 h-3.5 text-purple-400" />
-            <span>Hermes Content Studio ({jobs.length})</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('evals')}
-            className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
-              activeTab === 'evals'
-                ? 'bg-purple-500/20 text-purple-300 border border-purple-500/40 shadow-sm'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <BarChart3 className="w-3.5 h-3.5" />
-            <span>Anthropic Evals</span>
-          </button>
-          <button
-            onClick={() => setActiveTab('graph')}
-            className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
-              activeTab === 'graph'
-                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <GitFork className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Knowledge Graph & Vault</span>
-          </button>
+
+          <div className="flex items-center space-x-1 bg-slate-900/90 p-1 rounded-xl border border-slate-800">
+            <button
+              onClick={() => setActiveTab('console')}
+              className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                activeTab === 'console'
+                  ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <Mic className="w-3.5 h-3.5" />
+              <span>Voice Console</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('crm')}
+              className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                activeTab === 'crm'
+                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <Database className="w-3.5 h-3.5" />
+              <span>Revenue CRM ({leads.length})</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('content')}
+              className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                activeTab === 'content'
+                  ? 'bg-purple-500/20 text-purple-300 border border-purple-500/40 shadow-sm'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+              <span>Hermes Content Studio ({jobs.length})</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('evals')}
+              className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                activeTab === 'evals'
+                  ? 'bg-purple-500/20 text-purple-300 border border-purple-500/40 shadow-sm'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <BarChart3 className="w-3.5 h-3.5" />
+              <span>Anthropic Evals</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('graph')}
+              className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                activeTab === 'graph'
+                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 shadow-sm'
+                  : 'text-slate-400 hover:text-slate-200'
+              }`}
+            >
+              <GitFork className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Knowledge Graph & Vault</span>
+            </button>
+          </div>
         </div>
       </header>
 
-      {/* Main Workspace Body */}
-      <main className="flex-1 p-6 max-w-7xl w-full mx-auto space-y-6">
+      {/* Main Workspace Body with Optional 3D Spatial Depth Perspective */}
+      <main
+        className="flex-1 p-6 max-w-7xl w-full mx-auto space-y-6 relative z-10 transition-all duration-700"
+        style={
+          is3DSpatialMode
+            ? {
+                perspective: '1400px',
+                transformStyle: 'preserve-3d',
+                transform: 'rotateX(3.5deg) scale(0.985)',
+                boxShadow: '0 30px 80px rgba(0,0,0,0.8)'
+              }
+            : {}
+        }
+      >
         {activeTab === 'console' && (
           <div className="space-y-6">
             {/* Explainer & Mental Model Banner */}
@@ -1510,12 +1545,54 @@ export const App: React.FC = () => {
               </div>
             </div>
 
-            {/* Audio Waveform Canvas */}
-            <AudioWaveform
-              isActive={isCalling}
-              isAgentSpeaking={isAgentSpeaking}
-              isUserSpeaking={isUserSpeaking}
-            />
+            {/* Front-and-Center Audio Visualizer & 3D Neural Orb */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between px-1">
+                <div className="flex items-center space-x-2 text-xs font-mono text-slate-400">
+                  <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+                  <span className="uppercase font-semibold">Front-and-Center Audio Engine</span>
+                </div>
+                <div className="flex items-center space-x-1 bg-slate-900 p-0.5 rounded-lg border border-slate-800 text-[11px] font-mono">
+                  <button
+                    onClick={() => setAudioVisualizerType('orb')}
+                    className={`px-2.5 py-1 rounded transition-all ${
+                      audioVisualizerType === 'orb'
+                        ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-bold'
+                        : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    3D Neural Orb (GPU)
+                  </button>
+                  <button
+                    onClick={() => setAudioVisualizerType('waveform')}
+                    className={`px-2.5 py-1 rounded transition-all ${
+                      audioVisualizerType === 'waveform'
+                        ? 'bg-purple-500/20 text-purple-300 border border-purple-500/40 font-bold'
+                        : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    2D Waveform
+                  </button>
+                </div>
+              </div>
+
+              {audioVisualizerType === 'orb' ? (
+                <NeuralAudioOrb
+                  isActive={isCalling}
+                  isAgentSpeaking={isAgentSpeaking}
+                  isUserSpeaking={isUserSpeaking}
+                  agentName="Anna (Voice Agent)"
+                  samplingRate="24,000 Hz PCM16"
+                  modelName="universal-3-5-pro + Claude 3.5"
+                />
+              ) : (
+                <AudioWaveform
+                  isActive={isCalling}
+                  isAgentSpeaking={isAgentSpeaking}
+                  isUserSpeaking={isUserSpeaking}
+                />
+              )}
+            </div>
 
             {/* Live Interaction HUD */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -1541,39 +1618,114 @@ export const App: React.FC = () => {
 
               {/* Quick Interactive Simulator & Telemetry Sidebar */}
               <div className="space-y-4">
-                <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-xl space-y-3">
-                  <div className="flex items-center space-x-2 text-xs font-mono text-cyan-400">
-                    <Sparkles className="w-4 h-4" />
-                    <span className="font-semibold">Interactive Video Demo Drivers:</span>
+                <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-xl space-y-3 shadow-xl">
+                  <div className="flex items-center justify-between text-xs font-mono text-cyan-400">
+                    <div className="flex items-center space-x-2">
+                      <Sparkles className="w-4 h-4 text-cyan-400" />
+                      <span className="font-semibold uppercase tracking-wider">Interactive Simulation Drivers:</span>
+                    </div>
+                    <span className="text-[10px] text-slate-500 font-mono">1-Click Live Test</span>
                   </div>
                   <p className="text-xs text-slate-400">
-                    Test the buyer side of the conversation or trigger deterministic guardrail clamping:
+                    Drive the buyer persona in real-time or trigger deterministic guardrail clamping:
                   </p>
 
-                  <div className="space-y-2">
-                    <button
-                      onClick={() => triggerSimulationStep('lead_inbound')}
-                      className="w-full text-left p-2.5 rounded-xl bg-slate-950/70 hover:bg-slate-900 border border-slate-800 text-xs text-slate-200 transition-all flex items-center justify-between"
+                  <div className="space-y-2.5">
+                    {/* Card 1: BANT Inbound */}
+                    <div
+                      onClick={() => {
+                        setActiveSimulationKey('lead_inbound');
+                        triggerSimulationStep('lead_inbound');
+                        setTimeout(() => setActiveSimulationKey(null), 2500);
+                      }}
+                      className="group p-3 rounded-xl bg-slate-950/80 hover:bg-slate-900/90 border border-slate-800 hover:border-cyan-500/50 cursor-pointer transition-all space-y-1.5 shadow-sm relative overflow-hidden"
                     >
-                      <span>Simulate High-Ticket Inbound ($10k BANT)</span>
-                      <span className="text-[10px] font-mono text-cyan-400">▶ Run</span>
-                    </button>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)] animate-pulse" />
+                          <span className="font-semibold text-xs text-slate-100 group-hover:text-cyan-300 transition-colors">
+                            High-Ticket Inbound ($10k BANT)
+                          </span>
+                        </div>
+                        <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-800/50">
+                          {activeSimulationKey === 'lead_inbound' ? 'RUNNING...' : '▶ RUN'}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-400">
+                        Simulates founder inquiring about $2,997 sprint + $10k agency retainer. Anna qualifies budget &amp; books call.
+                      </p>
+                      <div className="h-1 w-full bg-slate-800 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full bg-gradient-to-r from-cyan-500 to-emerald-500 transition-all duration-700 ${
+                            activeSimulationKey === 'lead_inbound' ? 'w-full' : 'w-1/3'
+                          }`}
+                        />
+                      </div>
+                    </div>
 
-                    <button
-                      onClick={() => triggerSimulationStep('churn_clamp')}
-                      className="w-full text-left p-2.5 rounded-xl bg-slate-950/70 hover:bg-slate-900 border border-slate-800 text-xs text-slate-200 transition-all flex items-center justify-between"
+                    {/* Card 2: Churn Clamp */}
+                    <div
+                      onClick={() => {
+                        setActiveSimulationKey('churn_clamp');
+                        triggerSimulationStep('churn_clamp');
+                        setTimeout(() => setActiveSimulationKey(null), 2500);
+                      }}
+                      className="group p-3 rounded-xl bg-slate-950/80 hover:bg-slate-900/90 border border-slate-800 hover:border-amber-500/50 cursor-pointer transition-all space-y-1.5 shadow-sm relative overflow-hidden"
                     >
-                      <span>Simulate Churn Save (Clamp 35% to 15%)</span>
-                      <span className="text-[10px] font-mono text-purple-400">▶ Run</span>
-                    </button>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <span className="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.8)] animate-pulse" />
+                          <span className="font-semibold text-xs text-slate-100 group-hover:text-amber-300 transition-colors">
+                            Churn Save (Guardrail Clamp 35% → 15%)
+                          </span>
+                        </div>
+                        <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-amber-950/60 text-amber-400 border border-amber-800/50">
+                          {activeSimulationKey === 'churn_clamp' ? 'RUNNING...' : '▶ RUN'}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-400">
+                        Simulates angry subscriber demanding 50% refund. Clamps to maximum 15% policy concession with empathy.
+                      </p>
+                      <div className="h-1 w-full bg-slate-800 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full bg-gradient-to-r from-amber-500 to-rose-500 transition-all duration-700 ${
+                            activeSimulationKey === 'churn_clamp' ? 'w-full' : 'w-1/3'
+                          }`}
+                        />
+                      </div>
+                    </div>
 
-                    <button
-                      onClick={() => triggerSimulationStep('content_factory_spoken')}
-                      className="w-full text-left p-2.5 rounded-xl bg-slate-950/70 hover:bg-slate-900 border border-purple-800/60 text-xs text-purple-200 transition-all flex items-center justify-between"
+                    {/* Card 3: Spoken Content Factory */}
+                    <div
+                      onClick={() => {
+                        setActiveSimulationKey('content_factory_spoken');
+                        triggerSimulationStep('content_factory_spoken');
+                        setTimeout(() => setActiveSimulationKey(null), 2500);
+                      }}
+                      className="group p-3 rounded-xl bg-slate-950/80 hover:bg-slate-900/90 border border-slate-800 hover:border-purple-500/50 cursor-pointer transition-all space-y-1.5 shadow-sm relative overflow-hidden"
                     >
-                      <span>Simulate Voice: Trigger Hermes Content Factory</span>
-                      <span className="text-[10px] font-mono text-purple-400">▶ Run</span>
-                    </button>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2">
+                          <span className="w-2.5 h-2.5 rounded-full bg-purple-400 shadow-[0_0_8px_rgba(168,85,247,0.8)] animate-pulse" />
+                          <span className="font-semibold text-xs text-slate-100 group-hover:text-purple-300 transition-colors">
+                            Spoken Voice: Hermes Content Factory
+                          </span>
+                        </div>
+                        <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-purple-950/60 text-purple-400 border border-purple-800/50">
+                          {activeSimulationKey === 'content_factory_spoken' ? 'RUNNING...' : '▶ RUN'}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-400">
+                        Founder gives verbal brief on call. System spins up 3 parallel research lanes &amp; synthesizes multi-channel pack.
+                      </p>
+                      <div className="h-1 w-full bg-slate-800 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full bg-gradient-to-r from-purple-500 to-indigo-500 transition-all duration-700 ${
+                            activeSimulationKey === 'content_factory_spoken' ? 'w-full' : 'w-1/3'
+                          }`}
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -1603,7 +1755,13 @@ export const App: React.FC = () => {
           </div>
         )}
 
-        {activeTab === 'crm' && <CrmKanban leads={leads} members={members} />}
+        {activeTab === 'crm' && (
+          <CrmKanban
+            leads={leads}
+            members={members}
+            onSimulateLead={() => triggerSimulationStep('lead_inbound')}
+          />
+        )}
 
         {activeTab === 'content' && (
           <ContentFactoryStudio

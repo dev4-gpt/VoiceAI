@@ -1,34 +1,85 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { CRMLead, ChurnRiskMember, LeadStatus } from '@voice-os/shared';
-import { Users, Calendar, Award } from 'lucide-react';
+import { Users, Calendar, Award, Sparkles, PlusCircle, ArrowRight, PhoneCall } from 'lucide-react';
+import { LeadDetailDrawer } from './LeadDetailDrawer';
 
 interface CrmKanbanProps {
   leads: CRMLead[];
   members?: ChurnRiskMember[];
+  onSimulateLead?: () => void;
 }
 
-const COLUMNS: Array<{ key: LeadStatus; label: string; color: string }> = [
-  { key: 'new', label: 'New Inbound Leads', color: 'border-slate-700 bg-slate-800/40 text-slate-300' },
-  { key: 'inbound_qualified', label: 'BANT Qualified (≥60)', color: 'border-cyan-500/40 bg-cyan-950/30 text-cyan-300' },
-  { key: 'call_scheduled', label: 'Strategy Call Booked', color: 'border-emerald-500/40 bg-emerald-950/30 text-emerald-300' },
-  { key: 'enrolled', label: 'Enrolled / Closed', color: 'border-purple-500/40 bg-purple-950/30 text-purple-300' }
+const COLUMNS: Array<{ key: LeadStatus; label: string; color: string; badgeColor: string }> = [
+  {
+    key: 'new',
+    label: 'New Inbound Leads',
+    color: 'border-slate-700 bg-slate-800/40 text-slate-300',
+    badgeColor: 'border-slate-700 text-slate-400'
+  },
+  {
+    key: 'inbound_qualified',
+    label: 'BANT Qualified (≥60)',
+    color: 'border-cyan-500/40 bg-cyan-950/30 text-cyan-300',
+    badgeColor: 'border-cyan-500/40 text-cyan-300'
+  },
+  {
+    key: 'call_scheduled',
+    label: 'Strategy Call Booked',
+    color: 'border-emerald-500/40 bg-emerald-950/30 text-emerald-300',
+    badgeColor: 'border-emerald-500/40 text-emerald-300'
+  },
+  {
+    key: 'enrolled',
+    label: 'Enrolled / Closed',
+    color: 'border-purple-500/40 bg-purple-950/30 text-purple-300',
+    badgeColor: 'border-purple-500/40 text-purple-300'
+  }
 ];
 
-export const CrmKanban: React.FC<CrmKanbanProps> = ({ leads, members = [] }) => {
+export const CrmKanban: React.FC<CrmKanbanProps> = ({ leads, members = [], onSimulateLead }) => {
+  const [selectedLead, setSelectedLead] = useState<CRMLead | null>(null);
+
   return (
     <div className="flex flex-col h-full bg-slate-900/60 rounded-2xl border border-slate-800/80 backdrop-blur-xl p-5 shadow-2xl">
-      <div className="flex items-center justify-between mb-4">
+      {/* Top Header */}
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-800/80">
         <div className="flex items-center space-x-2.5">
-          <Users className="w-5 h-5 text-emerald-400" />
-          <h3 className="text-base font-semibold text-slate-200">
-            Live Creator Revenue Pipeline (CRM)
-          </h3>
+          <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+            <Users className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="flex items-center space-x-2">
+              <h3 className="text-base font-semibold text-slate-200">
+                Live Creator Revenue Pipeline (CRM)
+              </h3>
+              <span className="px-2 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-[10px] font-mono font-bold">
+                AI BANT SCORING
+              </span>
+            </div>
+            <p className="text-xs text-slate-400 mt-0.5">
+              Every inbound voice turn evaluates Budget, Authority, Need, and Timeline with real-time score updates.
+            </p>
+          </div>
         </div>
-        <span className="text-xs font-mono text-slate-400">
-          {leads.length} Leads • {members.length} Retained Members
-        </span>
+
+        <div className="flex items-center space-x-3">
+          <span className="text-xs font-mono text-slate-400">
+            {leads.length} Leads • {members.length} Retained Members
+          </span>
+
+          {onSimulateLead && (
+            <button
+              onClick={onSimulateLead}
+              className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 text-emerald-300 text-xs font-semibold shadow-sm transition-all"
+            >
+              <PlusCircle className="w-3.5 h-3.5" />
+              <span>Simulate Inbound Lead</span>
+            </button>
+          )}
+        </div>
       </div>
 
+      {/* 4 Kanban Columns */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 flex-1 overflow-x-auto">
         {COLUMNS.map((col) => {
           const colLeads = leads.filter((l) => l.status === col.key);
@@ -49,116 +100,137 @@ export const CrmKanban: React.FC<CrmKanbanProps> = ({ leads, members = [] }) => 
 
               <div className="flex-1 space-y-2.5 overflow-y-auto min-h-[440px] max-h-[560px] pr-1 custom-scrollbar">
                 {colLeads.length === 0 ? (
-                  <div className="text-center py-8 text-xs text-slate-600 font-mono">
-                    No records in stage
+                  <div className="flex flex-col items-center justify-center py-12 text-center text-slate-500 space-y-2">
+                    <div className="w-8 h-8 rounded-full border border-dashed border-slate-700 flex items-center justify-center text-slate-600 font-mono text-xs">
+                      0
+                    </div>
+                    <p className="text-xs font-mono">No records in this stage</p>
+                    {onSimulateLead && col.key === 'new' && (
+                      <button
+                        onClick={onSimulateLead}
+                        className="text-[11px] font-mono text-cyan-400 hover:text-cyan-300 underline pt-1"
+                      >
+                        + Click to Simulate Inbound
+                      </button>
+                    )}
                   </div>
                 ) : (
-                  colLeads.map((lead) => (
-                    <div
-                      key={lead.id}
-                      className="p-3 rounded-lg bg-slate-900/90 border border-slate-800 hover:border-slate-700 transition-all shadow-md space-y-2"
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="font-semibold text-xs text-slate-100">{lead.fullName}</span>
-                        <span
-                          className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded ${
-                            lead.qualificationScore >= 75
-                              ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                              : lead.qualificationScore >= 50
-                              ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
-                              : 'bg-slate-800 text-slate-400'
-                          }`}
-                        >
-                          Score: {lead.qualificationScore}
-                        </span>
-                      </div>
+                  colLeads.map((lead) => {
+                    const score = lead.qualificationScore;
+                    const isHigh = score >= 75;
+                    const isMid = score >= 50;
 
-                      <div className="text-[11px] text-slate-400 font-mono truncate">{lead.email}</div>
+                    // SVG mini-circle math
+                    const r = 16;
+                    const circ = 2 * Math.PI * r;
+                    const offset = circ - (score / 100) * circ;
 
-                      {lead.companyName && (
-                        <div className="text-[11px] text-slate-300 font-medium truncate">
-                          {lead.companyName}
+                    return (
+                      <div
+                        key={lead.id}
+                        onClick={() => setSelectedLead(lead)}
+                        className="group p-3 rounded-lg bg-slate-900/90 border border-slate-800 hover:border-cyan-500/50 hover:bg-slate-900 transition-all shadow-md space-y-2 cursor-pointer relative overflow-hidden"
+                      >
+                        {/* Ambient subtle glow for high-ticket lead */}
+                        {isHigh && (
+                          <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-full blur-xl pointer-events-none" />
+                        )}
+
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <span className="font-semibold text-xs text-slate-100 group-hover:text-cyan-300 transition-colors">
+                              {lead.fullName}
+                            </span>
+                            {lead.companyName && (
+                              <div className="text-[11px] text-slate-400 font-medium truncate">
+                                {lead.companyName}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Glowing circular progress score */}
+                          <div className="relative flex items-center justify-center w-10 h-10 flex-shrink-0" title={`BANT Qualification: ${score}/100`}>
+                            <svg className="w-10 h-10 transform -rotate-90">
+                              <circle
+                                cx="20"
+                                cy="20"
+                                r={r}
+                                stroke="currentColor"
+                                strokeWidth="3.5"
+                                fill="transparent"
+                                className="text-slate-800"
+                              />
+                              <circle
+                                cx="20"
+                                cy="20"
+                                r={r}
+                                stroke="currentColor"
+                                strokeWidth="3.5"
+                                fill="transparent"
+                                strokeDasharray={circ}
+                                strokeDashoffset={offset}
+                                strokeLinecap="round"
+                                className={`transition-all duration-700 ${
+                                  isHigh
+                                    ? 'text-emerald-400 drop-shadow-[0_0_4px_rgba(52,211,153,0.6)]'
+                                    : isMid
+                                    ? 'text-cyan-400 drop-shadow-[0_0_4px_rgba(34,211,238,0.5)]'
+                                    : 'text-amber-400'
+                                }`}
+                              />
+                            </svg>
+                            <span className="absolute text-[10px] font-mono font-bold text-slate-200">
+                              {score}
+                            </span>
+                          </div>
                         </div>
-                      )}
 
-                      {lead.socialLinks && (
-                        <div className="flex items-center space-x-1 pt-0.5 text-slate-400">
-                          {lead.socialLinks.twitter && (
-                            <a
-                              href={lead.socialLinks.twitter}
-                              target="_blank"
-                              rel="noreferrer"
-                              title="Twitter / X"
-                              className="hover:text-cyan-400"
-                            >
-                              <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-950 border border-slate-800 text-cyan-300">
+                        <div className="text-[11px] text-slate-400 font-mono truncate">{lead.email}</div>
+
+                        {/* Social Badges */}
+                        {lead.socialLinks && (
+                          <div className="flex items-center space-x-1 pt-0.5 text-slate-400">
+                            {lead.socialLinks.twitter && (
+                              <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-slate-950 border border-slate-800 text-cyan-300">
                                 𝕏
                               </span>
-                            </a>
-                          )}
-                          {lead.socialLinks.linkedin && (
-                            <a
-                              href={lead.socialLinks.linkedin}
-                              target="_blank"
-                              rel="noreferrer"
-                              title="LinkedIn"
-                              className="hover:text-blue-400"
-                            >
-                              <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-950 border border-slate-800 text-blue-300">
+                            )}
+                            {lead.socialLinks.linkedin && (
+                              <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-slate-950 border border-slate-800 text-blue-300">
                                 in
                               </span>
-                            </a>
-                          )}
-                          {lead.socialLinks.youtube && (
-                            <a
-                              href={lead.socialLinks.youtube}
-                              target="_blank"
-                              rel="noreferrer"
-                              title="YouTube"
-                              className="hover:text-red-400"
-                            >
-                              <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-950 border border-slate-800 text-red-300">
+                            )}
+                            {lead.socialLinks.youtube && (
+                              <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-slate-950 border border-slate-800 text-red-300">
                                 ▶
                               </span>
-                            </a>
-                          )}
-                          {lead.socialLinks.substack && (
-                            <a
-                              href={lead.socialLinks.substack}
-                              target="_blank"
-                              rel="noreferrer"
-                              title="Substack"
-                              className="hover:text-amber-400"
-                            >
-                              <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-950 border border-slate-800 text-amber-300">
-                                ✉
-                              </span>
-                            </a>
-                          )}
-                        </div>
-                      )}
+                            )}
+                          </div>
+                        )}
 
-                      {lead.budgetRange && (
-                        <div className="flex items-center space-x-1.5 text-[11px] text-cyan-400">
-                          <Award className="w-3 h-3" />
-                          <span>Budget: {lead.budgetRange.replace(/_/g, ' ')}</span>
-                        </div>
-                      )}
-
-                      {lead.scheduledCallTime && (
-                        <div className="flex items-center space-x-1.5 text-[11px] text-emerald-400 font-mono bg-emerald-950/40 px-2 py-1 rounded border border-emerald-900/50">
-                          <Calendar className="w-3 h-3 flex-shrink-0" />
-                          <span className="truncate">{lead.scheduledCallTime}</span>
-                        </div>
-                      )}
-                    </div>
-                  ))
+                        {/* Matched Offer */}
+                        {lead.matchedOffer && (
+                          <div className="flex items-center justify-between text-[11px] font-mono text-emerald-400 bg-emerald-950/30 px-2 py-1 rounded border border-emerald-500/20">
+                            <span className="truncate">{lead.matchedOffer}</span>
+                            <ArrowRight className="w-3 h-3 ml-1 flex-shrink-0 opacity-70 group-hover:translate-x-0.5 transition-transform" />
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
                 )}
               </div>
             </div>
           );
         })}
       </div>
+
+      {/* Slide-out Lead Drawer */}
+      <LeadDetailDrawer
+        lead={selectedLead}
+        isOpen={!!selectedLead}
+        onClose={() => setSelectedLead(null)}
+      />
     </div>
   );
 };

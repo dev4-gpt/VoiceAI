@@ -12,6 +12,7 @@ import {
   Layers,
   Search
 } from 'lucide-react';
+import { KnowledgeGraph3D } from './KnowledgeGraph3D';
 
 interface GraphNodeItem {
   id: string;
@@ -152,6 +153,14 @@ export const GraphViewHUD: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Interactive 3D Spatial Knowledge Cloud (WebGL / Canvas) */}
+      <KnowledgeGraph3D
+        nodes={nodes}
+        edges={edges}
+        selectedNodeId={selectedNode?.id}
+        onSelectNode={(node) => setSelectedNode(node)}
+      />
 
       {/* Main Split Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
