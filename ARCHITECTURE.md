@@ -8,7 +8,7 @@ The platform unites five architectural pillars:
 1. **AssemblyAI Voice Infrastructure:** Native managed Voice Agent API (`universal-3-5-pro`) with real-time speech-in/speech-out streaming, low-latency turn detection, flat tool-calling schemas, and sub-second barge-in cancellation.
 2. **Production GenAI Systems Engineering:** Hybrid RAG & re-ranking, Anthropic Evals harness ($pass@k$ and $pass^k$), distributed turn-level observability (TTFA, turn latency), multi-layer caching with TTL invalidation, and deterministic guardrails (*"Model proposes, application enforces"*).
 3. **DeepSeek Harness & Model-as-a-Judge Reasoning:** Integrated with [DeepSeek Harness (`dsh`)](https://github.com/deepseek-ai/deepseek-harness) utilizing `deepseek-reasoner` (DeepSeek-R1) and `deepseek-chat` (DeepSeek-V3) for deep mathematical/tactical analysis, multi-agent arbitration, and high-fidelity Model-as-a-Judge conversational grading.
-4. **Hermes Content Factory & Autonomous Self-Healing:** Codified implementation of [Raja Ashok's 10-step Hermes Content Factory Blueprint](file:///Users/aryamandev/Documents/Claude/Projects/VoiceAI/docs/CONTENT_FACTORY_PIPELINE.md). Resolves the 15–45s content generation latency hurdle via instant spoken dispatch in AssemblyAI followed by 3 parallel research lanes, multi-asset drafting (X threads, newsletters, webinars), and an automated self-healing error analysis and repair loop.
+4. **Hermes Content Factory & Autonomous Self-Healing:** Codified implementation of [Raja Ashok's 10-step Hermes Content Factory Blueprint](docs/CONTENT_FACTORY_PIPELINE.md). Resolves the 15–45s content generation latency hurdle via instant spoken dispatch in AssemblyAI followed by 3 parallel research lanes, multi-asset drafting (X threads, newsletters, webinars), and an automated self-healing error analysis and repair loop.
 5. **Cloud-Native Docker Substrate & Elite Operator UX:** Modular microservices architecture addressing security and orchestration challenges from Docker's State of Agentic AI Report, paired with a dark glassmorphic command console featuring 60 FPS bidirectional audio waveforms, live diarized transcript HUD, real-time CRM Kanban, and the Hermes Content Studio.
 
 ---
@@ -187,7 +187,7 @@ graph TD
 ### 3.3 Pillar 3: DeepSeek Harness & Model-as-a-Judge Reasoning Architecture
 
 * **Integration with [`deepseek-ai/deepseek-harness`](https://github.com/deepseek-ai/deepseek-harness):**
-  * Integrated directly through [`apps/orchestrator/src/services/deepseekService.ts`](file:///Users/aryamandev/Documents/Claude/Projects/VoiceAI/apps/orchestrator/src/services/deepseekService.ts).
+  * Integrated directly through [`apps/orchestrator/src/services/deepseekService.ts`](apps/orchestrator/src/services/deepseekService.ts).
   * **Dual-Model Specialization:**
     1. `deepseek-chat` (DeepSeek-V3): High-throughput semantic extractions, objection classification, and fast contextual queries.
     2. `deepseek-reasoner` (DeepSeek-R1): Deep Chain-of-Thought (CoT) synthesis, multi-source contradiction resolution, and self-healing code/content verification loops.
@@ -203,13 +203,13 @@ graph TD
 
 ### 3.4 Pillar 4: Hermes Content Factory & Autonomous Self-Healing Pipeline
 
-* **Full 10-Step Blueprint ([`docs/CONTENT_FACTORY_PIPELINE.md`](file:///Users/aryamandev/Documents/Claude/Projects/VoiceAI/docs/CONTENT_FACTORY_PIPELINE.md)):**
+* **Full 10-Step Blueprint ([`docs/CONTENT_FACTORY_PIPELINE.md`](docs/CONTENT_FACTORY_PIPELINE.md)):**
   1. **01. Brief Formulation:** Voice agent extracts core topic, target audience, and objection angle from live call.
   2. **02. Strategy Selection:** Maps tone to Creator Voice DNA (educational, contrarian, direct-response).
   3. **03. Control Plane & Budgets:** Allocates token budget (capped at $0.05 per pack) and assigns job ID.
   4. **04. Capability Packs:** Activates X/Twitter Thread, Long-form Newsletter, and Webinar Pitch modules.
   5. **05. 3 Parallel Research Lanes:**
-     * *Lane A (Creator RAG):* Pulls pricing matrices, course syllabi, and guarantee terms via [`ragEngine.ts`](file:///Users/aryamandev/Documents/Claude/Projects/VoiceAI/apps/orchestrator/src/services/ragEngine.ts).
+     * *Lane A (Creator RAG):* Pulls pricing matrices, course syllabi, and guarantee terms via [`ragEngine.ts`](apps/orchestrator/src/services/ragEngine.ts).
      * *Lane B (Market Signals):* Extracts audience pain points, industry trends, and competitor benchmarks.
      * *Lane C (Community Objections):* Mines recent inbound voice call logs and customer CRM interactions.
   6. **06. Synthesis & Asset Drafting:** DeepSeek-R1 merges research lanes into 3 co-ordinated deliverables.
@@ -219,13 +219,13 @@ graph TD
      * *Validation 2 (Guarantee Integrity):* Asserts inclusion of 14-day refund policy. If absent, injects exact verified language.
      * *Validation 3 (PII Redaction):* Ensures zero leaked phone numbers, emails, or credentials.
   9. **09. Human Approval Boundary:** Content Studio holds assets in `REVIEW_PENDING` until creator grants one-click approval.
-  10. **10. Telemetry & Publishing:** Emits live WebSocket telemetry to [`ContentFactoryStudio.tsx`](file:///Users/aryamandev/Documents/Claude/Projects/VoiceAI/apps/web/src/components/ContentFactoryStudio.tsx) and stores audit trail.
+  10. **10. Telemetry & Publishing:** Emits live WebSocket telemetry to [`ContentFactoryStudio.tsx`](apps/web/src/components/ContentFactoryStudio.tsx) and stores audit trail.
 
 ---
 
 ### 3.5 Pillar 5: Cloud-Native Container Substrate & Elite Operator UX
 
-* **Microservices Topology ([`docker-compose.yml`](file:///Users/aryamandev/Documents/Claude/Projects/VoiceAI/docker-compose.yml)):**
+* **Microservices Topology ([`docker-compose.yml`](docker-compose.yml)):**
   * `web-console`: React 18 + Vite frontend container serving the operator dashboard, AudioWorklet streaming, and Content Studio.
   * `orchestrator-gateway`: Node.js / TypeScript service managing AssemblyAI WebSocket bridges, auth token minting, and tool dispatching.
   * `agent-runtime`: Python / FastAPI service providing sandboxed tool implementations (Lead Gen, SDR, RAG search, Retention engine).
@@ -245,12 +245,12 @@ graph TD
 
 ## 4. Key Source Code References
 
-* **Voice Agent Tool Schemas:** [`apps/orchestrator/src/tools/registry.ts`](file:///Users/aryamandev/Documents/Claude/Projects/VoiceAI/apps/orchestrator/src/tools/registry.ts)
-* **Tool Dispatcher & Spoken Fast-Response:** [`apps/orchestrator/src/tools/dispatcher.ts`](file:///Users/aryamandev/Documents/Claude/Projects/VoiceAI/apps/orchestrator/src/tools/dispatcher.ts)
-* **Hermes Content Factory Engine:** [`apps/orchestrator/src/services/contentFactoryEngine.ts`](file:///Users/aryamandev/Documents/Claude/Projects/VoiceAI/apps/orchestrator/src/services/contentFactoryEngine.ts)
-* **DeepSeek Connector:** [`apps/orchestrator/src/services/deepseekService.ts`](file:///Users/aryamandev/Documents/Claude/Projects/VoiceAI/apps/orchestrator/src/services/deepseekService.ts)
-* **Anthropic Evals Runner & DeepSeek Judge:** [`packages/evals/src/runner.ts`](file:///Users/aryamandev/Documents/Claude/Projects/VoiceAI/packages/evals/src/runner.ts) and [`packages/evals/src/deepseekJudge.ts`](file:///Users/aryamandev/Documents/Claude/Projects/VoiceAI/packages/evals/src/deepseekJudge.ts)
-* **Web Command Console:** [`apps/web/src/App.tsx`](file:///Users/aryamandev/Documents/Claude/Projects/VoiceAI/apps/web/src/App.tsx)
-* **Hermes Content Studio Component:** [`apps/web/src/components/ContentFactoryStudio.tsx`](file:///Users/aryamandev/Documents/Claude/Projects/VoiceAI/apps/web/src/components/ContentFactoryStudio.tsx)
-* **Full Shared Data Contracts:** [`packages/shared/src/types.ts`](file:///Users/aryamandev/Documents/Claude/Projects/VoiceAI/packages/shared/src/types.ts)
+* **Voice Agent Tool Schemas:** [`apps/orchestrator/src/tools/registry.ts`](apps/orchestrator/src/tools/registry.ts)
+* **Tool Dispatcher & Spoken Fast-Response:** [`apps/orchestrator/src/tools/dispatcher.ts`](apps/orchestrator/src/tools/dispatcher.ts)
+* **Hermes Content Factory Engine:** [`apps/orchestrator/src/services/contentFactoryEngine.ts`](apps/orchestrator/src/services/contentFactoryEngine.ts)
+* **DeepSeek Connector:** [`apps/orchestrator/src/services/deepseekService.ts`](apps/orchestrator/src/services/deepseekService.ts)
+* **Anthropic Evals Runner & DeepSeek Judge:** [`packages/evals/src/runner.ts`](packages/evals/src/runner.ts) and [`packages/evals/src/deepseekJudge.ts`](packages/evals/src/deepseekJudge.ts)
+* **Web Command Console:** [`apps/web/src/App.tsx`](apps/web/src/App.tsx)
+* **Hermes Content Studio Component:** [`apps/web/src/components/ContentFactoryStudio.tsx`](apps/web/src/components/ContentFactoryStudio.tsx)
+* **Full Shared Data Contracts:** [`packages/shared/src/types.ts`](packages/shared/src/types.ts)
 

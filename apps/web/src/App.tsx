@@ -20,7 +20,15 @@ import {
   Save,
   RotateCcw,
   Trash2,
-  Lock
+  Lock,
+  Plus,
+  Minus,
+  PlusCircle,
+  MinusCircle,
+  UserPlus,
+  UserMinus,
+  Link2,
+  Tag
 } from 'lucide-react';
 import { AudioWaveform } from './components/AudioWaveform';
 import { LiveTranscriptHUD, MessageItem, ActiveToolItem } from './components/LiveTranscriptHUD';
@@ -39,6 +47,12 @@ export type OperatingPersona =
   | 'affiliate'
   | 'diagnostic';
 
+export interface CustomLinkItem {
+  id: string;
+  label: string;
+  url: string;
+}
+
 export interface DossierPreset {
   id: string;
   name: string;
@@ -55,13 +69,14 @@ export interface DossierPreset {
   toneArchetype: 'tactical_operator' | 'empathetic_mentor' | 'visionary_founder' | 'enterprise_advisor';
   customLexicon: string;
   customBannedTerms: string;
+  customLinks?: CustomLinkItem[];
   isCustom?: boolean;
 }
 
 export const BUILT_IN_PRESETS: DossierPreset[] = [
   {
     id: 'default_demo',
-    name: 'Default Demo: Jason Miller (DesignAcademy Studio)',
+    name: '🎨 Design & Education: Jason Miller (DesignAcademy Studio)',
     fullName: 'Jason Miller',
     email: 'jason.m@designacademy.io',
     website: 'https://designacademy.io',
@@ -79,7 +94,7 @@ export const BUILT_IN_PRESETS: DossierPreset[] = [
   },
   {
     id: 'creator_elena',
-    name: 'Sample Creator: Elena Rostova (NeuralCinema AI)',
+    name: '🎬 Creator VFX: Elena Rostova (NeuralCinema AI)',
     fullName: 'Elena Rostova',
     email: 'elena@neuralcinema.ai',
     website: 'https://neuralcinema.ai',
@@ -97,7 +112,7 @@ export const BUILT_IN_PRESETS: DossierPreset[] = [
   },
   {
     id: 'saas_alex',
-    name: 'Sample SaaS: Alex Rivera (Solopreneur OS)',
+    name: '💼 Micro-SaaS: Alex Rivera (Solopreneur OS)',
     fullName: 'Alex Rivera',
     email: 'alex@solopreneuros.com',
     website: 'https://solopreneuros.com',
@@ -123,7 +138,7 @@ export const App: React.FC = () => {
   const [selectedScenario, setSelectedScenario] = useState<OperatingPersona>('inbound');
   const [isSendingMessage, setIsSendingMessage] = useState(false);
 
-  // Prospect Enrichment Modal State
+  // Prospect Enrichment State: Initialized to Generic Public Demo (Jason Miller / DesignAcademy Studio)
   const [isEnrichModalOpen, setIsEnrichModalOpen] = useState(false);
   const [prospectName, setProspectName] = useState('Jason Miller');
   const [prospectEmail, setProspectEmail] = useState('jason.m@designacademy.io');
@@ -138,9 +153,14 @@ export const App: React.FC = () => {
   const [selectedToneArchetype, setSelectedToneArchetype] = useState<'tactical_operator' | 'empathetic_mentor' | 'visionary_founder' | 'enterprise_advisor'>('tactical_operator');
   const [customLexicon, setCustomLexicon] = useState('growth sprint, funnel velocity, high-ticket, cohort');
   const [customBannedTerms, setCustomBannedTerms] = useState('cheap, guru, synergy, hard sell, magic bullet');
-
-  // Saved Dossier Presets State (Browser LocalStorage + Built-in Archetypes)
+  const [customLinks, setCustomLinks] = useState<CustomLinkItem[]>([]);
   const [selectedPresetId, setSelectedPresetId] = useState<string>('default_demo');
+
+  // Input fields for adding new lexicon words or banned terms via plus buttons
+  const [newLexiconInput, setNewLexiconInput] = useState('');
+  const [newBannedInput, setNewBannedInput] = useState('');
+
+  // Saved Dossier Presets State (Browser LocalStorage + Built-in Public Archetypes)
   const [customPresets, setCustomPresets] = useState<DossierPreset[]>(() => {
     try {
       const saved = localStorage.getItem('growthvoice_custom_dossier_presets');
@@ -153,19 +173,20 @@ export const App: React.FC = () => {
   const allPresets = [...BUILT_IN_PRESETS, ...customPresets];
 
   const applyPreset = (preset: DossierPreset) => {
-    setProspectName(preset.fullName);
-    setProspectEmail(preset.email);
-    setProspectWebsite(preset.website);
-    setProspectLinkedIn(preset.linkedIn);
-    setProspectTwitter(preset.twitter);
-    setProspectYouTube(preset.youtube);
-    setProspectInstagram(preset.instagram);
-    setProspectSubstack(preset.substack);
-    setProspectCompany(preset.companyName);
-    setProspectBio(preset.bio);
-    setSelectedToneArchetype(preset.toneArchetype);
-    setCustomLexicon(preset.customLexicon);
-    setCustomBannedTerms(preset.customBannedTerms);
+    setProspectName(preset.fullName || '');
+    setProspectEmail(preset.email || '');
+    setProspectWebsite(preset.website || '');
+    setProspectLinkedIn(preset.linkedIn || '');
+    setProspectTwitter(preset.twitter || '');
+    setProspectYouTube(preset.youtube || '');
+    setProspectInstagram(preset.instagram || '');
+    setProspectSubstack(preset.substack || '');
+    setProspectCompany(preset.companyName || '');
+    setProspectBio(preset.bio || '');
+    setSelectedToneArchetype(preset.toneArchetype || 'tactical_operator');
+    setCustomLexicon(preset.customLexicon || '');
+    setCustomBannedTerms(preset.customBannedTerms || '');
+    setCustomLinks(preset.customLinks || []);
     setSelectedPresetId(preset.id);
   };
 
@@ -176,14 +197,72 @@ export const App: React.FC = () => {
     }
   };
 
+  // Plus (+) Button Action: Create a New Blank Client Template
+  const handleAddNewClient = () => {
+    setProspectName('');
+    setProspectEmail('');
+    setProspectWebsite('');
+    setProspectLinkedIn('');
+    setProspectTwitter('');
+    setProspectYouTube('');
+    setProspectInstagram('');
+    setProspectSubstack('');
+    setProspectCompany('');
+    setProspectBio('');
+    setSelectedToneArchetype('tactical_operator');
+    setCustomLexicon('');
+    setCustomBannedTerms('');
+    setCustomLinks([]);
+    setSelectedPresetId('new_client_draft');
+    setIsEnrichModalOpen(true);
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: `new_client_${Date.now()}`,
+        speaker: 'system',
+        text: '➕ Initialized blank client dossier template. Enter client information and click "Save Preset" or "Save & Feed to Voice Agent".',
+        timestamp: new Date().toLocaleTimeString()
+      }
+    ]);
+  };
+
+  // Minus (-) Button Action: Delete Current Custom Client
+  const handleDeleteCurrentClient = (presetId?: string) => {
+    const targetId = presetId || selectedPresetId;
+    const current = allPresets.find((p) => p.id === targetId);
+    if (!current || !current.isCustom) {
+      alert('The default test client (Jason Miller / DesignAcademy Studio) is a built-in template and cannot be deleted.');
+      return;
+    }
+    if (!window.confirm(`Delete client "${current.name}"? This will remove it from your local saved clients.`)) return;
+
+    const updated = customPresets.filter((p) => p.id !== targetId);
+    setCustomPresets(updated);
+    try {
+      localStorage.setItem('growthvoice_custom_dossier_presets', JSON.stringify(updated));
+    } catch (e) {
+      console.error('Failed to update localStorage', e);
+    }
+    handleSelectPreset('default_demo');
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: `del_client_${Date.now()}`,
+        speaker: 'system',
+        text: `➖ Deleted client "${current.name}". Switched back to default test client (DesignAcademy Studio).`,
+        timestamp: new Date().toLocaleTimeString()
+      }
+    ]);
+  };
+
   const handleSaveCurrentAsCustomPreset = () => {
-    const defaultTitle = prospectCompany || prospectName || 'My Custom Brand';
-    const name = window.prompt('Enter a title for this private dossier preset:', defaultTitle);
+    const defaultTitle = prospectCompany || prospectName || 'My Custom Client';
+    const name = window.prompt('Enter a title or nickname for this client:', defaultTitle);
     if (!name) return;
 
     const newPreset: DossierPreset = {
-      id: `custom_${Date.now()}`,
-      name: `💾 ${name}`,
+      id: `client_${Date.now()}`,
+      name: `👤 ${name}`,
       fullName: prospectName,
       email: prospectEmail,
       website: prospectWebsite,
@@ -197,14 +276,20 @@ export const App: React.FC = () => {
       toneArchetype: selectedToneArchetype,
       customLexicon,
       customBannedTerms,
+      customLinks,
       isCustom: true
     };
 
-    const updated = [...customPresets, newPreset];
+    const updated = [...customPresets.filter((p) => p.id !== newPreset.id), newPreset];
     setCustomPresets(updated);
     setSelectedPresetId(newPreset.id);
     try {
       localStorage.setItem('growthvoice_custom_dossier_presets', JSON.stringify(updated));
+      fetch('/api/crm/local-profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newPreset)
+      }).catch((e) => console.log('[Local profile save]', e));
     } catch (e) {
       console.error('Failed to save to localStorage', e);
     }
@@ -214,26 +299,74 @@ export const App: React.FC = () => {
       {
         id: `preset_${Date.now()}`,
         speaker: 'system',
-        text: `💾 Saved Private Dossier Preset: "${name}". Stored locally in your browser and vault!`,
+        text: `💾 Saved Private Client Dossier: "${name}". Stored locally in your browser and vault!`,
         timestamp: new Date().toLocaleTimeString()
       }
     ]);
   };
 
-  const handleDeleteCustomPreset = (presetId: string) => {
-    if (!window.confirm('Delete this saved private preset?')) return;
-    const updated = customPresets.filter((p) => p.id !== presetId);
-    setCustomPresets(updated);
-    try {
-      localStorage.setItem('growthvoice_custom_dossier_presets', JSON.stringify(updated));
-    } catch (e) {
-      console.error('Failed to update localStorage', e);
-    }
+  const handleResetToGenericDemo = () => {
     handleSelectPreset('default_demo');
   };
 
-  const handleResetToGenericDemo = () => {
-    handleSelectPreset('default_demo');
+  // Tag Management with Plus (+) and Minus (-) for Lexicon
+  const lexiconList = customLexicon
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  const handleAddLexiconTag = () => {
+    if (!newLexiconInput.trim()) return;
+    const term = newLexiconInput.trim();
+    if (!lexiconList.includes(term)) {
+      const updated = [...lexiconList, term].join(', ');
+      setCustomLexicon(updated);
+    }
+    setNewLexiconInput('');
+  };
+
+  const handleRemoveLexiconTag = (tagToRemove: string) => {
+    const updated = lexiconList.filter((t) => t !== tagToRemove).join(', ');
+    setCustomLexicon(updated);
+  };
+
+  // Tag Management with Plus (+) and Minus (-) for Banned Terms
+  const bannedList = customBannedTerms
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  const handleAddBannedTag = () => {
+    if (!newBannedInput.trim()) return;
+    const term = newBannedInput.trim();
+    if (!bannedList.includes(term)) {
+      const updated = [...bannedList, term].join(', ');
+      setCustomBannedTerms(updated);
+    }
+    setNewBannedInput('');
+  };
+
+  const handleRemoveBannedTag = (tagToRemove: string) => {
+    const updated = bannedList.filter((t) => t !== tagToRemove).join(', ');
+    setCustomBannedTerms(updated);
+  };
+
+  // Custom Links (+ and -)
+  const handleAddCustomLink = () => {
+    setCustomLinks((prev) => [
+      ...prev,
+      { id: `link_${Date.now()}`, label: '', url: '' }
+    ]);
+  };
+
+  const handleUpdateCustomLink = (id: string, field: 'label' | 'url', value: string) => {
+    setCustomLinks((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, [field]: value } : item))
+    );
+  };
+
+  const handleRemoveCustomLink = (id: string) => {
+    setCustomLinks((prev) => prev.filter((item) => item.id !== id));
   };
 
   const [messages, setMessages] = useState<MessageItem[]>([]);
@@ -1141,23 +1274,70 @@ export const App: React.FC = () => {
                 </div>
               </div>
 
-              {/* Enrich Prospect Context Button & Active Profile Badge */}
-              <div className="flex items-center space-x-2">
+              {/* Client Manager Bar with Plus (+) & Minus (-) Controls */}
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex items-center space-x-1 bg-slate-900/90 border border-slate-800 rounded-xl p-1 shadow-sm">
+                  <Bookmark className="w-3.5 h-3.5 text-cyan-400 ml-1.5 flex-shrink-0" />
+                  <select
+                    value={selectedPresetId}
+                    onChange={(e) => handleSelectPreset(e.target.value)}
+                    className="bg-transparent text-slate-200 text-xs font-medium focus:outline-none px-2 py-1 max-w-[170px] truncate font-mono cursor-pointer"
+                    title="Switch active client dossier"
+                  >
+                    <optgroup label="🌟 Public Demo Archetypes">
+                      {BUILT_IN_PRESETS.map((p) => (
+                        <option key={p.id} value={p.id} className="bg-slate-900 text-slate-200">
+                          {p.companyName || p.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                    {customPresets.length > 0 && (
+                      <optgroup label="💾 My Saved Clients (Local)">
+                        {customPresets.map((p) => (
+                          <option key={p.id} value={p.id} className="bg-slate-900 text-slate-200">
+                            {p.companyName || p.name}
+                          </option>
+                        ))}
+                      </optgroup>
+                    )}
+                  </select>
+
+                  {/* [+] Add Client Button */}
+                  <button
+                    type="button"
+                    onClick={handleAddNewClient}
+                    title="Add a new client dossier (+)"
+                    className="flex items-center space-x-1 px-2 py-1 rounded-lg bg-cyan-600/30 hover:bg-cyan-600/50 border border-cyan-500/50 text-cyan-200 text-xs font-semibold transition-all"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Add</span>
+                  </button>
+
+                  {/* [-] Delete Client Button */}
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteCurrentClient()}
+                    title={
+                      allPresets.find((p) => p.id === selectedPresetId)?.isCustom
+                        ? "Delete current client (-)"
+                        : "Default demo client is protected from deletion"
+                    }
+                    className={`p-1.5 rounded-lg border transition-all ${
+                      allPresets.find((p) => p.id === selectedPresetId)?.isCustom
+                        ? "bg-red-950/40 hover:bg-red-900/60 border-red-800/50 text-red-300 cursor-pointer"
+                        : "bg-slate-950/40 border-slate-800/50 text-slate-600 cursor-not-allowed"
+                    }`}
+                  >
+                    <Minus className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
                 <button
                   onClick={() => setIsEnrichModalOpen(true)}
-                  className="flex items-center space-x-2 px-3.5 py-2 rounded-xl bg-cyan-600/30 hover:bg-cyan-600/50 border border-cyan-500/40 text-cyan-200 text-xs font-semibold whitespace-nowrap transition-all shadow-md shadow-cyan-600/20"
+                  className="flex items-center space-x-2 px-3 py-2 rounded-xl bg-cyan-600/30 hover:bg-cyan-600/50 border border-cyan-500/40 text-cyan-200 text-xs font-semibold whitespace-nowrap transition-all shadow-md shadow-cyan-600/20"
                 >
                   <Globe className="w-3.5 h-3.5" />
-                  <span>Enrich Prospect Dossier (Website & LinkedIn)</span>
-                </button>
-                <button
-                  onClick={() => setIsEnrichModalOpen(true)}
-                  title="Active Dossier Profile - Click to switch or edit"
-                  className="hidden lg:flex items-center space-x-1.5 px-2.5 py-2 rounded-xl bg-slate-900/90 border border-slate-800 hover:border-slate-700 text-slate-300 text-xs font-mono transition-all"
-                >
-                  <Bookmark className="w-3.5 h-3.5 text-cyan-400" />
-                  <span className="text-slate-400">Profile:</span>
-                  <span className="text-cyan-300 font-medium max-w-[140px] truncate">{prospectCompany || 'DesignAcademy'}</span>
+                  <span>Edit Dossier & Brand Voice</span>
                 </button>
               </div>
             </div>
@@ -1455,23 +1635,23 @@ export const App: React.FC = () => {
                 Provide the prospect's website, LinkedIn profile, or business bio so Anna can research their business model and tailor questions during the call.
               </p>
 
-              {/* Preset Profile Bar */}
-              <div className="p-3 rounded-xl bg-slate-950/80 border border-cyan-800/40 space-y-2">
+              {/* Preset Profile Bar with Plus (+) / Minus (-) Client Management */}
+              <div className="p-3.5 rounded-xl bg-slate-950/90 border border-cyan-800/50 space-y-2.5">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2 text-cyan-300 font-semibold font-mono">
+                  <div className="flex items-center space-x-2 text-cyan-300 font-semibold font-mono text-xs">
                     <Bookmark className="w-3.5 h-3.5 text-cyan-400" />
-                    <span>Dossier Preset Profile:</span>
+                    <span>Client Dossier & Profile:</span>
                   </div>
                   <span className="text-[10px] px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-800/60 font-mono">
-                    {allPresets.find((p) => p.id === selectedPresetId)?.isCustom ? '🔒 Private Local Preset' : '🌟 Public Demo Archetype'}
+                    {allPresets.find((p) => p.id === selectedPresetId)?.isCustom ? '🔒 Local Private Client' : '🌟 Pre-built Public Demo'}
                   </span>
                 </div>
 
-                <div className="flex items-center space-x-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <select
                     value={selectedPresetId}
                     onChange={(e) => handleSelectPreset(e.target.value)}
-                    className="flex-1 px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 text-xs font-medium focus:outline-none focus:border-cyan-500 font-mono"
+                    className="flex-1 min-w-[200px] px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-700 text-slate-200 text-xs font-medium focus:outline-none focus:border-cyan-500 font-mono"
                   >
                     <optgroup label="🌟 Public Built-in Archetypes">
                       {BUILT_IN_PRESETS.map((p) => (
@@ -1481,7 +1661,7 @@ export const App: React.FC = () => {
                       ))}
                     </optgroup>
                     {customPresets.length > 0 && (
-                      <optgroup label="💾 My Saved Private Presets (Local)">
+                      <optgroup label="💾 My Saved Clients (Local Disk & Browser)">
                         {customPresets.map((p) => (
                           <option key={p.id} value={p.id}>
                             {p.name}
@@ -1491,43 +1671,63 @@ export const App: React.FC = () => {
                     )}
                   </select>
 
+                  {/* (+) Add Client Button */}
+                  <button
+                    type="button"
+                    onClick={handleAddNewClient}
+                    title="Add a new client (+)"
+                    className="flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-cyan-600/30 hover:bg-cyan-600/50 border border-cyan-500/50 text-cyan-200 text-xs font-semibold whitespace-nowrap transition-all shadow-sm"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>New Client</span>
+                  </button>
+
+                  {/* (-) Delete Client Button */}
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteCurrentClient(selectedPresetId)}
+                    title={
+                      allPresets.find((p) => p.id === selectedPresetId)?.isCustom
+                        ? "Delete this custom client (-)"
+                        : "Built-in public demo is protected from deletion"
+                    }
+                    className={`flex items-center space-x-1 px-2.5 py-1.5 rounded-xl border text-xs font-semibold whitespace-nowrap transition-all ${
+                      allPresets.find((p) => p.id === selectedPresetId)?.isCustom
+                        ? "bg-red-950/40 hover:bg-red-900/60 border-red-800/50 text-red-300 cursor-pointer"
+                        : "bg-slate-900 border-slate-800 text-slate-600 cursor-not-allowed"
+                    }`}
+                  >
+                    <Minus className="w-3.5 h-3.5" />
+                    <span>Delete</span>
+                  </button>
+
+                  {/* Save Client Preset */}
                   <button
                     type="button"
                     onClick={handleSaveCurrentAsCustomPreset}
-                    title="Save current inputs as a private preset"
+                    title="Save current info as a client preset"
                     className="flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/40 border border-emerald-500/40 text-emerald-300 text-xs font-semibold whitespace-nowrap transition-all"
                   >
                     <Save className="w-3.5 h-3.5" />
-                    <span>Save Preset</span>
+                    <span>Save</span>
                   </button>
 
+                  {/* Reset to Generic Demo */}
                   <button
                     type="button"
                     onClick={handleResetToGenericDemo}
-                    title="Reset to generic public demo (Jason Miller / DesignAcademy Studio)"
-                    className="flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold whitespace-nowrap transition-all"
+                    title="Reset to default test demo (Jason Miller / DesignAcademy Studio)"
+                    className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 transition-all"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
-                    <span>Reset</span>
                   </button>
-
-                  {allPresets.find((p) => p.id === selectedPresetId)?.isCustom && (
-                    <button
-                      type="button"
-                      onClick={() => handleDeleteCustomPreset(selectedPresetId)}
-                      title="Delete this custom preset"
-                      className="p-1.5 rounded-xl bg-red-950/40 hover:bg-red-900/60 border border-red-800/50 text-red-300 transition-all"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  )}
                 </div>
 
                 {/* Privacy Shield Info Banner */}
                 <div className="flex items-center space-x-2 text-[10px] text-slate-400 bg-slate-900/60 px-2.5 py-1.5 rounded-lg border border-slate-800">
                   <Lock className="w-3 h-3 text-emerald-400 flex-shrink-0" />
                   <span>
-                    <strong>Local Vault Shield:</strong> Stored locally in <code className="text-cyan-300 font-mono">vault/Clients/</code> and gitignored. Public git pulls always see the generic demo.
+                    <strong>Local Vault Isolation:</strong> All clients saved here are stored in <code className="text-cyan-300 font-mono">vault/Clients/</code> (gitignored). Anyone cloning this repo only sees the clean generic test demo.
                   </span>
                 </div>
               </div>
@@ -1598,10 +1798,22 @@ export const App: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-2.5">
                 <div className="space-y-1">
-                  <label className="text-slate-300 font-mono flex items-center space-x-1.5">
-                    <span className="text-red-400 font-bold">▶</span>
-                    <span>YouTube:</span>
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-slate-300 font-mono flex items-center space-x-1.5">
+                      <span className="text-red-400 font-bold">▶</span>
+                      <span>YouTube:</span>
+                    </label>
+                    {prospectYouTube && (
+                      <button
+                        type="button"
+                        onClick={() => setProspectYouTube('')}
+                        title="Clear YouTube (-)"
+                        className="text-[10px] text-slate-500 hover:text-red-400 font-mono"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
                   <input
                     type="url"
                     value={prospectYouTube}
@@ -1611,10 +1823,22 @@ export const App: React.FC = () => {
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-slate-300 font-mono flex items-center space-x-1.5">
-                    <span className="text-amber-400 font-bold">✉</span>
-                    <span>Substack / Newsletter:</span>
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-slate-300 font-mono flex items-center space-x-1.5">
+                      <span className="text-amber-400 font-bold">✉</span>
+                      <span>Substack / Newsletter:</span>
+                    </label>
+                    {prospectSubstack && (
+                      <button
+                        type="button"
+                        onClick={() => setProspectSubstack('')}
+                        title="Clear Substack (-)"
+                        className="text-[10px] text-slate-500 hover:text-red-400 font-mono"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
                   <input
                     type="url"
                     value={prospectSubstack}
@@ -1623,6 +1847,60 @@ export const App: React.FC = () => {
                     className="w-full px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 focus:outline-none focus:border-cyan-500 font-mono text-xs"
                   />
                 </div>
+              </div>
+
+              {/* Dynamic Custom Channels / Info Links with Plus (+) and Minus (-) */}
+              <div className="p-3 rounded-xl bg-slate-950/50 border border-slate-800/60 space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-slate-300 font-mono text-[11px] font-semibold flex items-center space-x-1.5">
+                    <Link2 className="w-3 h-3 text-cyan-400" />
+                    <span>Additional Channels & Resources:</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleAddCustomLink}
+                    title="Add custom channel or URL (+)"
+                    className="flex items-center space-x-1 px-2 py-0.5 rounded bg-cyan-950 hover:bg-cyan-900 border border-cyan-800/60 text-cyan-300 text-[11px] font-mono transition-all"
+                  >
+                    <Plus className="w-3 h-3" />
+                    <span>Add Channel</span>
+                  </button>
+                </div>
+
+                {customLinks.length === 0 ? (
+                  <div className="text-[10px] text-slate-500 italic">
+                    Add optional channels (Discord, GitHub, TikTok, Skool, Podcast, Docs) with the (+) button above.
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {customLinks.map((link) => (
+                      <div key={link.id} className="flex items-center space-x-2">
+                        <input
+                          type="text"
+                          value={link.label}
+                          onChange={(e) => handleUpdateCustomLink(link.id, 'label', e.target.value)}
+                          placeholder="Platform (e.g. Discord)"
+                          className="w-1/3 px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-slate-200 text-xs font-mono focus:outline-none focus:border-cyan-500"
+                        />
+                        <input
+                          type="url"
+                          value={link.url}
+                          onChange={(e) => handleUpdateCustomLink(link.id, 'url', e.target.value)}
+                          placeholder="https://..."
+                          className="flex-1 px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-slate-200 text-xs font-mono focus:outline-none focus:border-cyan-500"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveCustomLink(link.id)}
+                          title="Delete channel (-)"
+                          className="p-1 rounded-lg bg-red-950/40 hover:bg-red-900/60 border border-red-800/50 text-red-400 transition-colors"
+                        >
+                          <Minus className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="space-y-1">
@@ -1669,26 +1947,128 @@ export const App: React.FC = () => {
                   ))}
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 pt-1">
-                  <div className="space-y-1">
-                    <label className="text-slate-300 font-mono text-[11px]">Signature Lexicon (Favorite Words):</label>
-                    <input
-                      type="text"
-                      value={customLexicon}
-                      onChange={(e) => setCustomLexicon(e.target.value)}
-                      placeholder="growth sprint, cohort, velocity"
-                      className="w-full px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 focus:outline-none focus:border-indigo-500 font-mono text-xs"
-                    />
+                {/* Lexicon & Banned Terms with Plus (+) and Minus (-) Item Management */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+                  {/* Signature Lexicon */}
+                  <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-slate-300 font-mono text-[11px] font-semibold flex items-center space-x-1.5">
+                        <Tag className="w-3 h-3 text-indigo-400" />
+                        <span>Signature Lexicon (Favorite Words):</span>
+                      </label>
+                      <span className="text-[10px] text-indigo-400 font-mono">{lexiconList.length} terms</span>
+                    </div>
+
+                    {/* Tag Pills with Minus (-) to remove */}
+                    <div className="flex flex-wrap gap-1.5 min-h-[32px] p-1.5 bg-slate-950 rounded-lg border border-slate-900">
+                      {lexiconList.length === 0 ? (
+                        <span className="text-[10px] text-slate-600 italic">No favorite words added yet.</span>
+                      ) : (
+                        lexiconList.map((tag) => (
+                          <span
+                            key={tag}
+                            className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md bg-indigo-950/60 border border-indigo-800/60 text-indigo-300 text-[11px] font-mono"
+                          >
+                            <span>{tag}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveLexiconTag(tag)}
+                              title={`Remove "${tag}" (-)`}
+                              className="text-indigo-400 hover:text-red-400 font-bold ml-1 transition-colors"
+                            >
+                              ✕
+                            </button>
+                          </span>
+                        ))
+                      )}
+                    </div>
+
+                    {/* Add Word Input with Plus (+) button */}
+                    <div className="flex items-center space-x-1.5">
+                      <input
+                        type="text"
+                        value={newLexiconInput}
+                        onChange={(e) => setNewLexiconInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleAddLexiconTag();
+                          }
+                        }}
+                        placeholder="Add word or phrase..."
+                        className="flex-1 px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-slate-200 text-xs focus:outline-none focus:border-indigo-500 font-mono"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleAddLexiconTag}
+                        title="Add to Lexicon (+)"
+                        className="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-indigo-600/30 hover:bg-indigo-600/50 border border-indigo-500/40 text-indigo-200 text-xs font-semibold transition-all"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Add</span>
+                      </button>
+                    </div>
                   </div>
-                  <div className="space-y-1">
-                    <label className="text-slate-300 font-mono text-[11px]">Banned Terms (Never Say):</label>
-                    <input
-                      type="text"
-                      value={customBannedTerms}
-                      onChange={(e) => setCustomBannedTerms(e.target.value)}
-                      placeholder="cheap, guru, synergy, hard sell"
-                      className="w-full px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 focus:outline-none focus:border-indigo-500 font-mono text-xs"
-                    />
+
+                  {/* Banned Terms */}
+                  <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800/80 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-slate-300 font-mono text-[11px] font-semibold flex items-center space-x-1.5">
+                        <ShieldAlert className="w-3 h-3 text-red-400" />
+                        <span>Banned Terms (Never Say):</span>
+                      </label>
+                      <span className="text-[10px] text-red-400 font-mono">{bannedList.length} banned</span>
+                    </div>
+
+                    {/* Banned Tag Pills with Minus (-) to remove */}
+                    <div className="flex flex-wrap gap-1.5 min-h-[32px] p-1.5 bg-slate-950 rounded-lg border border-slate-900">
+                      {bannedList.length === 0 ? (
+                        <span className="text-[10px] text-slate-600 italic">No banned terms configured.</span>
+                      ) : (
+                        bannedList.map((tag) => (
+                          <span
+                            key={tag}
+                            className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md bg-red-950/50 border border-red-800/60 text-red-300 text-[11px] font-mono"
+                          >
+                            <span>{tag}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveBannedTag(tag)}
+                              title={`Remove banned term "${tag}" (-)`}
+                              className="text-red-400 hover:text-white font-bold ml-1 transition-colors"
+                            >
+                              ✕
+                            </button>
+                          </span>
+                        ))
+                      )}
+                    </div>
+
+                    {/* Add Banned Input with Plus (+) button */}
+                    <div className="flex items-center space-x-1.5">
+                      <input
+                        type="text"
+                        value={newBannedInput}
+                        onChange={(e) => setNewBannedInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleAddBannedTag();
+                          }
+                        }}
+                        placeholder="Add banned term..."
+                        className="flex-1 px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-800 text-slate-200 text-xs focus:outline-none focus:border-red-500 font-mono"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleAddBannedTag}
+                        title="Add Banned Term (+)"
+                        className="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-red-950/60 hover:bg-red-900/80 border border-red-800/60 text-red-200 text-xs font-semibold transition-all"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Add</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>

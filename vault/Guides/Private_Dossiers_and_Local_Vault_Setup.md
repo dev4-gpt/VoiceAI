@@ -102,7 +102,7 @@ Whenever you pull updates, edit code, or restart your Mac, use the following com
 ### Step 1: Clean Restart with Docker
 ```bash
 # Navigate to project root
-cd /Users/aryamandev/Documents/Claude/Projects/VoiceAI
+cd path/to/VoiceAI
 
 # Stop and remove previous containers
 docker compose down

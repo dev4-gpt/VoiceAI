@@ -98,10 +98,10 @@ Following Raja Ashok's principle: **"Route work by fitness, not by model loyalty
 
 ## 5. Codebase Mapping & Symbols
 
-* **Tool Declaration:** [`apps/orchestrator/src/tools/registry.ts`](file:///Users/aryamandev/Documents/Claude/Projects/VoiceAI/apps/orchestrator/src/tools/registry.ts) (`run_content_factory`)
-* **Spoken Dispatcher:** [`apps/orchestrator/src/tools/dispatcher.ts`](file:///Users/aryamandev/Documents/Claude/Projects/VoiceAI/apps/orchestrator/src/tools/dispatcher.ts)
-* **Engine Implementation:** [`apps/orchestrator/src/services/contentFactoryEngine.ts`](file:///Users/aryamandev/Documents/Claude/Projects/VoiceAI/apps/orchestrator/src/services/contentFactoryEngine.ts)
-* **DeepSeek Connector:** [`apps/orchestrator/src/services/deepseekService.ts`](file:///Users/aryamandev/Documents/Claude/Projects/VoiceAI/apps/orchestrator/src/services/deepseekService.ts)
-* **Anthropic Model Judge:** [`packages/evals/src/deepseekJudge.ts`](file:///Users/aryamandev/Documents/Claude/Projects/VoiceAI/packages/evals/src/deepseekJudge.ts)
-* **Frontend Studio Console:** [`apps/web/src/components/ContentFactoryStudio.tsx`](file:///Users/aryamandev/Documents/Claude/Projects/VoiceAI/apps/web/src/components/ContentFactoryStudio.tsx)
-* **Shared Types:** [`packages/shared/src/types.ts`](file:///Users/aryamandev/Documents/Claude/Projects/VoiceAI/packages/shared/src/types.ts)
+* **Tool Declaration:** [`apps/orchestrator/src/tools/registry.ts`](apps/orchestrator/src/tools/registry.ts) (`run_content_factory`)
+* **Spoken Dispatcher:** [`apps/orchestrator/src/tools/dispatcher.ts`](apps/orchestrator/src/tools/dispatcher.ts)
+* **Engine Implementation:** [`apps/orchestrator/src/services/contentFactoryEngine.ts`](apps/orchestrator/src/services/contentFactoryEngine.ts)
+* **DeepSeek Connector:** [`apps/orchestrator/src/services/deepseekService.ts`](apps/orchestrator/src/services/deepseekService.ts)
+* **Anthropic Model Judge:** [`packages/evals/src/deepseekJudge.ts`](packages/evals/src/deepseekJudge.ts)
+* **Frontend Studio Console:** [`apps/web/src/components/ContentFactoryStudio.tsx`](apps/web/src/components/ContentFactoryStudio.tsx)
+* **Shared Types:** [`packages/shared/src/types.ts`](packages/shared/src/types.ts)

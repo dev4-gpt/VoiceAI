@@ -5,7 +5,7 @@
     "version": "1.0.0",
     "codename": "Anna-Hermes-Cognitive-Mesh",
     "description": "Autonomous AI Growth Operator for high-volume creators. Unifies AssemblyAI Voice Agent API, DeepSeek-R1 reasoning harness, Hermes 10-step content factory, and self-healing knowledge graph persistence.",
-    "authors": ["Aryaman Singh Dev", "dev4-gpt"],
+    "authors": ["GrowthVoice Core Team", "dev4-gpt"],
     "hackathon": "AssemblyAI Voice Agent Hackathon (lablab.ai)"
   },
   "layers": [
