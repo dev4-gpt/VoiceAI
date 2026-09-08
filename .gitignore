@@ -45,5 +45,9 @@ vault/Leads/*
 
 # Private Local Profiles & Dossier Presets
 data/local_profile.json
+.claude-flow/
+apps/orchestrator/data/
+apps/orchestrator/vault/
+
 
 

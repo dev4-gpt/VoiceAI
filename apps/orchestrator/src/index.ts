@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import http from 'http';
+import path from 'path';
+import fs from 'fs';
 import { WebSocketServer, WebSocket } from 'ws';
 import dotenv from 'dotenv';
 dotenv.config();
@@ -10,6 +12,7 @@ import { crmRouter } from './routes/crm';
 import { contentRouter } from './routes/content';
 import { graphRouter } from './routes/graph';
 import { credentialsRouter } from './routes/credentials';
+import { billingRouter } from './routes/billing';
 import { VOICE_AGENT_TOOLS } from './tools/registry';
 import { toolDispatcher } from './tools/dispatcher';
 import { crmStore } from './services/crmStore';
@@ -33,12 +36,26 @@ const allowedOrigins = (process.env.CORS_ALLOWED_ORIGINS || process.env.CLIENT_U
 app.use(cors({ origin: allowedOrigins }));
 app.use(express.json({ limit: '1mb' }));
 
+// Static assets & embeddable widget
+const publicDir = fs.existsSync(path.join(__dirname, 'public'))
+  ? path.join(__dirname, 'public')
+  : path.join(__dirname, '../src/public');
+
+app.use(express.static(publicDir));
+app.get('/embed.js', (_req, res) => {
+  res.sendFile(path.join(publicDir, 'embed.js'));
+});
+app.get('/widget-preview', (_req, res) => {
+  res.sendFile(path.join(publicDir, 'widget-preview.html'));
+});
+
 // Mount HTTP routes
 app.use('/api/voice', tokenRouter);
 app.use('/api/crm', crmRouter);
 app.use('/api/content', contentRouter);
 app.use('/api/graph', graphRouter);
 app.use('/api/credentials', credentialsRouter);
+app.use('/api/billing', billingRouter);
 
 // Root landing info
 app.get('/', (_req, res) => {
@@ -57,6 +74,10 @@ app.get('/', (_req, res) => {
       graphNodes: '/api/graph/nodes',
       graphEdges: '/api/graph/edges',
       credentials: '/api/credentials/:clientId',
+      billingPlans: '/api/billing/plans',
+      billingUsage: '/api/billing/usage/:clientId',
+      embedWidget: '/embed.js',
+      widgetPreview: '/widget-preview',
       telemetryWs: 'ws://localhost:4000/ws/telemetry'
     }
   });

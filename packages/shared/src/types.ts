@@ -362,3 +362,60 @@ export interface EvalSuiteReport {
   outcomes: EvalTrialOutcome[];
   timestamp: string;
 }
+
+// ============================================================================
+// SaaS Subscription, Monetization & ROI Telemetry
+// ============================================================================
+
+export type SubscriptionTierId = 'starter' | 'pro' | 'enterprise';
+
+export interface SubscriptionPlan {
+  id: SubscriptionTierId;
+  name: string;
+  tagline: string;
+  priceMonthlyUsd: number;
+  priceAnnualMonthlyUsd: number; // discounted rate when billed annually
+  voiceMinutesMonthly: number;
+  overageRatePerMinUsd: number;
+  maxAutonomousAgents: number;
+  features: string[];
+  recommended?: boolean;
+}
+
+export interface ClientUsageTelemetry {
+  clientId: string;
+  companyName: string;
+  planId: SubscriptionTierId;
+  billingCycle: 'monthly' | 'annual';
+  billingCycleStart: string;
+  billingCycleEnd: string;
+  minutesUsed: number;
+  minutesLimit: number;
+  callsCount: number;
+  afterHoursLeadsCaptured: number;
+  pipelineGeneratedUsd: number;
+  cacSavedUsd: number;
+  estimatedRoiMultiplier: number;
+}
+
+export interface ROIParameters {
+  monthlyTraffic: number;
+  averageContractValueUsd: number;
+  currentConversionPct?: number; // default ~0.8%
+  afterHoursTrafficSharePct?: number; // default ~32%
+}
+
+export interface ROICalculationResult {
+  monthlyTraffic: number;
+  averageContractValueUsd: number;
+  afterHoursVisitors: number;
+  expectedSpokenLeadsMonthly: number;
+  staticFormBaselineLeadsMonthly: number;
+  incrementalLeadsMonthly: number;
+  grossPipelineGeneratedUsd: number;
+  netRevenueGainUsd: number;
+  growthOsCostMonthlyUsd: number;
+  estimatedRoiMultiple: number;
+  cacSavedUsd: number;
+}
+

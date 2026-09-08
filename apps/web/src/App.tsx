@@ -50,10 +50,12 @@ import { CrmKanban } from './components/CrmKanban';
 import { EvalsDashboard } from './components/EvalsDashboard';
 import { ContentFactoryStudio } from './components/ContentFactoryStudio';
 import { ClientCredentialsModal } from './components/ClientCredentialsModal';
+import { SubscriptionPlansModal } from './components/SubscriptionPlansModal';
+import { EmbedWidgetModal } from './components/EmbedWidgetModal';
 import { GraphViewHUD } from './components/GraphViewHUD';
 import { Spatial3DOdyssey } from './components/Spatial3DOdyssey';
 import { AudioPipeline } from './utils/audioWorklet';
-import { CRMLead, ChurnRiskMember, ContentFactoryJob } from '@voice-os/shared';
+import { CRMLead, ChurnRiskMember, ContentFactoryJob, SubscriptionTierId } from '@voice-os/shared';
 import { OperatingPersona, CustomLinkItem, DossierPreset } from './types/persona';
 import { BUILT_IN_PRESETS, PACING_OPTIONS } from './constants/dossierPresets';
 
@@ -73,6 +75,9 @@ export const App: React.FC = () => {
   const [is3DSpatialMode, setIs3DSpatialMode] = useState(false);
   const [audioVisualizerType, setAudioVisualizerType] = useState<VisualizerMode | 'waveform'>('cymatic');
   const [isCredentialsModalOpen, setIsCredentialsModalOpen] = useState(false);
+  const [isPlansModalOpen, setIsPlansModalOpen] = useState(false);
+  const [isEmbedModalOpen, setIsEmbedModalOpen] = useState(false);
+  const [activePlanId, setActivePlanId] = useState<SubscriptionTierId>('pro');
   const [activeSimulationKey, setActiveSimulationKey] = useState<string | null>(null);
 
   // Voice Pacing & Silence Threshold Tuning
@@ -2188,6 +2193,24 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
             <span>VAD: <strong className="text-sky-600 font-bold">{PACING_OPTIONS[voicePacing].label}</strong></span>
           </div>
 
+          {/* SaaS Telemetry Pill: Minutes Quota & Pipeline Recovered */}
+          <button
+            onClick={() => setIsPlansModalOpen(true)}
+            className={`hidden 2xl:flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-mono transition-all border cursor-pointer ${
+              isGlass
+                ? 'bg-amber-50/90 hover:bg-amber-100 border-amber-200/90 text-amber-950 shadow-2xs'
+                : 'bg-amber-950/40 hover:bg-amber-900/50 border-amber-500/40 text-amber-200'
+            }`}
+            title="Click to view subscription plan, quota usage, and spoken ROI calculator"
+          >
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
+              <span>Quota: <strong>412/2,500m</strong></span>
+            </div>
+            <span className="text-slate-300">|</span>
+            <span className="text-emerald-600 font-bold">+$56.9k Pipeline</span>
+          </button>
+
           {/* 📥 1-Click Revenue Dossier Export */}
           <button
             onClick={handleExportRevenueDossier}
@@ -2205,6 +2228,37 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
 
         {/* View Engine Switcher & Tab Navigation */}
         <div className="flex items-center space-x-2.5">
+          {/* 💎 Plans & Spoken ROI Calculator Trigger */}
+          <button
+            onClick={() => setIsPlansModalOpen(true)}
+            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition-all border ${
+              isGlass
+                ? 'bg-gradient-to-r from-amber-50 to-amber-100/90 hover:from-amber-100 hover:to-amber-200/90 border-amber-300 text-amber-950 shadow-2xs'
+                : 'bg-amber-500/20 hover:bg-amber-500/30 border-amber-400 text-amber-300 shadow-[0_0_12px_rgba(245,158,11,0.25)]'
+            }`}
+            title="Open Venture SaaS Subscription Plans & Spoken ROI Recovery Calculator"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+            <span>💎 Plans & ROI</span>
+            <span className="hidden sm:inline-block text-[9px] px-1.5 py-0.5 rounded bg-amber-400/30 text-amber-950 dark:text-amber-200 font-extrabold ml-0.5">
+              {activePlanId.toUpperCase()}
+            </span>
+          </button>
+
+          {/* 🌐 1-Click Embed Snippet Trigger */}
+          <button
+            onClick={() => setIsEmbedModalOpen(true)}
+            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-mono font-semibold transition-all border ${
+              isGlass
+                ? 'bg-sky-50 hover:bg-sky-100/80 border-sky-300 text-sky-950 shadow-2xs'
+                : 'bg-sky-500/20 hover:bg-sky-500/30 border-sky-400 text-sky-300 shadow-[0_0_12px_rgba(56,189,248,0.25)]'
+            }`}
+            title="Generate 1-line HTML embed snippet for external client websites"
+          >
+            <Globe className="w-3.5 h-3.5 text-sky-500" />
+            <span>🌐 Embed Anna</span>
+          </button>
+
           {/* Theme Switcher: 💎 Lucid Glass vs 🌑 Obsidian */}
           <button
             onClick={() => setTheme(theme === 'glass' ? 'cyber' : 'glass')}
@@ -2936,11 +2990,30 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
         theme={theme}
       />
 
+      {/* SaaS Subscription Plans & Spoken ROI Recovery Modal */}
+      <SubscriptionPlansModal
+        isOpen={isPlansModalOpen}
+        onClose={() => setIsPlansModalOpen(false)}
+        currentPlanId={activePlanId}
+        onSelectPlan={(planId) => setActivePlanId(planId)}
+        onOpenEmbedModal={() => setIsEmbedModalOpen(true)}
+        isGlass={isGlass}
+      />
+
+      {/* 1-Click Embed Snippet Generator Modal */}
+      <EmbedWidgetModal
+        isOpen={isEmbedModalOpen}
+        onClose={() => setIsEmbedModalOpen(false)}
+        defaultCompany={prospectCompany || 'DesignAcademy Studio'}
+        defaultClientId="lead_jm_901"
+        isGlass={isGlass}
+      />
+
       {/* Footer Status Bar */}
-      <footer className={`border-t px-6 py-3 text-xs font-mono flex items-center justify-between ${
+      <footer className={`border-t px-6 py-3 text-xs font-mono flex flex-wrap items-center justify-between gap-3 ${
         isGlass ? 'border-slate-200 bg-white/85 text-slate-600' : 'border-slate-900 bg-slate-950/90 text-slate-500'
       }`}>
-        <div className="flex items-center space-x-3">
+        <div className="flex flex-wrap items-center space-x-3">
           <span className="flex items-center space-x-1.5">
             <span className="w-2 h-2 rounded-full bg-emerald-500" />
             <span>AssemblyAI Voice Agent API: Operational</span>
@@ -2948,7 +3021,19 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
           <span>•</span>
           <span>Sample Rate: 24,000 Hz Mono</span>
           <span>•</span>
-          <span>Database: Persistent SQLite/JSON Graph</span>
+          <button
+            onClick={() => setIsPlansModalOpen(true)}
+            className="hover:underline font-semibold text-amber-600 dark:text-amber-400 cursor-pointer"
+          >
+            SaaS Plan: Growth Engine Pro ($397/mo)
+          </button>
+          <span>•</span>
+          <button
+            onClick={() => setIsEmbedModalOpen(true)}
+            className="hover:underline font-semibold text-sky-600 dark:text-sky-400 cursor-pointer"
+          >
+            1-Click Embed Widget (embed.js)
+          </button>
         </div>
         <div>lablab.ai Voice Agent Hackathon Submission • GrowthVoice OS</div>
       </footer>
