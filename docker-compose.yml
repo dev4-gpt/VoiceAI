@@ -48,9 +48,26 @@ services:
     networks:
       - voice-net
 
+  instatic:
+    image: ghcr.io/corebunch/instatic:latest
+    platform: linux/amd64
+    container_name: voice-instatic-cms
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - DATABASE_URL=file:./data/instatic.sqlite
+      - NODE_ENV=production
+    volumes:
+      - instatic-data:/app/data
+    restart: unless-stopped
+    networks:
+      - voice-net
+
 networks:
   voice-net:
     driver: bridge
 
 volumes:
   redis-data:
+  instatic-data:

@@ -33,6 +33,7 @@ import {
   Globe
 } from 'lucide-react';
 import { ClientCredentialsModal } from './ClientCredentialsModal';
+import { InstaticVisualEditor } from './InstaticVisualEditor';
 
 interface ContentFactoryStudioProps {
   jobs: ContentFactoryJob[];
@@ -130,7 +131,7 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
   };
   const isGlass = theme === 'glass';
   const [selectedJobId, setSelectedJobId] = useState<string>(jobs[0]?.id || '');
-  const [activeAssetTab, setActiveAssetTab] = useState<'twitter' | 'linkedin' | 'instagram' | 'newsletter' | 'webinar'>('twitter');
+  const [activeAssetTab, setActiveAssetTab] = useState<'twitter' | 'linkedin' | 'instagram' | 'newsletter' | 'webinar' | 'instatic'>('twitter');
   const [activeOutreachTab, setActiveOutreachTab] = useState<'voice_script' | 'email' | 'linkedin' | 'lead_magnet'>('voice_script');
   const [copiedIndex, setCopiedIndex] = useState<string | number | null>(null);
   const [customTopic, setCustomTopic] = useState('');
@@ -1110,6 +1111,18 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
                   <Video className="w-3.5 h-3.5" />
                   <span>Webinar Pitch Script</span>
                 </button>
+
+                <button
+                  onClick={() => setActiveAssetTab('instatic')}
+                  className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
+                    activeAssetTab === 'instatic'
+                      ? (isGlass ? 'bg-gradient-to-r from-amber-100 to-amber-200/90 text-amber-950 border border-amber-400 shadow-xs' : 'bg-gradient-to-r from-amber-500/30 to-amber-400/20 text-amber-300 border border-amber-400/60 shadow-sm')
+                      : (isGlass ? 'text-slate-600 hover:text-slate-900' : 'text-slate-400 hover:text-slate-200')
+                  }`}
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                  <span>🎨 Instatic Visual CMS</span>
+                </button>
               </div>
 
               {/* Asset Tab Views */}
@@ -1303,6 +1316,22 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
                       <p><span className={`font-bold font-mono ${isGlass ? 'text-cyan-700' : 'text-cyan-400'}`}>[Value Prop]:</span> {pack.webinarScript.valueProposition}</p>
                       <p><span className={`font-bold font-mono ${isGlass ? 'text-emerald-700' : 'text-emerald-400'}`}>[The Close]:</span> {pack.webinarScript.offerClose}</p>
                     </div>
+                  </div>
+                )}
+
+                {activeAssetTab === 'instatic' && (
+                  <div className="h-[750px] w-full mt-2">
+                    <InstaticVisualEditor
+                      companyName={activeCompanyName}
+                      initialTopic={pack?.thesis || selectedJob?.topic || 'Lead Generation & High-Ticket Sprints'}
+                      contentSummary={{
+                        thesis: pack?.thesis,
+                        hook: pack?.linkedInPost?.hook,
+                        coreProblem: pack?.webinarScript?.coreProblem || pack?.newsletter?.previewText,
+                        tacticalFramework: pack?.linkedInPost?.takeaways
+                      }}
+                      isGlass={isGlass}
+                    />
                   </div>
                 )}
               </div>

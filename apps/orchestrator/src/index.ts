@@ -13,6 +13,7 @@ import { contentRouter } from './routes/content';
 import { graphRouter } from './routes/graph';
 import { credentialsRouter } from './routes/credentials';
 import { billingRouter } from './routes/billing';
+import { instaticRouter } from './routes/instatic';
 import { VOICE_AGENT_TOOLS } from './tools/registry';
 import { toolDispatcher } from './tools/dispatcher';
 import { crmStore } from './services/crmStore';
@@ -56,6 +57,7 @@ app.use('/api/content', contentRouter);
 app.use('/api/graph', graphRouter);
 app.use('/api/credentials', credentialsRouter);
 app.use('/api/billing', billingRouter);
+app.use('/api/instatic', instaticRouter);
 
 // Root landing info
 app.get('/', (_req, res) => {
@@ -76,6 +78,8 @@ app.get('/', (_req, res) => {
       credentials: '/api/credentials/:clientId',
       billingPlans: '/api/billing/plans',
       billingUsage: '/api/billing/usage/:clientId',
+      instaticPages: '/api/instatic/pages',
+      instaticPreview: '/api/instatic/preview/:pageId',
       embedWidget: '/embed.js',
       widgetPreview: '/widget-preview',
       telemetryWs: 'ws://localhost:4000/ws/telemetry'

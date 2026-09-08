@@ -1,5 +1,5 @@
 ---
-id: "bv_1788842704167_hpbm"
+id: "bv_1788844302780_oanp"
 title: "DesignAcademy Studio — Brand Voice & Persona Matrix"
 type: "BrandVoice"
 clientId: "lead_jm_901"
@@ -10,7 +10,7 @@ toneLabel: "Enterprise Advisor"
 formality: 4
 energy: 3
 directness: 4
-updatedAt: "2026-09-08T04:45:04.167Z"
+updatedAt: "2026-09-08T05:11:42.781Z"
 tags:
   - brand-voice
   - revenue-os

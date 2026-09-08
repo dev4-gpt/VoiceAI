@@ -11,7 +11,7 @@ linkedIn: "https://linkedin.com/in/jasonmiller-design"
 budgetRange: "5k_to_15k"
 qualificationScore: 85
 status: "inbound_qualified"
-updatedAt: "2026-09-08T04:45:04.188Z"
+updatedAt: "2026-09-08T05:11:42.786Z"
 tags:
   - client-dossier
   - revenue-os
