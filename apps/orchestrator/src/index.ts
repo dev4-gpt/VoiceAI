@@ -25,8 +25,13 @@ if (typeof (process as any).loadEnvFile === 'function') {
 const app = express();
 const port = process.env.PORT || 4000;
 
-app.use(cors());
-app.use(express.json());
+const allowedOrigins = (process.env.CORS_ALLOWED_ORIGINS || process.env.CLIENT_URL || 'http://localhost:3000')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+app.use(cors({ origin: allowedOrigins }));
+app.use(express.json({ limit: '1mb' }));
 
 // Mount HTTP routes
 app.use('/api/voice', tokenRouter);
@@ -77,10 +82,12 @@ app.get('/api/voice/config', (_req, res) => {
   });
 });
 
-// Anthropic Evals Suite Endpoints
+// Demo Eval Suite Endpoints — these return static illustrative numbers, not a
+// computed evaluation. `mode: 'static_demo'` flags this honestly for callers.
 app.get('/api/evals/report', (_req, res) => {
   res.json({
     status: 'success',
+    mode: 'static_demo',
     suiteName: 'Anthropic Production Eval Suite',
     totalTasks: 4,
     kTrials: 5,
@@ -96,6 +103,7 @@ app.get('/api/evals/report', (_req, res) => {
 app.post('/api/evals/run', async (_req, res) => {
   res.json({
     status: 'completed',
+    mode: 'static_demo',
     suiteName: 'Anthropic Production Eval Suite',
     totalTasks: 4,
     kTrials: 5,

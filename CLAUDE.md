@@ -16,6 +16,23 @@ Welcome, Claude! This file provides the essential context, commands, architectur
 
 ---
 
+## ⚠️ Current Implementation Status (read before integrating a real business)
+
+Some capabilities are real only when the relevant API key/flag is configured; without it, the code falls back to a clearly-labeled simulation. Don't assume "autonomous" or "live" language elsewhere in this doc means every call hits a real third-party API — check this table first:
+
+| Capability | Real when... | Falls back to... |
+| :--- | :--- | :--- |
+| Voice (AssemblyAI) | `ASSEMBLYAI_API_KEY` set | A `demo_token_...` mock session token |
+| Anna chat / content synthesis (DeepSeek) | `DEEPSEEK_API_KEY` set | A canned, hardcoded response (`deepseekService.generateFallback`) |
+| Twitter/X, LinkedIn publish | `ENABLE_REAL_PUBLISHING=true` **and** complete OAuth credentials stored for that client | A simulated receipt (`isSimulated: true`) with a fabricated post ID/URL — no real post is made |
+| YouTube publish | Not supported yet — the stored credential shape (a bare API key) can't authenticate a publish call; real publishing needs OAuth2 user consent + refresh tokens, which isn't implemented | Always a simulated, honestly-labeled `stub_unsupported` receipt |
+| Substack publish | `webhookUrl` configured | A real webhook `fetch()` is attempted; failure is reported as `status: 'failed'`, not silently swallowed |
+| `/api/evals/*` | N/A | Always returns static demo numbers (`mode: 'static_demo'`) — not a real evaluator |
+
+Every publish receipt includes `isSimulated: boolean` so you can check at runtime whether a given post was real or simulated — don't infer it from response shape alone.
+
+---
+
 ## 🏗️ Repository Architecture
 
 * `apps/web/`: React 18, Vite, Tailwind CSS, Lucide icons.

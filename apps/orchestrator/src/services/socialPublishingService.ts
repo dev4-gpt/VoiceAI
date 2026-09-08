@@ -3,10 +3,11 @@ import * as path from 'path';
 import { clientCredentialsService } from './clientCredentialsService';
 import { brandVoiceService } from './brandVoiceService';
 import { crmStore } from './crmStore';
+import { buildOAuth1AuthHeader } from './oauth1Signer';
 
 export interface PlatformPublishReceipt {
   platform: 'twitter' | 'linkedin' | 'substack' | 'youtube';
-  status: 'published' | 'queued' | 'simulated_live' | 'failed';
+  status: 'published' | 'queued' | 'simulated_live' | 'failed' | 'stub_unsupported';
   postId: string;
   postUrl: string;
   publishedAt: string;
@@ -15,6 +16,8 @@ export interface PlatformPublishReceipt {
   details: string;
   transactionHash: string;
   contentExcerpt: string;
+  /** false only when a real third-party API call was made and succeeded. */
+  isSimulated: boolean;
 }
 
 export interface PublishBatchResult {
@@ -43,6 +46,79 @@ export class SocialPublishingService {
 
   private generateTxHash(platform: string, id: string): string {
     return `0x${Buffer.from(`${platform}:${id}:${Date.now()}`).toString('hex').slice(0, 32)}`;
+  }
+
+  private isRealPublishingEnabled(): boolean {
+    return process.env.ENABLE_REAL_PUBLISHING === 'true';
+  }
+
+  private hasCompleteTwitterCredentials(secrets: Record<string, string>): boolean {
+    return Boolean(secrets.apiKey && secrets.apiSecret && secrets.accessToken && secrets.tokenSecret);
+  }
+
+  private hasCompleteLinkedInCredentials(secrets: Record<string, string>): boolean {
+    return Boolean(secrets.accessToken);
+  }
+
+  /** Real POST /2/tweets call. Throws on any failure so the caller can fall back to simulation. */
+  private async publishToTwitterReal(secrets: Record<string, string>, text: string): Promise<{ postId: string; postUrl: string; handle: string }> {
+    const url = 'https://api.twitter.com/2/tweets';
+    const authHeader = buildOAuth1AuthHeader('POST', url, {
+      consumerKey: secrets.apiKey,
+      consumerSecret: secrets.apiSecret,
+      accessToken: secrets.accessToken,
+      tokenSecret: secrets.tokenSecret
+    });
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: authHeader },
+      body: JSON.stringify({ text }),
+      signal: AbortSignal.timeout(8000)
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Twitter API ${response.status}: ${errorText}`);
+    }
+
+    const data = (await response.json()) as any;
+    const postId = data?.data?.id;
+    if (!postId) throw new Error('Twitter API returned no tweet id');
+    return { postId, postUrl: `https://x.com/i/web/status/${postId}`, handle: '' };
+  }
+
+  /** Real POST /v2/ugcPosts call. Throws on any failure so the caller can fall back to simulation. */
+  private async publishToLinkedInReal(secrets: Record<string, string>, authorUrn: string, text: string): Promise<{ postId: string }> {
+    const url = 'https://api.linkedin.com/v2/ugcPosts';
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${secrets.accessToken}`,
+        'X-Restli-Protocol-Version': '2.0.0'
+      },
+      body: JSON.stringify({
+        author: authorUrn,
+        lifecycleState: 'PUBLISHED',
+        specificContent: {
+          'com.linkedin.ugc.ShareContent': {
+            shareCommentary: { text },
+            shareMediaCategory: 'NONE'
+          }
+        },
+        visibility: { 'com.linkedin.ugc.MemberNetworkVisibility': 'PUBLIC' }
+      }),
+      signal: AbortSignal.timeout(8000)
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`LinkedIn API ${response.status}: ${errorText}`);
+    }
+
+    const postId = response.headers.get('x-restli-id') || this.generateSnowflakeId();
+    return { postId };
   }
 
   /**
@@ -82,7 +158,8 @@ export class SocialPublishingService {
           latencyMs: 0,
           details: `Publishing failed: No credentials or API keys found for ${plat.toUpperCase()}. Please configure under Connected Platforms.`,
           transactionHash: '',
-          contentExcerpt: ''
+          contentExcerpt: '',
+          isSimulated: true
         });
         continue;
       }
@@ -90,58 +167,112 @@ export class SocialPublishingService {
       // Execute platform-specific publication
       if (plat === 'twitter') {
         const handle = cred.accountHandle || `@${companyName.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
-        const tweetId = this.generateSnowflakeId();
-        const txHash = this.generateTxHash('twitter', tweetId);
         const thread = content.twitterThread && content.twitterThread.length > 0
           ? content.twitterThread
           : [content.thesis];
 
-        // Simulate cloud dispatch latency
-        await new Promise((r) => setTimeout(r, 45 + Math.random() * 30));
-        const latencyMs = Math.round(performance.now() - startMs);
+        let real: { postId: string; postUrl: string } | null = null;
+        if (this.isRealPublishingEnabled() && this.hasCompleteTwitterCredentials(cred.secrets)) {
+          try {
+            const r = await this.publishToTwitterReal(cred.secrets, thread[0]);
+            real = { postId: r.postId, postUrl: `https://x.com/${handle.replace('@', '')}/status/${r.postId}` };
+          } catch (e: any) {
+            console.error('[Twitter Real Publish Failed, falling back to simulation]', e.message);
+          }
+        }
 
-        receipts.push({
-          platform: 'twitter',
-          status: 'published',
-          postId: tweetId,
-          postUrl: `https://x.com/${handle.replace('@', '')}/status/${tweetId}`,
-          publishedAt: nowStr,
-          accountHandle: handle,
-          latencyMs,
-          details: `Dispatched ${thread.length}-part thread to X API v2 under ${handle}. All tweets live.`,
-          transactionHash: txHash,
-          contentExcerpt: thread[0].slice(0, 140) + '...'
-        });
+        const latencyMs = Math.round(performance.now() - startMs);
+        if (real) {
+          receipts.push({
+            platform: 'twitter',
+            status: 'published',
+            postId: real.postId,
+            postUrl: real.postUrl,
+            publishedAt: nowStr,
+            accountHandle: handle,
+            latencyMs,
+            details: `Posted live to X API v2 under ${handle}.`,
+            transactionHash: '',
+            contentExcerpt: thread[0].slice(0, 140) + '...',
+            isSimulated: false
+          });
+        } else {
+          await new Promise((r) => setTimeout(r, 45 + Math.random() * 30));
+          const tweetId = this.generateSnowflakeId();
+          receipts.push({
+            platform: 'twitter',
+            status: 'published',
+            postId: tweetId,
+            postUrl: `https://x.com/${handle.replace('@', '')}/status/${tweetId}`,
+            publishedAt: nowStr,
+            accountHandle: handle,
+            latencyMs: Math.round(performance.now() - startMs),
+            details: `Simulated dispatch of ${thread.length}-part thread under ${handle} (set ENABLE_REAL_PUBLISHING=true with complete OAuth1 credentials to post live).`,
+            transactionHash: this.generateTxHash('twitter', tweetId),
+            contentExcerpt: thread[0].slice(0, 140) + '...',
+            isSimulated: true
+          });
+        }
       } else if (plat === 'linkedin') {
         const handle = cred.accountHandle || companyName;
-        const shareId = this.generateSnowflakeId();
-        const txHash = this.generateTxHash('linkedin', shareId);
         const postText = content.linkedInPost || content.thesis;
 
-        await new Promise((r) => setTimeout(r, 50 + Math.random() * 35));
-        const latencyMs = Math.round(performance.now() - startMs);
+        let real: { postId: string } | null = null;
+        if (this.isRealPublishingEnabled() && this.hasCompleteLinkedInCredentials(cred.secrets)) {
+          try {
+            const authorUrn = cred.secrets.authorUrn || `urn:li:person:${handle}`;
+            real = await this.publishToLinkedInReal(cred.secrets, authorUrn, postText);
+          } catch (e: any) {
+            console.error('[LinkedIn Real Publish Failed, falling back to simulation]', e.message);
+          }
+        }
 
-        receipts.push({
-          platform: 'linkedin',
-          status: 'published',
-          postId: shareId,
-          postUrl: `https://www.linkedin.com/feed/update/urn:li:share:${shareId}`,
-          publishedAt: nowStr,
-          accountHandle: handle,
-          latencyMs,
-          details: `Published thought leadership post to LinkedIn UGC API (author: ${handle}).`,
-          transactionHash: txHash,
-          contentExcerpt: postText.slice(0, 160) + '...'
-        });
+        const latencyMs = Math.round(performance.now() - startMs);
+        if (real) {
+          receipts.push({
+            platform: 'linkedin',
+            status: 'published',
+            postId: real.postId,
+            postUrl: `https://www.linkedin.com/feed/update/${real.postId}`,
+            publishedAt: nowStr,
+            accountHandle: handle,
+            latencyMs,
+            details: `Posted live to LinkedIn UGC API (author: ${handle}).`,
+            transactionHash: '',
+            contentExcerpt: postText.slice(0, 160) + '...',
+            isSimulated: false
+          });
+        } else {
+          await new Promise((r) => setTimeout(r, 50 + Math.random() * 35));
+          const shareId = this.generateSnowflakeId();
+          receipts.push({
+            platform: 'linkedin',
+            status: 'published',
+            postId: shareId,
+            postUrl: `https://www.linkedin.com/feed/update/urn:li:share:${shareId}`,
+            publishedAt: nowStr,
+            accountHandle: handle,
+            latencyMs: Math.round(performance.now() - startMs),
+            details: `Simulated thought leadership post (author: ${handle}); set ENABLE_REAL_PUBLISHING=true with a valid accessToken to post live.`,
+            transactionHash: this.generateTxHash('linkedin', shareId),
+            contentExcerpt: postText.slice(0, 160) + '...',
+            isSimulated: true
+          });
+        }
       } else if (plat === 'substack') {
         const handle = cred.accountHandle || `${companyName.toLowerCase().replace(/[^a-z0-9]/g, '')}.substack.com`;
         const slug = content.thesis.toLowerCase().replace(/[^a-z0-9]/g, '-').slice(0, 40);
         const txHash = this.generateTxHash('substack', slug);
 
-        // If webhook URL exists, attempt real post ping
+        // If a webhook URL exists, attempt a real post ping. Unlike the branches
+        // above, this call is real whenever a webhook is configured (no flag
+        // gate) — but a failure must be reported honestly, not swallowed.
+        let webhookFailed = false;
+        let webhookAttempted = false;
         if (cred.secrets.webhookUrl) {
+          webhookAttempted = true;
           try {
-            await fetch(cred.secrets.webhookUrl, {
+            const response = await fetch(cred.secrets.webhookUrl, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -156,44 +287,65 @@ export class SocialPublishingService {
               }),
               signal: AbortSignal.timeout(3000)
             });
+            if (!response.ok) webhookFailed = true;
           } catch (e: any) {
-            // Non-fatal webhook fallback for offline/sandbox
+            console.error('[Substack Webhook Failed]', e.message);
+            webhookFailed = true;
           }
         }
 
         const latencyMs = Math.round(performance.now() - startMs);
 
-        receipts.push({
-          platform: 'substack',
-          status: 'published',
-          postId: `sub_${slug}`,
-          postUrl: `https://${handle}/p/${slug}`,
-          publishedAt: nowStr,
-          accountHandle: handle,
-          latencyMs,
-          details: `Broadcast newsletter to ${handle} subscribers via automated publishing webhook.`,
-          transactionHash: txHash,
-          contentExcerpt: (content.newsletterMarkdown || content.thesis).slice(0, 160) + '...'
-        });
+        if (webhookFailed) {
+          receipts.push({
+            platform: 'substack',
+            status: 'failed',
+            postId: '',
+            postUrl: '',
+            publishedAt: nowStr,
+            accountHandle: handle,
+            latencyMs,
+            details: `Substack webhook call failed for ${handle}. No newsletter was sent.`,
+            transactionHash: '',
+            contentExcerpt: (content.newsletterMarkdown || content.thesis).slice(0, 160) + '...',
+            isSimulated: false
+          });
+        } else {
+          receipts.push({
+            platform: 'substack',
+            status: 'published',
+            postId: `sub_${slug}`,
+            postUrl: `https://${handle}/p/${slug}`,
+            publishedAt: nowStr,
+            accountHandle: handle,
+            latencyMs,
+            details: webhookAttempted
+              ? `Broadcast newsletter to ${handle} subscribers via automated publishing webhook.`
+              : `Simulated (no webhookUrl configured for ${handle}) — set one under Connected Platforms to publish live.`,
+            transactionHash: txHash,
+            contentExcerpt: (content.newsletterMarkdown || content.thesis).slice(0, 160) + '...',
+            isSimulated: !webhookAttempted
+          });
+        }
       } else if (plat === 'youtube') {
         const handle = cred.accountHandle || `@${companyName}`;
         const videoId = this.generateSnowflakeId().slice(0, 11);
-        const txHash = this.generateTxHash('youtube', videoId);
 
         await new Promise((r) => setTimeout(r, 60 + Math.random() * 40));
         const latencyMs = Math.round(performance.now() - startMs);
 
         receipts.push({
           platform: 'youtube',
-          status: 'published',
-          postId: videoId,
-          postUrl: `https://youtube.com/post/Ugk${videoId}`,
+          status: 'stub_unsupported',
+          postId: '',
+          postUrl: '',
           publishedAt: nowStr,
           accountHandle: handle,
           latencyMs,
-          details: `Staged video breakdown & community script to YouTube Studio API.`,
-          transactionHash: txHash,
-          contentExcerpt: (content.youtubeScript || content.thesis).slice(0, 160) + '...'
+          details: `Not published — YouTube Data API v3 publishing requires OAuth2 user consent + refresh tokens, which this app does not implement. The stored API key is read-only.`,
+          transactionHash: '',
+          contentExcerpt: (content.youtubeScript || content.thesis).slice(0, 160) + '...',
+          isSimulated: true
         });
       }
     }

@@ -17,6 +17,24 @@ GrowthVoice OS is a sovereign, voice-first growth operating system that automate
 
 ---
 
+## ⚠️ Current Implementation Status — Read This Before Building On Top
+
+This is a working prototype, not a fully wired production system. Several capabilities below are described as "autonomous" or "live" in spirit, but are only *actually real* when a specific API key or flag is configured — otherwise the code intentionally falls back to a clearly-labeled simulation so the rest of the flow (UI, vault logging, demo) still works end-to-end. Codex/agents integrating a new business should check this table before assuming any given call reaches a real third-party API:
+
+| Capability | Real when... | Simulated fallback |
+| :--- | :--- | :--- |
+| Voice session (AssemblyAI) | `ASSEMBLYAI_API_KEY` env var set | `demo_token_...` mock session token |
+| Anna chat / content generation (DeepSeek) | `DEEPSEEK_API_KEY` env var set | Hardcoded canned response (`deepseekService.generateFallback`) |
+| Twitter/X publish | `ENABLE_REAL_PUBLISHING=true` + complete OAuth1 credentials (`apiKey`/`apiSecret`/`accessToken`/`tokenSecret`) for the client | Fabricated post ID/URL, `isSimulated: true`, no real tweet is posted |
+| LinkedIn publish | `ENABLE_REAL_PUBLISHING=true` + a valid `accessToken` scoped for `w_member_social` (obtained out-of-band — this app does not implement the OAuth2 consent flow) | Fabricated post ID/URL, `isSimulated: true` |
+| YouTube publish | **Not implemented.** The stored credential (a bare API key) is read-only and cannot authenticate a publish call — real publishing needs a full OAuth2 authorization-code + refresh-token flow | Always simulated, labeled `status: 'stub_unsupported'` |
+| Substack publish | `webhookUrl` configured for the client | Real `fetch()` POST is attempted; on failure, reports `status: 'failed'` (previously this silently reported success even when the webhook call failed — fixed) |
+| `/api/evals/*` | N/A — always static | Returns hardcoded demo numbers (`mode: 'static_demo'`), not a computed evaluation |
+
+Check every publish receipt's `isSimulated` field at runtime rather than assuming success means a real post landed. When integrating a real business, real publishing for Twitter/LinkedIn requires manually obtaining long-lived API tokens from each platform's developer console (no in-app OAuth flow exists) and setting `ENABLE_REAL_PUBLISHING=true`.
+
+---
+
 ## 🧠 Core System Capabilities
 
 ### 1. Universal GrowthOS Advisory Voice (Anna)
@@ -130,6 +148,8 @@ Or click **"Run Autonomous Sync"** in the Content Factory Studio tab on [`http:/
 | `POST` | `/api/content/auto-pipeline` | Run complete 4-step autonomous research ➔ talk ➔ publish loop |
 | `GET` | `/api/content/publications/:companyName` | Retrieve publication history from Obsidian vault |
 | `GET` | `/api/crm/leads` | Retrieve qualified leads and Obsidian dossier paths |
+
+**Auth note**: `/api/credentials/*` and the state-changing `/api/content/publish`, `/api/content/auto-pipeline`, `/api/content/dispatch` routes require `Authorization: Bearer <ORCHESTRATOR_API_KEY>` once that env var is set (local demo mode, with it unset, leaves them open).
 
 ---
 

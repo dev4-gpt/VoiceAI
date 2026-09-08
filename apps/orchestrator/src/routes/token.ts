@@ -65,8 +65,14 @@ tokenRouter.post('/token', async (req: Request, res: Response) => {
 // Interactive Text & Keyboard Conversation Route
 tokenRouter.post('/chat', async (req: Request, res: Response) => {
   const { text, persona, prospect, history } = req.body;
-  if (!text) {
+  if (!text || typeof text !== 'string') {
     return res.status(400).json({ error: 'Text input is required' });
+  }
+  if (text.length > 4000) {
+    return res.status(400).json({ error: 'Text input exceeds 4000 character limit' });
+  }
+  if (history !== undefined && (!Array.isArray(history) || history.length > 50)) {
+    return res.status(400).json({ error: 'history must be an array of at most 50 turns' });
   }
 
   // 1. Detect Email and Phone

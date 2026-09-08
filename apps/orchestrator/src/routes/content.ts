@@ -5,6 +5,7 @@ import { Router, Request, Response } from 'express';
 import { contentFactoryEngine } from '../services/contentFactoryEngine';
 import { outreachDispatcherService } from '../services/outreachDispatcherService';
 import { antiSlopGuardrail } from '../services/antiSlopGuardrail';
+import { requireApiKey } from '../middleware/auth';
 
 export const contentRouter = Router();
 
@@ -54,7 +55,7 @@ contentRouter.post('/audit', async (req: Request, res: Response) => {
   });
 });
 
-contentRouter.post('/dispatch', async (req: Request, res: Response) => {
+contentRouter.post('/dispatch', requireApiKey, async (req: Request, res: Response) => {
   const {
     companyName,
     recipientName,
@@ -107,7 +108,7 @@ contentRouter.post('/jobs/:id/reject', (req: Request, res: Response) => {
 });
 
 // Automated Social Publishing Across Connected Platforms
-contentRouter.post('/publish', async (req: Request, res: Response) => {
+contentRouter.post('/publish', requireApiKey, async (req: Request, res: Response) => {
   const { companyName, platforms, content, source } = req.body;
   if (!companyName || !platforms || !Array.isArray(platforms) || platforms.length === 0) {
     return res.status(400).json({ error: 'Company name and target platforms array are required' });
@@ -127,7 +128,7 @@ contentRouter.post('/publish', async (req: Request, res: Response) => {
 });
 
 // Autonomous End-to-End Social Pipeline: Research -> Anna Voice -> Create -> Publish
-contentRouter.post('/auto-pipeline', async (req: Request, res: Response) => {
+contentRouter.post('/auto-pipeline', requireApiKey, async (req: Request, res: Response) => {
   const { companyName, transcriptExcerpt, coreInsight, platforms } = req.body;
   if (!companyName) {
     return res.status(400).json({ error: 'Company name is required' });

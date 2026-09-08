@@ -7,7 +7,7 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
-    "test": "echo \"Orchestrator ready for integration tests\""
+    "test": "jest"
   },
   "dependencies": {
     "@voice-os/shared": "file:../../packages/shared",
@@ -19,8 +19,11 @@
   "devDependencies": {
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
+    "@types/jest": "^30.0.0",
     "@types/node": "^20.12.12",
     "@types/ws": "^8.5.10",
+    "jest": "^30.5.1",
+    "ts-jest": "^29.4.12",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.4.5"
   }
