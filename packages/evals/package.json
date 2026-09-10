@@ -10,7 +10,7 @@
     "start": "node dist/runner.js"
   },
   "dependencies": {
-    "@voice-os/shared": "file:../shared"
+    "@voice-os/shared": "^1.0.0"
   },
   "devDependencies": {
     "@types/node": "^20.12.12",
