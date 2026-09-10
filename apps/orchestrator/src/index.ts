@@ -161,6 +161,21 @@ contentFactoryEngine.setUpdateListener((job) => {
   });
 });
 
+// Broadcast CRM lead updates (e.g. Kanban drag-and-drop status changes) to all connected UI clients
+crmStore.setUpdateListener((lead) => {
+  const payload = JSON.stringify({
+    type: 'lead_updated',
+    lead,
+    timestamp: new Date().toISOString()
+  });
+
+  wss.clients.forEach((client) => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(payload);
+    }
+  });
+});
+
 wss.on('connection', (ws: WebSocket) => {
   console.log('[Telemetry WS] Client connected to live telemetry stream');
 

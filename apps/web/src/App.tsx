@@ -649,6 +649,16 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
             }
             return [payload.job, ...prev];
           });
+        } else if (payload.type === 'lead_updated') {
+          setLeads((prev) => {
+            const index = prev.findIndex((l) => l.id === payload.lead.id);
+            if (index >= 0) {
+              const copy = [...prev];
+              copy[index] = payload.lead;
+              return copy;
+            }
+            return [payload.lead, ...prev];
+          });
         } else if (payload.type === 'initial_state') {
           if (payload.leads) setLeads(payload.leads);
           if (payload.members) setMembers(payload.members);
@@ -1124,6 +1134,57 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
     setIsCalling(false);
     setIsAgentSpeaking(false);
     setIsUserSpeaking(false);
+  };
+
+  // CRM Lead Detail Drawer -> "Trigger AI Strategy Call": load the lead into the
+  // active prospect dossier, then start the call once that state has committed
+  // (setState is batched, so handleStartCall must run in a follow-up effect to
+  // see the updated prospect* values instead of stale closure state).
+  const [pendingLeadCall, setPendingLeadCall] = useState<CRMLead | null>(null);
+
+  const handleTriggerLeadCall = (lead: CRMLead) => {
+    setProspectName(lead.fullName);
+    setProspectEmail(lead.email);
+    setProspectCompany(lead.companyName || '');
+    setProspectWebsite(lead.website || '');
+    setProspectLinkedIn(lead.socialLinks?.linkedin || lead.linkedIn || '');
+    setProspectTwitter(lead.socialLinks?.twitter || '');
+    setProspectYouTube(lead.socialLinks?.youtube || '');
+    setSelectedScenario('outbound');
+    setActiveTab('console');
+    setViewMode('tactical');
+    setPendingLeadCall(lead);
+  };
+
+  useEffect(() => {
+    if (!pendingLeadCall) return;
+    if (isCalling) handleEndCall();
+    handleStartCall();
+    setPendingLeadCall(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingLeadCall]);
+
+  // CRM Kanban drag-and-drop: optimistically move the card, persist the new
+  // pipeline stage, and roll back locally if the server rejects it.
+  const handleLeadStatusChange = async (lead: CRMLead, newStatus: CRMLead['status']) => {
+    const previousStatus = lead.status;
+    setLeads((prev) => prev.map((l) => (l.id === lead.id ? { ...l, status: newStatus } : l)));
+
+    try {
+      const res = await fetch(`/api/crm/leads/${encodeURIComponent(lead.id)}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      });
+      if (!res.ok) throw new Error(`Status ${res.status}`);
+      const data = await res.json();
+      if (data.lead) {
+        setLeads((prev) => prev.map((l) => (l.id === lead.id ? data.lead : l)));
+      }
+    } catch (err) {
+      console.error('[CRM Lead Status Update]', err);
+      setLeads((prev) => prev.map((l) => (l.id === lead.id ? { ...l, status: previousStatus } : l)));
+    }
   };
 
   // Send Typed Message to Voice Agent & Sync to Obsidian Vault
@@ -2402,6 +2463,8 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
               leads={leads}
               members={members}
               onSimulateLead={() => triggerSimulationStep('lead_inbound')}
+              onTriggerLeadCall={handleTriggerLeadCall}
+              onLeadStatusChange={handleLeadStatusChange}
             />
           }
           contentStudioContent={
@@ -2440,6 +2503,8 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
               leads={leads}
               members={members}
               onSimulateLead={() => triggerSimulationStep('lead_inbound')}
+              onTriggerLeadCall={handleTriggerLeadCall}
+              onLeadStatusChange={handleLeadStatusChange}
             />
           )}
           {activeTab === 'content' && (

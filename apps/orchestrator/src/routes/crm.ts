@@ -35,6 +35,22 @@ crmRouter.get('/leads', (_req: Request, res: Response) => {
   res.json({ leads: crmStore.getLeads() });
 });
 
+const VALID_LEAD_STATUSES = ['new', 'inbound_qualified', 'call_scheduled', 'negotiating', 'enrolled', 'disqualified'];
+
+crmRouter.patch('/leads/:id/status', (req: Request, res: Response) => {
+  const { status } = req.body;
+  if (!status || !VALID_LEAD_STATUSES.includes(status)) {
+    return res.status(400).json({ error: `Invalid status. Must be one of: ${VALID_LEAD_STATUSES.join(', ')}` });
+  }
+
+  const updated = crmStore.updateLeadStatus(req.params.id, status);
+  if (!updated) {
+    return res.status(404).json({ error: 'Lead not found' });
+  }
+
+  return res.json({ status: 'success', lead: updated });
+});
+
 crmRouter.get('/members', (_req: Request, res: Response) => {
   res.json({ members: crmStore.getMembers() });
 });

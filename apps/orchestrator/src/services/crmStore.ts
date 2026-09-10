@@ -8,9 +8,20 @@ class CRMStore {
   private leads: Map<string, CRMLead> = new Map();
   private members: Map<string, ChurnRiskMember> = new Map();
   private telemetryLogs: TurnTelemetry[] = [];
+  private onLeadUpdateCallback?: (lead: CRMLead) => void;
 
   constructor() {
     this.seedInitialData();
+  }
+
+  public setUpdateListener(callback: (lead: CRMLead) => void) {
+    this.onLeadUpdateCallback = callback;
+  }
+
+  private notifyLeadUpdate(lead: CRMLead) {
+    if (this.onLeadUpdateCallback) {
+      this.onLeadUpdateCallback(lead);
+    }
   }
 
   private seedInitialData() {
@@ -94,6 +105,23 @@ class CRMStore {
 
   public logTurn(telemetry: TurnTelemetry) {
     this.telemetryLogs.push(telemetry);
+  }
+
+  public updateLeadStatus(leadId: string, status: CRMLead['status']): CRMLead | null {
+    const lead = this.leads.get(leadId);
+    if (!lead) return null;
+
+    const previousStatus = lead.status;
+    if (previousStatus === status) return lead;
+
+    lead.status = status;
+    lead.updatedAt = new Date().toISOString();
+    lead.notes.push(`Pipeline stage moved from "${previousStatus}" to "${status}" (manual Kanban drag).`);
+
+    this.leads.set(lead.id, lead);
+    this.syncLeadToVault(lead);
+    this.notifyLeadUpdate(lead);
+    return lead;
   }
 
   public createOrUpdateLead(data: {

@@ -7,6 +7,8 @@ interface CrmKanbanProps {
   leads: CRMLead[];
   members?: ChurnRiskMember[];
   onSimulateLead?: () => void;
+  onTriggerLeadCall?: (lead: CRMLead) => void;
+  onLeadStatusChange?: (lead: CRMLead, newStatus: LeadStatus) => void;
   theme?: 'glass' | 'cyber';
 }
 
@@ -37,9 +39,45 @@ const COLUMNS: Array<{ key: LeadStatus; label: string; color: string; badgeColor
   }
 ];
 
-export const CrmKanban: React.FC<CrmKanbanProps> = ({ leads, members = [], onSimulateLead, theme = 'glass' }) => {
+export const CrmKanban: React.FC<CrmKanbanProps> = ({
+  leads,
+  members = [],
+  onSimulateLead,
+  onTriggerLeadCall,
+  onLeadStatusChange,
+  theme = 'glass'
+}) => {
   const isGlass = theme === 'glass';
   const [selectedLead, setSelectedLead] = useState<CRMLead | null>(null);
+  const [draggedLeadId, setDraggedLeadId] = useState<string | null>(null);
+  const [dragOverColumn, setDragOverColumn] = useState<LeadStatus | null>(null);
+
+  const handleCardDragStart = (e: React.DragEvent<HTMLDivElement>, lead: CRMLead) => {
+    e.dataTransfer.setData('text/plain', lead.id);
+    e.dataTransfer.effectAllowed = 'move';
+    setDraggedLeadId(lead.id);
+  };
+
+  const handleCardDragEnd = () => {
+    setDraggedLeadId(null);
+    setDragOverColumn(null);
+  };
+
+  const handleColumnDragOver = (e: React.DragEvent<HTMLDivElement>, columnKey: LeadStatus) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragOverColumn !== columnKey) setDragOverColumn(columnKey);
+  };
+
+  const handleColumnDrop = (e: React.DragEvent<HTMLDivElement>, columnKey: LeadStatus) => {
+    e.preventDefault();
+    const leadId = e.dataTransfer.getData('text/plain');
+    const lead = leads.find((l) => l.id === leadId);
+    setDraggedLeadId(null);
+    setDragOverColumn(null);
+    if (!lead || lead.status === columnKey) return;
+    onLeadStatusChange?.(lead, columnKey);
+  };
 
   return (
     <div
@@ -102,11 +140,23 @@ export const CrmKanban: React.FC<CrmKanbanProps> = ({ leads, members = [], onSim
         {COLUMNS.map((col) => {
           const colLeads = leads.filter((l) => l.status === col.key);
 
+          const isDropTarget = dragOverColumn === col.key;
+
           return (
             <div
               key={col.key}
-              className={`flex flex-col rounded-xl p-3.5 min-w-[260px] shadow-sm border ${
-                isGlass ? 'bg-[#f7f3ea]/80 border-[#e5e0d6]' : 'bg-slate-950/60 border-slate-800/80'
+              onDragEnter={(e) => handleColumnDragOver(e, col.key)}
+              onDragOver={(e) => handleColumnDragOver(e, col.key)}
+              onDragLeave={() => setDragOverColumn((prev) => (prev === col.key ? null : prev))}
+              onDrop={(e) => handleColumnDrop(e, col.key)}
+              className={`flex flex-col rounded-xl p-3.5 min-w-[260px] shadow-sm border transition-colors ${
+                isDropTarget
+                  ? isGlass
+                    ? 'bg-sky-50/80 border-sky-400 border-dashed'
+                    : 'bg-cyan-950/40 border-cyan-500/60 border-dashed'
+                  : isGlass
+                  ? 'bg-[#f7f3ea]/80 border-[#e5e0d6]'
+                  : 'bg-slate-950/60 border-slate-800/80'
               }`}
             >
               <div className={`flex items-center justify-between pb-2.5 mb-2.5 border-b ${isGlass ? 'border-[#e5e0d6]' : 'border-slate-800'}`}>
@@ -151,11 +201,18 @@ export const CrmKanban: React.FC<CrmKanbanProps> = ({ leads, members = [], onSim
                     const circ = 2 * Math.PI * r;
                     const offset = circ - (score / 100) * circ;
 
+                    const isDragging = draggedLeadId === lead.id;
+
                     return (
                       <div
                         key={lead.id}
+                        draggable
+                        onDragStart={(e) => handleCardDragStart(e, lead)}
+                        onDragEnd={handleCardDragEnd}
                         onClick={() => setSelectedLead(lead)}
-                        className={`group p-3.5 rounded-xl transition-all shadow-xs hover:shadow-md space-y-2 cursor-pointer relative overflow-hidden border ${
+                        className={`group p-3.5 rounded-xl transition-all shadow-xs hover:shadow-md space-y-2 cursor-grab active:cursor-grabbing relative overflow-hidden border ${
+                          isDragging ? 'opacity-40' : ''
+                        } ${
                           isGlass
                             ? 'bg-[#fdfcf9] hover:bg-white border-[#e5e0d6] hover:border-sky-500 text-slate-800 shadow-2xs'
                             : 'bg-slate-900/90 hover:bg-slate-850 border-slate-800 hover:border-cyan-500/50 text-slate-100'
@@ -276,6 +333,7 @@ export const CrmKanban: React.FC<CrmKanbanProps> = ({ leads, members = [], onSim
         lead={selectedLead}
         isOpen={!!selectedLead}
         onClose={() => setSelectedLead(null)}
+        onTriggerCall={onTriggerLeadCall}
         theme={theme}
       />
     </div>
