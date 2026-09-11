@@ -24,5 +24,8 @@
     "docker"
   ],
   "author": "GrowthVoice OS Team",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "drizzle-orm": "^0.45.2"
+  }
 }

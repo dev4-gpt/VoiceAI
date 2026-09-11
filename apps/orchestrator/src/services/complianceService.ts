@@ -1,5 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { resolveTenantId, insertConsent } from '../db/repository';
 
 /**
  * US disclosure and recording-consent policy for the voice agent.
@@ -188,7 +189,39 @@ export class ComplianceService {
 
     this.consentLog.push(record);
     this.appendToVault(record);
+
+    // Persist to Postgres. This record is the evidence produced if a regulator
+    // or plaintiff asks whether the visitor was told and agreed; in-memory and a
+    // local markdown file are not an audit trail for a deployed service.
+    // Deliberately not awaited: consent has already been given and recorded in
+    // memory, and a slow database must not delay the call starting.
+    void this.persistConsent(record).catch((err) =>
+      console.error('[Compliance] Failed to persist consent record', record.id, err.message)
+    );
+
     return record;
+  }
+
+  private async persistConsent(record: ConsentRecord): Promise<void> {
+    const tenantId = await resolveTenantId(record.companyName);
+    if (!tenantId) {
+      console.warn(
+        `[Compliance] No database configured — consent ${record.id} exists only in memory and the vault file.`
+      );
+      return;
+    }
+    await insertConsent(tenantId, {
+      id: record.id,
+      sessionId: record.sessionId,
+      companyName: record.companyName,
+      region: record.region,
+      consentRequirement: record.consentRequirement,
+      consentMethod: record.consentMethod,
+      disclosureText: record.disclosureText,
+      disclosedAt: new Date(record.disclosedAt),
+      consentGrantedAt: record.consentGrantedAt ? new Date(record.consentGrantedAt) : null,
+      userAgent: record.userAgent
+    });
   }
 
   public getConsentLog(companyName?: string): ConsentRecord[] {

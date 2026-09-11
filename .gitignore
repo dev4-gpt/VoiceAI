@@ -63,3 +63,4 @@ apps/orchestrator/vault/
 
 
 .vercel
+.env*

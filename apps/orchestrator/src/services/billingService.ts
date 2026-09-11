@@ -1,3 +1,4 @@
+import { resolveTenantId, upsertSubscription } from '../db/repository';
 import type {
   SubscriptionPlan,
   SubscriptionTierId,
@@ -270,15 +271,37 @@ export class BillingService {
     // Only a paying status grants the plan's minutes. A past_due or canceled
     // subscription must not keep its allowance.
     const isEntitled = state.status === 'active' || state.status === 'trialing';
+    const minutesLimit = isEntitled ? plan.voiceMinutesMonthly : 0;
 
     this.updateSubscription(state.tenantId, planId, cycle);
 
     const usage = this.getClientUsage(state.tenantId);
     usage.planId = planId;
     usage.subscriptionStatus = state.status;
-    usage.minutesLimit = isEntitled ? plan.voiceMinutesMonthly : 0;
+    usage.minutesLimit = minutesLimit;
     usage.stripeCustomerId = state.stripeCustomerId || usage.stripeCustomerId;
     usage.stripeSubscriptionId = state.stripeSubscriptionId || usage.stripeSubscriptionId;
+
+    // Persist. A payment confirmation that only reaches memory is worse than
+    // useless: the customer is charged and the entitlement disappears on the
+    // next restart. Failing to write must therefore be loud, not swallowed.
+    const tenantId = await resolveTenantId(state.tenantId);
+    if (tenantId) {
+      await upsertSubscription(tenantId, {
+        planId,
+        billingCycle: cycle,
+        status: state.status,
+        stripeCustomerId: state.stripeCustomerId,
+        stripeSubscriptionId: state.stripeSubscriptionId,
+        minutesLimit,
+        currentPeriodStart: state.currentPeriodStart,
+        currentPeriodEnd: state.currentPeriodEnd
+      });
+    } else {
+      console.warn(
+        `[Billing] No database configured — subscription for ${state.tenantId} is in memory only and will be lost on restart.`
+      );
+    }
   }
 }
 
