@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { apiUrl } from '../config/api';
 import {
   Monitor,
   Tablet,
@@ -50,7 +51,7 @@ export const InstaticVisualEditor: React.FC<InstaticVisualEditorProps> = ({
   useEffect(() => {
     const fetchOrCreatePage = async () => {
       try {
-        const res = await fetch(`/api/instatic/pages?company=${encodeURIComponent(companyName)}`);
+        const res = await fetch(apiUrl(`/api/instatic/pages?company=${encodeURIComponent(companyName)}`));
         const data = await res.json();
         if (data.status === 'success' && data.pages && data.pages.length > 0) {
           setPageDoc(data.pages[0]);
@@ -58,7 +59,7 @@ export const InstaticVisualEditor: React.FC<InstaticVisualEditorProps> = ({
         }
 
         // Generate page
-        const genRes = await fetch('/api/instatic/generate', {
+        const genRes = await fetch(apiUrl('/api/instatic/generate'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -94,7 +95,7 @@ export const InstaticVisualEditor: React.FC<InstaticVisualEditorProps> = ({
   const handleSaveTextEdit = async () => {
     if (!pageDoc || !selectedNodeId) return;
     try {
-      const res = await fetch('/api/instatic/patch-node', {
+      const res = await fetch(apiUrl('/api/instatic/patch-node'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -119,7 +120,7 @@ export const InstaticVisualEditor: React.FC<InstaticVisualEditorProps> = ({
 
     setIsAiLoading(true);
     try {
-      const res = await fetch('/api/instatic/ai-assist', {
+      const res = await fetch(apiUrl('/api/instatic/ai-assist'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

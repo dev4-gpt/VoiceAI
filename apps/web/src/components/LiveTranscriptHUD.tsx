@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { apiUrl } from '../config/api';
 import { User, Bot, Wrench, CheckCircle2, Send, Keyboard, Sparkles, FileDown } from 'lucide-react';
 
 export interface MessageItem {
@@ -138,7 +139,7 @@ ${messages
 
     // 2. Mirror into Obsidian vault via orchestrator
     try {
-      await fetch('/api/crm/export-dossier', {
+      await fetch(apiUrl('/api/crm/export-dossier'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

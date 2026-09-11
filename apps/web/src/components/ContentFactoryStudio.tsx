@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { apiUrl } from '../config/api';
 import { ContentFactoryJob, SocialPlatformLinks } from '@voice-os/shared';
 import {
   Search,
@@ -72,7 +73,7 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
       setPublishReceipts(null);
       const platforms = target === 'all' ? ['twitter', 'linkedin', 'substack'] : [target];
 
-      const res = await fetch('/api/content/publish', {
+      const res = await fetch(apiUrl('/api/content/publish'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -106,7 +107,7 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
       setIsAutoPipelineRunning(true);
       setAutoPipelineResult(null);
 
-      const res = await fetch('/api/content/auto-pipeline', {
+      const res = await fetch(apiUrl('/api/content/auto-pipeline'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

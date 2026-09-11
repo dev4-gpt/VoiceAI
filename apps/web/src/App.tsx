@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { apiUrl, wsUrl } from './config/api';
 import {
   Compass,
   Sliders,
@@ -484,7 +485,7 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
     setSelectedPresetId(newPreset.id);
     try {
       localStorage.setItem('growthvoice_custom_dossier_presets', JSON.stringify(updated));
-      fetch('/api/crm/local-profile', {
+      fetch(apiUrl('/api/crm/local-profile'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newPreset)
@@ -585,7 +586,7 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
   // Fetch initial CRM leads and connect to telemetry WS
   useEffect(() => {
     // Check if local private profile exists on disk
-    fetch('/api/crm/local-profile')
+    fetch(apiUrl('/api/crm/local-profile'))
       .then((res) => res.json())
       .then((data) => {
         if (data.exists && data.profile) {
@@ -599,21 +600,21 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
       })
       .catch((err) => console.log('[API Local Profile]', err.message));
 
-    fetch('/api/crm/leads')
+    fetch(apiUrl('/api/crm/leads'))
       .then((res) => res.json())
       .then((data) => {
         if (data.leads) setLeads(data.leads);
       })
       .catch((err) => console.log('[API Leads]', err.message));
 
-    fetch('/api/crm/members')
+    fetch(apiUrl('/api/crm/members'))
       .then((res) => res.json())
       .then((data) => {
         if (data.members) setMembers(data.members);
       })
       .catch((err) => console.log('[API Members]', err.message));
 
-    fetch('/api/content/jobs')
+    fetch(apiUrl('/api/content/jobs'))
       .then((res) => res.json())
       .then((data) => {
         if (data.jobs) setJobs(data.jobs);
@@ -621,8 +622,9 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
       .catch((err) => console.log('[API Jobs]', err.message));
 
     // Connect to orchestrator telemetry WS
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const telemetryUrl = `${protocol}//${window.location.host}/ws/telemetry`;
+    // Same-origin in dev (Vite proxies /ws); the orchestrator's own origin once
+    // VITE_ORCHESTRATOR_URL is set, since a deployed frontend has no proxy.
+    const telemetryUrl = wsUrl('/ws/telemetry');
     const tws = new WebSocket(telemetryUrl);
     telemetryWsRef.current = tws;
 
@@ -804,7 +806,7 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
       ]);
 
       // 1. Fetch ephemeral token from backend
-      const tokenRes = await fetch('/api/voice/token', {
+      const tokenRes = await fetch(apiUrl('/api/voice/token'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -873,7 +875,7 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
         let registeredTools = voiceToolsRef.current || [];
         if (registeredTools.length === 0) {
           try {
-            const cfgRes = await fetch('/api/voice/config');
+            const cfgRes = await fetch(apiUrl('/api/voice/config'));
             if (cfgRes.ok) {
               const cfg = await cfgRes.json();
               registeredTools = cfg.tools || [];
@@ -1225,7 +1227,7 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
     setLeads((prev) => prev.map((l) => (l.id === lead.id ? { ...l, status: newStatus } : l)));
 
     try {
-      const res = await fetch(`/api/crm/leads/${encodeURIComponent(lead.id)}/status`, {
+      const res = await fetch(apiUrl(`/api/crm/leads/${encodeURIComponent(lead.id)}/status`), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus })
@@ -1269,7 +1271,7 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
         }));
 
       // 3. Call backend endpoint POST /api/voice/chat
-      const res = await fetch('/api/voice/chat', {
+      const res = await fetch(apiUrl('/api/voice/chat'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1307,7 +1309,7 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
 
       // If a lead was created or updated, refresh CRM leads and add tool execution chip
       if (data.lead) {
-        const leadsRes = await fetch('/api/crm/leads');
+        const leadsRes = await fetch(apiUrl('/api/crm/leads'));
         const leadsData = await leadsRes.json();
         if (leadsData.leads) setLeads(leadsData.leads);
 
@@ -1337,7 +1339,7 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
   const handleEnrichProspect = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch('/api/crm/tools/execute', {
+      const res = await fetch(apiUrl('/api/crm/tools/execute'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1364,7 +1366,7 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
       const data = await res.json();
 
       // Refresh leads
-      const leadsRes = await fetch('/api/crm/leads');
+      const leadsRes = await fetch(apiUrl('/api/crm/leads'));
       const leadsData = await leadsRes.json();
       if (leadsData.leads) setLeads(leadsData.leads);
 
@@ -1428,7 +1430,7 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
       await new Promise((r) => setTimeout(r, 1400));
 
       // 3. Execute tools
-      await fetch('/api/crm/tools/execute', {
+      await fetch(apiUrl('/api/crm/tools/execute'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1442,7 +1444,7 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
         })
       });
 
-      await fetch('/api/crm/tools/execute', {
+      await fetch(apiUrl('/api/crm/tools/execute'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1456,7 +1458,7 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
         })
       });
 
-      await fetch('/api/crm/tools/execute', {
+      await fetch(apiUrl('/api/crm/tools/execute'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1469,7 +1471,7 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
         })
       });
 
-      const res = await fetch('/api/crm/leads');
+      const res = await fetch(apiUrl('/api/crm/leads'));
       const data = await res.json();
       if (data.leads) setLeads(data.leads);
 
@@ -1499,7 +1501,7 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
       // Natural pause
       await new Promise((r) => setTimeout(r, 1400));
 
-      const res = await fetch('/api/crm/tools/execute', {
+      const res = await fetch(apiUrl('/api/crm/tools/execute'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1571,7 +1573,7 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
 
   const handleTriggerContentJob = async (topic: string) => {
     try {
-      const res = await fetch('/api/content/trigger', {
+      const res = await fetch(apiUrl('/api/content/trigger'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ topic, speaker: 'creator' })
@@ -1591,7 +1593,7 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
     socialBioText?: string;
   }) => {
     try {
-      const res = await fetch('/api/content/audit', {
+      const res = await fetch(apiUrl('/api/content/audit'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...params, speaker: 'sdr_outbound' })
@@ -1605,7 +1607,7 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
 
   const handleApproveContentJob = async (id: string) => {
     try {
-      await fetch(`/api/content/jobs/${id}/approve`, { method: 'POST' });
+      await fetch(apiUrl(`/api/content/jobs/${id}/approve`), { method: 'POST' });
     } catch (e: any) {
       console.error(e.message);
     }

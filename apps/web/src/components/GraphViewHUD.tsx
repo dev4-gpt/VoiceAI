@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { apiUrl } from '../config/api';
 import {
   GitFork,
   Share2,
@@ -43,7 +44,7 @@ export const GraphViewHUD: React.FC<GraphViewHUDProps> = ({ theme = 'glass' }) =
   const [exportNotice, setExportNotice] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch('/api/graph/nodes')
+    fetch(apiUrl('/api/graph/nodes'))
       .then((res) => res.json())
       .then((data) => {
         if (data.nodes) {
@@ -53,7 +54,7 @@ export const GraphViewHUD: React.FC<GraphViewHUDProps> = ({ theme = 'glass' }) =
       })
       .catch((err) => console.log('[Graph Nodes]', err.message));
 
-    fetch('/api/graph/edges')
+    fetch(apiUrl('/api/graph/edges'))
       .then((res) => res.json())
       .then((data) => {
         if (data.edges) setEdges(data.edges);
@@ -62,7 +63,7 @@ export const GraphViewHUD: React.FC<GraphViewHUDProps> = ({ theme = 'glass' }) =
   }, []);
 
   const triggerExport = (type: 'obsidian' | 'cypher' | 'graphml') => {
-    fetch(`/api/graph/export/${type}`, { method: 'POST' })
+    fetch(apiUrl(`/api/graph/export/${type}`), { method: 'POST' })
       .then((res) => res.json())
       .then((data) => {
         setExportNotice(`Exported ${type.toUpperCase()} successfully to disk!`);

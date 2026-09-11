@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { apiUrl } from '../config/api';
 import {
   ShieldCheck,
   CheckCircle,
@@ -105,7 +106,7 @@ export const EvalsDashboard: React.FC<EvalsDashboardProps> = ({ theme = 'glass' 
   const handleRunEvals = async () => {
     setIsRunning(true);
     try {
-      const res = await fetch('/api/evals/run', { method: 'POST' });
+      const res = await fetch(apiUrl('/api/evals/run'), { method: 'POST' });
       if (res.ok) {
         const data = await res.json();
         setReport({
