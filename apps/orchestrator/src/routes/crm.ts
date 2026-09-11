@@ -37,27 +37,33 @@ crmRouter.post('/local-profile', (req: Request, res: Response) => {
   }
 });
 
-crmRouter.get('/leads', (_req: Request, res: Response) => {
+crmRouter.get('/leads', async (_req: Request, res: Response) => {
+  // A cold instance must finish loading stored leads, or it returns the demo seed.
+  await crmStore.ready;
   res.json({ leads: crmStore.getLeads() });
 });
 
 const VALID_LEAD_STATUSES = ['new', 'inbound_qualified', 'call_scheduled', 'negotiating', 'enrolled', 'disqualified'];
 
-crmRouter.patch('/leads/:id/status', (req: Request, res: Response) => {
+crmRouter.patch('/leads/:id/status', async (req: Request, res: Response) => {
   const { status } = req.body;
   if (!status || !VALID_LEAD_STATUSES.includes(status)) {
     return res.status(400).json({ error: `Invalid status. Must be one of: ${VALID_LEAD_STATUSES.join(', ')}` });
   }
 
+  await crmStore.ready;
   const updated = crmStore.updateLeadStatus(req.params.id, status);
   if (!updated) {
     return res.status(404).json({ error: 'Lead not found' });
   }
 
+  // Persist before responding; the Kanban shows the move as saved once this returns.
+  await crmStore.flush();
   return res.json({ status: 'success', lead: updated });
 });
 
-crmRouter.get('/members', (_req: Request, res: Response) => {
+crmRouter.get('/members', async (_req: Request, res: Response) => {
+  await crmStore.ready;
   res.json({ members: crmStore.getMembers() });
 });
 

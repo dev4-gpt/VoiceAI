@@ -4,7 +4,25 @@ import { cacheEngine } from '../services/cacheEngine';
 import { contentFactoryEngine } from '../services/contentFactoryEngine';
 
 export class ToolDispatcher {
+  /**
+   * Runs a voice-agent tool.
+   *
+   * Waits for the CRM to finish loading stored data first — on a cold serverless
+   * instance a lookup by email would otherwise miss an existing lead and create a
+   * duplicate. Then flushes every write before returning, because the caller
+   * responds to the agent as soon as this resolves and the host may freeze the
+   * function the moment it does. `finally` so writes land even if a tool throws.
+   */
   public async dispatch(name: string, args: Record<string, any>): Promise<Record<string, any>> {
+    await crmStore.ready;
+    try {
+      return await this.run(name, args);
+    } finally {
+      await crmStore.flush();
+    }
+  }
+
+  private async run(name: string, args: Record<string, any>): Promise<Record<string, any>> {
     switch (name) {
       case 'create_or_update_lead': {
         const lead = crmStore.createOrUpdateLead({

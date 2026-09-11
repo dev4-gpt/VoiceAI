@@ -26,7 +26,7 @@ complianceRouter.get('/policy', (req: Request, res: Response) => {
  * Public for the same reason: this is the visitor granting consent, and it must
  * be recorded before capture begins.
  */
-complianceRouter.post('/consent', (req: Request, res: Response) => {
+complianceRouter.post('/consent', async (req: Request, res: Response) => {
   try {
     const { sessionId, companyName, state, consentGranted } = req.body;
     if (!sessionId || !companyName) {
@@ -53,6 +53,9 @@ complianceRouter.post('/consent', (req: Request, res: Response) => {
       userAgent: req.header('user-agent') || ''
     });
 
+    // The client starts capture on this 200, so the evidence must already be
+    // stored. Returning first would let a serverless host drop the insert.
+    await complianceService.flush();
     res.json({ status: 'success', record, policy });
   } catch (err: any) {
     res.status(500).json({ error: err.message });

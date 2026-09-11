@@ -1,5 +1,11 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import { isDatabaseConfigured } from '../db/client';
+import {
+  upsertPlatformCredential,
+  deletePlatformCredential,
+  listAllPlatformCredentials
+} from '../db/repository';
 
 export interface PlatformCredentials {
   secrets: Record<string, string>;
@@ -34,13 +40,68 @@ export interface ClientCredentialsRecord {
   platforms: Record<string, PlatformCredentials>;
 }
 
+/**
+ * Per-client third-party credentials.
+ *
+ * Write-through cache over the encrypted `platform_credentials` table: reads stay
+ * in memory, every change is encrypted and persisted, and stored credentials are
+ * decrypted back in on boot. Writes are tracked so routes can await them before
+ * responding — an unawaited write can be dropped when a serverless host freezes.
+ */
 export class ClientCredentialsService {
   private memoryStore: Map<string, ClientCredentialsRecord> = new Map();
   private vaultBasePath: string;
+  private pendingWrites = new Set<Promise<void>>();
+
+  /** Resolves once stored credentials have been decrypted into memory. */
+  public readonly ready: Promise<void>;
 
   constructor() {
     this.vaultBasePath = path.resolve(process.cwd(), 'vault');
     this.seedInitialCredentials();
+    this.ready = this.hydrate();
+  }
+
+  /** Waits for every in-flight credential write to settle. */
+  public async flush(): Promise<void> {
+    await Promise.allSettled(Array.from(this.pendingWrites));
+  }
+
+  private track(write: Promise<void>, what: string): void {
+    const tracked = write.catch((err) => {
+      console.error(`[Credentials] Failed to persist ${what}:`, err?.message || err);
+    });
+    this.pendingWrites.add(tracked);
+    void tracked.finally(() => this.pendingWrites.delete(tracked));
+  }
+
+  /**
+   * Loads stored credentials over the in-memory seed. Stored entries win for the
+   * same client and platform: the database holds what the customer actually
+   * configured, the seed only exists so a fresh demo has something to show.
+   */
+  private async hydrate(): Promise<void> {
+    if (!isDatabaseConfigured()) return;
+    try {
+      const stored = await listAllPlatformCredentials();
+      for (const { tenantId, companyName, platform, entry } of stored) {
+        let record = this.getClientRecord(companyName);
+        if (!record) {
+          record = {
+            clientId: tenantId,
+            clientName: companyName,
+            companyName,
+            updatedAt: new Date().toISOString(),
+            platforms: {}
+          };
+          this.memoryStore.set(companyName.toLowerCase().trim(), record);
+          this.memoryStore.set(tenantId.toLowerCase(), record);
+        }
+        record.platforms[platform] = entry;
+      }
+    } catch (err: any) {
+      console.error('[Credentials] Hydration failed; serving in-memory credentials only:', err?.message || err);
+    }
   }
 
   private maskSecret(val: string): string {
@@ -272,23 +333,39 @@ export class ClientCredentialsService {
       environment: params.environment || existingPlatform?.environment || 'cloud_production',
       autoPublishEnabled: params.autoPublishEnabled !== undefined ? params.autoPublishEnabled : (existingPlatform?.autoPublishEnabled ?? true),
       status: isConnected ? 'connected' : 'unconfigured',
-      lastVerifiedAt: new Date().toISOString(),
-      latencyMs: isConnected ? Math.floor(25 + Math.random() * 30) : undefined
+      // Saving keys is not verifying them, so no verification time is recorded
+      // here. A random "latency" used to be invented at this point.
+      lastVerifiedAt: existingPlatform?.lastVerifiedAt,
+      latencyMs: undefined
     };
 
     record.updatedAt = new Date().toISOString();
     this.syncToVault(record);
+    this.track(
+      upsertPlatformCredential(record.companyName, platformKey, record.platforms[platformKey]),
+      `${platformKey} for ${record.companyName}`
+    );
 
     const masked = this.getMaskedCredentials(params.identifier);
     return masked.platforms.find((p) => p.platform === platformKey)!;
   }
 
+  /**
+   * Reports whether credentials are present and complete.
+   *
+   * It does NOT contact the platform. This previously slept for a random 45-85ms
+   * and returned "Verified connection to TWITTER ... in 62ms", a handshake that
+   * never happened, with the sleep dressed up as network latency. `verified:
+   * false` says plainly that nothing was tested; a real check needs a per-platform
+   * authenticated call (e.g. X `GET /2/users/me`), which is not implemented yet.
+   */
   public async verifyPlatform(identifier: string, platform: string): Promise<{
     success: boolean;
     status: 'connected' | 'error';
     latencyMs: number;
     message: string;
     accountHandle?: string;
+    verified: boolean;
   }> {
     const record = this.getClientRecord(identifier);
     const platformKey = platform.toLowerCase().trim();
@@ -299,27 +376,17 @@ export class ClientCredentialsService {
         success: false,
         status: 'error',
         latencyMs: 0,
+        verified: false,
         message: `No credentials configured for platform "${platform}". Please enter API keys first.`
       };
     }
 
-    const startTime = performance.now();
-    // Simulate cloud API handshake with live latency
-    await new Promise((r) => setTimeout(r, 45 + Math.random() * 40));
-    const latencyMs = Math.round(performance.now() - startTime);
-
-    cred.status = 'connected';
-    cred.lastVerifiedAt = new Date().toISOString();
-    cred.latencyMs = latencyMs;
-    cred.lastError = undefined;
-
-    this.syncToVault(record!);
-
     return {
       success: true,
       status: 'connected',
-      latencyMs,
-      message: `Verified connection to ${platform.toUpperCase()} for ${record!.companyName} (${cred.accountHandle || 'Active'}) in ${latencyMs}ms.`,
+      latencyMs: 0,
+      verified: false,
+      message: `Credentials for ${platform.toUpperCase()} (${cred.accountHandle || 'no handle set'}) are stored and encrypted, but were not tested against ${platform.toUpperCase()}'s API — live verification is not implemented yet. The first real publish will surface any bad key.`,
       accountHandle: cred.accountHandle
     };
   }
@@ -333,6 +400,7 @@ export class ClientCredentialsService {
       delete record.platforms[platformKey];
       record.updatedAt = new Date().toISOString();
       this.syncToVault(record);
+      this.track(deletePlatformCredential(record.companyName, platformKey), `delete ${platformKey}`);
       return true;
     }
     return false;
@@ -352,9 +420,26 @@ export class ClientCredentialsService {
         fs.mkdirSync(clientDir, { recursive: true });
       }
 
-      // 1. Write encrypted/sanitized credentials json
+      // 1. Write a MASKED credentials summary. This used to write the full record,
+      // plaintext tokens included, under a comment claiming it was encrypted — and
+      // the demo client's copy was committed to git. The real secrets now live
+      // only in memory and, encrypted, in Postgres; this file never holds one.
       const credFile = path.join(clientDir, 'Credentials.json');
-      fs.writeFileSync(credFile, JSON.stringify(record, null, 2), 'utf-8');
+      const masked = {
+        ...record,
+        platforms: Object.fromEntries(
+          Object.entries(record.platforms).map(([plat, info]) => [
+            plat,
+            {
+              ...info,
+              secrets: Object.fromEntries(
+                Object.entries(info.secrets || {}).map(([k, v]) => [k, this.maskSecret(v)])
+              )
+            }
+          ])
+        )
+      };
+      fs.writeFileSync(credFile, JSON.stringify(masked, null, 2), 'utf-8');
 
       // 2. Write Obsidian markdown summary
       const mdFile = path.join(clientDir, 'ConnectedPlatforms.md');

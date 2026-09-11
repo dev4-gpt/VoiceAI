@@ -50,6 +50,7 @@ tokenRouter.post('/token', async (req: Request, res: Response) => {
     const bv = brandVoiceService.getProfileByCompany(company);
 
     if (req.body && Array.isArray(req.body.history) && req.body.history.length > 0) {
+      await crmStore.ready;
       const lead = crmStore.getLeads().find(
         (l) => l.companyName === company || l.fullName.includes(company)
       );
@@ -57,7 +58,7 @@ tokenRouter.post('/token', async (req: Request, res: Response) => {
         lead.notes.push(
           `[Voice Stream Handoff ${new Date().toLocaleTimeString()}]: Transitioned from text chat to live voice stream with ${req.body.history.length} turns in context.`
         );
-        crmStore.syncLeadToVault(lead);
+        crmStore.commitLead(lead);
       }
     }
 
@@ -67,6 +68,7 @@ tokenRouter.post('/token', async (req: Request, res: Response) => {
     // not a cosmetic bug.
     const policy = complianceService.getPolicy((req.body && req.body.state) || null);
 
+    await crmStore.flush();
     return res.json({
       token: data.token,
       isDemo: false,
@@ -103,7 +105,9 @@ tokenRouter.post('/chat', async (req: Request, res: Response) => {
     : `inbound_${Date.now().toString(36)}@growth.ai`;
   const prospectEmail = emailMatch ? emailMatch[0] : (prospect?.email || fallbackEmail);
   const prospectPhone = phoneMatch ? phoneMatch[0] : prospect?.phone;
-  
+
+  // Dedup by email needs stored leads loaded, or a cold instance creates a duplicate.
+  await crmStore.ready;
   const updatedLead = crmStore.createOrUpdateLead({
     fullName: prospect?.name || (prospect?.company ? `${prospect.company} Founder` : 'Prospective Founder'),
     email: prospectEmail,
@@ -116,7 +120,7 @@ tokenRouter.post('/chat', async (req: Request, res: Response) => {
   });
 
   updatedLead.notes.push(`[Typed Interaction ${new Date().toLocaleTimeString()}]: "${text}"`);
-  crmStore.syncLeadToVault(updatedLead);
+  crmStore.commitLead(updatedLead);
 
   // 2. Generate Anna's contextual spoken reply using Live LLM (DeepSeek) & Brand Voice DNA
   const safeName = (updatedLead?.companyName || updatedLead?.fullName || prospect?.company || 'Founder')
@@ -222,8 +226,10 @@ Rules for Spoken Voice Dialogue:
   }
 
   updatedLead.notes.push(`[Agent Reply ${new Date().toLocaleTimeString()}]: "${reply}"`);
-  crmStore.syncLeadToVault(updatedLead);
+  crmStore.commitLead(updatedLead);
 
+  // The lead and both conversation notes must be stored before this returns.
+  await crmStore.flush();
   res.json({
     reply,
     lead: updatedLead,

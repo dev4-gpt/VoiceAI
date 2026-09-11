@@ -3,15 +3,111 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { graphDatabaseService } from './graphDatabaseService';
 import { brandVoiceService, ToneArchetype } from './brandVoiceService';
+import { isDatabaseConfigured } from '../db/client';
+import { upsertLead, listAllLeads, upsertMember, listAllMembers } from '../db/repository';
 
+/** Demo records created in memory at boot. Never allowed to overwrite stored data. */
+const SEED_LEAD_IDS = new Set(['lead_jm_901']);
+const SEED_MEMBER_IDS = new Set(['mem_101', 'mem_102']);
+
+/**
+ * Lead and churn-member store.
+ *
+ * Write-through cache over Postgres. Reads stay synchronous against memory, so
+ * the 19 existing call sites are untouched; every mutation is also written to the
+ * database, and the store rehydrates from it on boot.
+ *
+ * Writes are tracked, not fire-and-forget. On a serverless host the function can
+ * be frozen the instant a response is sent, so an unawaited write may never land.
+ * Anything that mutates the store must `await crmStore.flush()` before responding.
+ */
 class CRMStore {
   private leads: Map<string, CRMLead> = new Map();
   private members: Map<string, ChurnRiskMember> = new Map();
   private telemetryLogs: TurnTelemetry[] = [];
   private onLeadUpdateCallback?: (lead: CRMLead) => void;
+  private pendingWrites = new Set<Promise<void>>();
+
+  /** Resolves once stored data has been loaded. Await before the first read or write. */
+  public readonly ready: Promise<void>;
 
   constructor() {
     this.seedInitialData();
+    this.ready = this.hydrate();
+  }
+
+  /** Waits for every in-flight database write to settle. */
+  public async flush(): Promise<void> {
+    await Promise.allSettled(Array.from(this.pendingWrites));
+  }
+
+  private track(write: Promise<void>, what: string): void {
+    const tracked = write.catch((err) => {
+      console.error(`[CRM] Failed to persist ${what}:`, err?.message || err);
+    });
+    this.pendingWrites.add(tracked);
+    void tracked.finally(() => this.pendingWrites.delete(tracked));
+  }
+
+  private saveLead(lead: CRMLead): void {
+    this.leads.set(lead.id, lead);
+    this.track(upsertLead(lead), `lead ${lead.id}`);
+  }
+
+  /**
+   * Persists a lead that a caller mutated in place, and refreshes its vault
+   * export. Callers used to push notes onto a lead and then call syncLeadToVault
+   * as if that saved it — but that only writes the Obsidian export, so the change
+   * never reached the database. This is the explicit save.
+   */
+  public commitLead(lead: CRMLead, toneOverride?: ToneArchetype): void {
+    this.saveLead(lead);
+    this.syncLeadToVault(lead, toneOverride);
+  }
+
+  private saveMember(member: ChurnRiskMember): void {
+    this.members.set(member.memberId, member);
+    this.track(upsertMember(member), `member ${member.memberId}`);
+  }
+
+  /**
+   * Loads stored leads and members.
+   *
+   * Against an empty database the in-memory seed is persisted once, so a fresh
+   * deploy still has demo data. Otherwise the database is authoritative: seed
+   * records are discarded in favour of what is stored, and anything created in
+   * memory during hydration that is not yet stored is kept rather than lost.
+   */
+  private async hydrate(): Promise<void> {
+    if (!isDatabaseConfigured()) return;
+
+    try {
+      const [storedLeads, storedMembers] = await Promise.all([listAllLeads(), listAllMembers()]);
+
+      if (storedLeads.length === 0 && storedMembers.length === 0) {
+        for (const lead of this.leads.values()) this.track(upsertLead(lead), `seed lead ${lead.id}`);
+        for (const m of this.members.values()) this.track(upsertMember(m), `seed member ${m.memberId}`);
+        await this.flush();
+        return;
+      }
+
+      const mergedLeads = new Map(storedLeads.map((l) => [l.id, l] as [string, CRMLead]));
+      for (const [id, lead] of this.leads) {
+        if (!mergedLeads.has(id) && !SEED_LEAD_IDS.has(id)) mergedLeads.set(id, lead);
+      }
+
+      const mergedMembers = new Map(storedMembers.map((m) => [m.memberId, m] as [string, ChurnRiskMember]));
+      for (const [id, member] of this.members) {
+        if (!mergedMembers.has(id) && !SEED_MEMBER_IDS.has(id)) mergedMembers.set(id, member);
+      }
+
+      this.leads = mergedLeads;
+      this.members = mergedMembers;
+    } catch (err: any) {
+      // Serve from memory rather than failing to boot, but say so: this instance
+      // will not see stored data and anything it writes may conflict.
+      console.error('[CRM] Hydration from Postgres failed; serving in-memory data only:', err?.message || err);
+    }
   }
 
   public setUpdateListener(callback: (lead: CRMLead) => void) {
@@ -118,7 +214,7 @@ class CRMStore {
     lead.updatedAt = new Date().toISOString();
     lead.notes.push(`Pipeline stage moved from "${previousStatus}" to "${status}" (manual Kanban drag).`);
 
-    this.leads.set(lead.id, lead);
+    this.saveLead(lead);
     this.syncLeadToVault(lead);
     this.notifyLeadUpdate(lead);
     return lead;
@@ -161,7 +257,7 @@ class CRMStore {
       existing.source = data.source || existing.source;
       existing.updatedAt = now;
       existing.notes.push(`Updated via voice inbound on ${now}`);
-      this.leads.set(existing.id, existing);
+      this.saveLead(existing);
       this.syncLeadToVault(existing, data.toneArchetype);
       return existing;
     }
@@ -185,7 +281,7 @@ class CRMStore {
       updatedAt: now
     };
 
-    this.leads.set(newLead.id, newLead);
+    this.saveLead(newLead);
     this.syncLeadToVault(newLead, data.toneArchetype);
     return newLead;
   }
@@ -219,7 +315,7 @@ class CRMStore {
     lead.updatedAt = new Date().toISOString();
     lead.notes.push(`BANT Qualified: score ${lead.qualificationScore}/100. Budget: ${data.budgetRange}`);
 
-    this.leads.set(lead.id, lead);
+    this.saveLead(lead);
     this.syncLeadToVault(lead);
     return { lead, calculatedScore: lead.qualificationScore };
   }
@@ -238,7 +334,7 @@ class CRMStore {
     lead.updatedAt = new Date().toISOString();
     lead.notes.push(`Consultation booked: ${data.preferredDatetime}. Code: ${confirmationCode}`);
 
-    this.leads.set(lead.id, lead);
+    this.saveLead(lead);
     this.syncLeadToVault(lead);
     return { success: true, lead, confirmationCode };
   }
@@ -265,7 +361,7 @@ class CRMStore {
       member.status = data.approvedDiscountPct > 0 ? 'saved' : 'retention_offered';
     }
 
-    this.members.set(member.memberId, member);
+    this.saveMember(member);
     return member;
   }
 

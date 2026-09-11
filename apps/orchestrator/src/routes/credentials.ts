@@ -17,6 +17,13 @@ function isValidSecretsShape(secrets: unknown): secrets is Record<string, string
 
 credentialsRouter.use(requireApiKey);
 
+// A cold instance must decrypt stored credentials first, or it would show the
+// demo seed as this client's configuration and let a save overwrite real keys.
+credentialsRouter.use(async (_req, _res, next) => {
+  await clientCredentialsService.ready;
+  next();
+});
+
 // 1. Get masked credentials for a client
 credentialsRouter.get('/:clientId', (req: Request, res: Response) => {
   const { clientId } = req.params;
@@ -53,6 +60,8 @@ credentialsRouter.post('/:clientId', async (req: Request, res: Response) => {
       environment,
       autoPublishEnabled
     });
+    // Encrypted write must land before we tell the client it was saved.
+    await clientCredentialsService.flush();
     res.json({ status: 'success', platform: updated });
   } catch (err: any) {
     res.status(500).json({ error: 'Failed to save credentials', message: err.message });
@@ -77,11 +86,13 @@ credentialsRouter.post('/:clientId/verify', async (req: Request, res: Response) 
 });
 
 // 4. Disconnect / delete a platform credential
-credentialsRouter.delete('/:clientId/:platform', (req: Request, res: Response) => {
+credentialsRouter.delete('/:clientId/:platform', async (req: Request, res: Response) => {
   const { clientId, platform } = req.params;
   const deleted = clientCredentialsService.deletePlatform(clientId, platform);
   if (!deleted) {
     return res.status(404).json({ error: 'Platform or client not found' });
   }
+  // A disconnect that only happened in memory would revive the keys on restart.
+  await clientCredentialsService.flush();
   res.json({ status: 'success', message: `Disconnected ${platform.toUpperCase()}` });
 });

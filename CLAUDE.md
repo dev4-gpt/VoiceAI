@@ -6,8 +6,8 @@ Welcome, Claude! This file provides the essential context, commands, architectur
 
 ## 🌟 What This Project Is
 
-**GrowthVoice OS** is an autonomous, voice-first growth operating system built for founders, creators, agencies, and enterprise operators. Powered by **AssemblyAI's Voice Agent API (`universal-3-5-pro`)**, it:
-1. **Captures and qualifies inbound buyers 24/7** with under 400ms time-to-first-audio.
+**GrowthVoice OS** is an autonomous, voice-first growth operating system built for founders, creators, agencies, and enterprise operators. Powered by **AssemblyAI's Voice Agent API**, it:
+1. **Captures and qualifies inbound buyers 24/7** in the browser, with the agent creating and qualifying CRM leads through registered tool calls. (Time-to-first-audio is not yet measured — do not quote a latency figure.)
 2. **Acts as Anna, Senior Growth Operating Architect at GrowthOS** (an elite revenue systems consultancy advising clients—not an internal employee claiming credit).
 3. **Renders an interactive 3D WebGL Glassy Voice Reactor** running at 60 FPS on the GPU, defaulting to **The Cymatic Plane (Liquid & Organic)**.
 4. **Isolates direct user credentials per client in the cloud/vault layer** for Twitter/X, LinkedIn, Substack, YouTube, and Cloud Storage.
@@ -20,24 +20,30 @@ Welcome, Claude! This file provides the essential context, commands, architectur
 
 Some capabilities are real only when the relevant API key/flag is configured; without it, the code falls back to a clearly-labeled simulation. Don't assume "autonomous" or "live" language elsewhere in this doc means every call hits a real third-party API — check this table first:
 
-| Capability | Real when... | Falls back to... |
-| :--- | :--- | :--- |
-| Voice (AssemblyAI) | `ASSEMBLYAI_API_KEY` set | A `demo_token_...` mock session token |
-| Anna chat / content synthesis (DeepSeek) | `DEEPSEEK_API_KEY` set | A canned, hardcoded response (`deepseekService.generateFallback`) |
-| Twitter/X, LinkedIn publish | `ENABLE_REAL_PUBLISHING=true` **and** complete OAuth credentials stored for that client | A simulated receipt (`isSimulated: true`) with a fabricated post ID/URL — no real post is made |
-| YouTube publish | Not supported yet — the stored credential shape (a bare API key) can't authenticate a publish call; real publishing needs OAuth2 user consent + refresh tokens, which isn't implemented | Always a simulated, honestly-labeled `stub_unsupported` receipt |
-| Substack publish | `webhookUrl` configured | A real webhook `fetch()` is attempted; failure is reported as `status: 'failed'`, not silently swallowed |
-| `/api/evals/*` | N/A | Always returns static demo numbers (`mode: 'static_demo'`) — not a real evaluator |
-| Billing / checkout | **Never — no Stripe integration exists yet** | `simulateCheckout()` returns a fabricated `cs_`-prefixed session id and a `checkout.growthvoice.os` URL, then self-activates the plan. **No money moves and no payment provider is contacted.** |
-| `embed.js` widget | **Never — not yet wired to audio** | A scripted preview: no `getUserMedia`, no WebSocket, no AssemblyAI call. Plays two hardcoded lines on a timer. Labeled as a scripted demo in its own UI. |
-| Usage metering | **Never for real calls** | `recordCallUsage` is only reachable via `POST /api/billing/record-call`. Live AssemblyAI sessions do not meter. Dashboard usage figures come from `seedDefaultUsage()`. |
-| CRM / leads / billing state | **Never — no database** | All state is in-memory `Map`s seeded at boot. Nothing survives a restart; `clientCredentialsService` writes `Credentials.json` but never reads it back. |
-| RAG engine | **Never** | 4 hardcoded documents with substring keyword scoring. No embeddings, no vector store. |
-| Calendar booking | **Never** | Writes a confirmation code into the in-memory lead record. No Google Calendar or Cal.com integration. |
-| Latency / eval metrics | **Never** | Every TTFA, p50/p95, and eval score in the UI is a hardcoded constant. Nothing is measured at runtime yet. |
-| Voice agent tool calls | **Never — tools are not registered** | `VOICE_AGENT_TOOLS` is exposed over HTTP and logged at startup, but is **not** sent in `session.update`, so `tool.call` cannot fire. A live voice call creates no lead and books nothing. Fixed in Track B. |
+**Live deployment:** https://growthvoice-os.vercel.app (frontend + API as one Vercel project; Neon Postgres; Stripe in **test mode**).
 
-Every publish receipt includes `isSimulated: boolean` so you can check at runtime whether a given post was real or simulated — don't infer it from response shape alone.
+| Capability | Real when... | Otherwise... |
+| :--- | :--- | :--- |
+| Voice (AssemblyAI) | `ASSEMBLYAI_API_KEY` set | `POST /api/voice/token` returns **503 `VOICE_UNCONFIGURED`** and the UI refuses to start a call. It never fakes a session. |
+| Voice agent tool calls | Always, when voice is live | Tools are registered in `session.update` and executed over HTTP (`/api/crm/tools/execute`); results return as `tool.result`. Verified against the live API: 7/7 tools register. |
+| `embed.js` widget | `ASSEMBLYAI_API_KEY` set | Real mic → token → AssemblyAI WebSocket → audio playback. Widget origins are scoped by `WIDGET_ALLOWED_ORIGINS`; token minting is rate-limited per IP. |
+| US AI disclosure & consent | Always | Disclosure prepended to the greeting; explicit opt-in in the 13 all-party-consent states; strictest policy when location is unknown. Consent records are append-only and persisted before the call starts. **Engineering implementation, not legal advice.** |
+| Anna chat / content synthesis (DeepSeek) | `DEEPSEEK_API_KEY` set | An honest placeholder flagged `isFallback: true` — no invented metrics, testimonials, or claimed model reasoning. Callers must check the flag before publishing. |
+| Persistence (leads, members, subscriptions, consent, credentials) | `DATABASE_URL` set | In-memory only, and the app logs that it will forget on restart. With a database: write-through cache over Postgres, hydrated on boot, writes awaited before each response. |
+| Third-party credentials at rest | `DATABASE_URL` **and** `MASTER_KEY` set | Encrypted AES-256-GCM with per-row data keys. Without `MASTER_KEY` the app **refuses to persist** rather than store plaintext. `vault/.../Credentials.json` holds **masked** values only. |
+| Credential "verify" button | **Never tests the key** | Returns `verified: false` and says so. Real per-platform checks (e.g. X `GET /2/users/me`) are not implemented; the first real publish surfaces a bad key. |
+| Billing / checkout | `STRIPE_SECRET_KEY` set | Real Stripe Checkout Session (subscription mode). **503 `BILLING_UNCONFIGURED`** otherwise. A plan activates **only** via the signature-verified webhook `POST /api/billing/webhook`; `past_due`/`canceled`/`unpaid` grant zero minutes. Currently test keys — no real money. |
+| Twitter/X, LinkedIn publish | `ENABLE_REAL_PUBLISHING=true` **and** complete OAuth credentials | A simulated receipt (`isSimulated: true`). `isSimulated` is true unless a real call **succeeded** — a failed real attempt is also `true`. |
+| YouTube publish | Not supported — needs OAuth2 consent + refresh tokens | Always an honestly-labeled `stub_unsupported` receipt |
+| Substack publish | `webhookUrl` configured | Real webhook `fetch()`; failure reported as `status: 'failed'` |
+| Usage metering | **Not wired to live calls** | Live AssemblyAI sessions do not yet write `usage_records`. Dashboard usage figures come from `seedDefaultUsage()`. |
+| Multi-tenant auth | **Not built** | No login or sessions. A caller-supplied company name maps to an `organizations` row via `resolveTenantId`. One shared `ORCHESTRATOR_API_KEY` gates dashboard routes. |
+| RAG engine | **Never** | 4 hardcoded documents with substring keyword scoring. No embeddings. |
+| Calendar booking | **Never** | Writes a confirmation code into the lead record. No calendar integration. |
+| Latency / eval metrics | **Never** | Every TTFA, p50/p95 and eval score in the UI is a hardcoded constant (`/api/evals/*` is flagged `mode: 'static_demo'`). |
+| Live dashboard updates | Local / Docker only | The `/ws/telemetry` socket cannot open on Vercel. The dashboard loads over HTTP instead, so this costs freshness, not content. |
+
+Every publish receipt includes `isSimulated: boolean` — check it at runtime; don't infer it from response shape.
 
 ---
 
@@ -134,6 +140,8 @@ curl -X POST http://localhost:4000/api/content/auto-pipeline \
    * Anna represents **GrowthOS**, advising the client as a high-conviction revenue operating system and management consultancy.
    * Avoid hollow cheerleading ("I love that mindset!"). Emphasize unit economics, CAC, funnel leakage, and deterministic agent loops.
 2. **Client Credential Isolation**:
-   * Never mix keys across different clients. Each client's secrets live strictly in `vault/Clients/<Client_Name>/Credentials.json` and are masked in the UI.
+   * Never mix keys across different clients. Each client's secrets are stored **encrypted** in Postgres (`platform_credentials`, one row per tenant and platform) and are masked in the UI.
+   * `vault/Clients/<Client_Name>/Credentials.json` is a **masked** Obsidian summary, never a source of secrets. Do not write real tokens there, and never commit it (it is gitignored).
+   * Never log, print, or paste a decrypted secret. Losing or changing `MASTER_KEY` makes every stored credential unreadable.
 3. **Docker Rebuild**:
    * Because the app runs in Docker, after modifying code in `apps/web/` or `apps/orchestrator/`, rebuild the containers with `docker compose build && docker compose up -d`.

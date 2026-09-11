@@ -102,6 +102,7 @@ const OPT_IN_REQUEST = 'Please confirm you agree to continue on a recorded and t
 export class ComplianceService {
   private vaultBasePath: string;
   private consentLog: ConsentRecord[] = [];
+  private pendingWrites = new Set<Promise<void>>();
 
   constructor() {
     this.vaultBasePath = path.resolve(process.cwd(), 'vault');
@@ -193,13 +194,24 @@ export class ComplianceService {
     // Persist to Postgres. This record is the evidence produced if a regulator
     // or plaintiff asks whether the visitor was told and agreed; in-memory and a
     // local markdown file are not an audit trail for a deployed service.
-    // Deliberately not awaited: consent has already been given and recorded in
-    // memory, and a slow database must not delay the call starting.
-    void this.persistConsent(record).catch((err) =>
-      console.error('[Compliance] Failed to persist consent record', record.id, err.message)
+    //
+    // Tracked, and the route awaits flush() before responding. An earlier version
+    // fired this and forgot it to avoid delaying call start — but on a serverless
+    // host the function can be frozen the moment the response is sent, so an
+    // unawaited insert may simply never happen. A few milliseconds of latency is
+    // the right price for evidence that actually exists.
+    const write = this.persistConsent(record).catch((err) =>
+      console.error('[Compliance] Failed to persist consent record', record.id, err?.message || err)
     );
+    this.pendingWrites.add(write);
+    void write.finally(() => this.pendingWrites.delete(write));
 
     return record;
+  }
+
+  /** Waits for every in-flight consent write to settle. */
+  public async flush(): Promise<void> {
+    await Promise.allSettled(Array.from(this.pendingWrites));
   }
 
   private async persistConsent(record: ConsentRecord): Promise<void> {

@@ -181,6 +181,9 @@ export class SocialPublishingService {
     source?: 'anna_voice_consultation' | 'content_factory_studio' | 'autonomous_loop';
   }): Promise<PublishBatchResult> {
     const { companyName, platforms, content, source = 'content_factory_studio' } = params;
+    // On a cold instance the customer's decrypted keys may not be loaded yet;
+    // publishing without waiting would silently use the demo seed instead.
+    await clientCredentialsService.ready;
     const clientRecord = clientCredentialsService.getOrCreateClientRecord(companyName);
     const receipts: PlatformPublishReceipt[] = [];
     const jobId = `pub_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;

@@ -86,6 +86,9 @@ export const churnMembers = pgTable(
     riskLevel: text('risk_level').notNull().default('low'),
     status: text('status').notNull().default('active'),
     notes: jsonb('notes').$type<string[]>().notNull().default([]),
+    // Full record, so fields without a dedicated column (churn reason, applied
+    // discount, bonus offer) round-trip losslessly. Columns above are for querying.
+    payload: jsonb('payload').$type<Record<string, unknown>>(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
   },
