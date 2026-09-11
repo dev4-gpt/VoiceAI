@@ -9,11 +9,16 @@ tokenRouter.post('/token', async (req: Request, res: Response) => {
   const apiKey = process.env.ASSEMBLYAI_API_KEY;
 
   if (!apiKey) {
-    // In local demo mode without an active key, return a mock token for local testing
-    return res.json({
-      token: 'demo_token_' + Math.random().toString(36).substring(2),
+    // Fail loudly. This used to return 200 with a fake `demo_token_...`, and the
+    // client would then point its "voice" WebSocket at our own /ws/telemetry
+    // endpoint while the UI printed "Voice session authenticated". The visitor
+    // spoke, nothing listened, and nobody could tell. A voice product that
+    // cannot do voice must say so.
+    return res.status(503).json({
+      error: 'Voice is not configured on this server.',
+      code: 'VOICE_UNCONFIGURED',
       isDemo: true,
-      message: 'Demo mode active. Provide ASSEMBLYAI_API_KEY for live AssemblyAI WebSocket connection.'
+      message: 'Set ASSEMBLYAI_API_KEY to enable live voice sessions.'
     });
   }
 

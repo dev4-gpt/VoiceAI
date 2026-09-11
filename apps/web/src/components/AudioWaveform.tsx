@@ -107,7 +107,7 @@ export const AudioWaveform: React.FC<AudioWaveformProps> = ({
       </div>
 
       <div className="absolute top-3 right-4 text-xs font-mono text-slate-500">
-        24,000 Hz PCM16 • universal-3-5-pro
+        24,000 Hz PCM16 • AssemblyAI Voice Agent
       </div>
 
       <canvas ref={canvasRef} width={700} height={120} className="w-full h-full object-contain" />

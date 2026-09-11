@@ -100,7 +100,7 @@ export const LiveTranscriptHUD: React.FC<LiveTranscriptHUDProps> = ({
 
 ## 🛠️ Key References & Architecture Stack
 * **Operating Layer:** Veloce AgenticOS (local-first layer for Claude Code, Codex, Antigravity, Ollama).
-* **Voice Inbound Engine:** GrowthVoice OS with AssemblyAI Voice Agent API (24kHz PCM16, universal-3-5-pro).
+* **Voice Inbound Engine:** GrowthVoice OS with AssemblyAI Voice Agent API (24kHz PCM16).
 * **Persistent Memory:** Local Obsidian Knowledge Vault with automated dossier synchronization.
 * **Reasoning Engine:** DeepSeek LLM with multi-turn context retention.
 

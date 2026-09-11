@@ -74,7 +74,7 @@ export const NeuralAudioOrb: React.FC<NeuralAudioOrbProps> = ({
   isUserSpeaking,
   agentName = 'Anna (GrowthOS Senior Advisor)',
   samplingRate = '24,000 Hz PCM16',
-  modelName = 'universal-3-5-pro + Claude 3.5',
+  modelName = 'AssemblyAI Voice Agent',
   theme = 'glass',
   visualMode = 'cymatic',
   onSelectVisualMode

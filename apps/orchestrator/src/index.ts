@@ -92,14 +92,15 @@ app.get('/api/health', (_req, res) => {
   res.json({
     status: 'healthy',
     service: 'voice-orchestrator',
-    assemblyAiModel: 'universal-3-5-pro',
+    voiceProvider: 'assemblyai-voice-agent',
     registeredTools: VOICE_AGENT_TOOLS.map((t) => t.name)
   });
 });
 
 app.get('/api/voice/config', (_req, res) => {
   res.json({
-    speech_model: 'universal-3-5-pro',
+    // The Voice Agent API exposes no model-selection field, so we do not claim
+    // one. Naming a specific model here was cosmetic: it was never sent.
     voice: 'anna',
     tools: VOICE_AGENT_TOOLS,
     system_prompt:
@@ -254,7 +255,7 @@ server.listen(port, () => {
   console.log(`=======================================================`);
   console.log(`🎙️  AI Growth Operator Voice OS — Orchestrator Running`);
   console.log(`🚀 Port: http://localhost:${port}`);
-  console.log(`⚡ AssemblyAI Model: universal-3-5-pro (Voice Agent API)`);
+  console.log(`⚡ Voice: AssemblyAI Voice Agent API`);
   console.log(`🛠️  Tools Registered: ${VOICE_AGENT_TOOLS.length}`);
   console.log(`=======================================================`);
 });

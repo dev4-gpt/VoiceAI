@@ -161,7 +161,7 @@ export const SubscriptionPlansModal: React.FC<SubscriptionPlansModalProps> = ({
                 </li>
                 <li className="flex items-start gap-2">
                   <Check className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
-                  <span><strong>500 Voice Minutes / mo</strong> (universal-3-5-pro)</span>
+                  <span><strong>500 Voice Minutes / mo</strong></span>
                 </li>
                 <li className="flex items-start gap-2">
                   <Check className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />

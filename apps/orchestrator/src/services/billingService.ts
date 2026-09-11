@@ -17,7 +17,7 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
     overageRatePerMinUsd: 0.18,
     maxAutonomousAgents: 1,
     features: [
-      '1 Autonomous Inbound SDR Voice Agent (universal-3-5-pro)',
+      '1 Autonomous Inbound SDR Voice Agent',
       '500 High-Fidelity Voice Minutes / mo',
       'Real-Time BANT Qualification & CRM Kanban Sync',
       'Automated Strategy Consultation Calendar Booking',

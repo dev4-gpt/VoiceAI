@@ -222,7 +222,7 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
 * **pass^5**: 92%
 * **TTFA (Time-To-First-Audio)**: 410ms
 * **p95 Latency**: 1,450ms
-* **Model Engine**: AssemblyAI universal-3-5-pro (24,000 Hz PCM16)
+* **Model Engine**: AssemblyAI Voice Agent API (24,000 Hz PCM16)
 `;
 
     const jsonContent = JSON.stringify(
@@ -819,8 +819,15 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
       });
       const tokenData = await tokenRes.json();
 
-      if (!tokenData.token) {
-        throw new Error(tokenData.error || 'Failed to acquire token');
+      if (!tokenRes.ok || !tokenData.token || tokenData.isDemo) {
+        // Refuse to open a session we cannot actually run. Previously a missing
+        // key produced a fake token and the call was pointed at our own
+        // telemetry socket, so the UI looked live while nothing was listening.
+        throw new Error(
+          tokenData.code === 'VOICE_UNCONFIGURED'
+            ? 'Live voice is not configured on this server (ASSEMBLYAI_API_KEY is unset). Text chat still works.'
+            : tokenData.error || 'Failed to acquire a voice session token'
+        );
       }
 
       setMessages((prev) => [
@@ -828,7 +835,7 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
         {
           id: `sys_voice_connected_${Date.now()}`,
           speaker: 'system',
-          text: `Voice session authenticated. Connecting to AssemblyAI WebSocket (universal-3-5-pro)...`,
+          text: `Voice session authenticated. Connecting to the AssemblyAI Voice Agent...`,
           timestamp: new Date().toLocaleTimeString()
         }
       ]);
@@ -847,11 +854,10 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
       });
       audioPipelineRef.current = pipeline;
 
-      const wsEndpoint = tokenData.isDemo
-        ? `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/ws/telemetry`
-        : `wss://agents.assemblyai.com/v1/ws?token=${tokenData.token}`;
-
-      const ws = new WebSocket(wsEndpoint);
+      // Only ever the real endpoint. The demo branch that pointed this at our own
+      // /ws/telemetry is gone: audio streamed into an endpoint that discarded it
+      // while the UI reported a live AssemblyAI session.
+      const ws = new WebSocket(`wss://agents.assemblyai.com/v1/ws?token=${tokenData.token}`);
       wsRef.current = ws;
 
       ws.onopen = async () => {
@@ -904,9 +910,7 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
           }
         };
 
-        if (!tokenData.isDemo) {
-          ws.send(JSON.stringify(sessionUpdate));
-        }
+        ws.send(JSON.stringify(sessionUpdate));
 
         // Start local mic capture
         await pipeline.startRecording();
@@ -921,11 +925,9 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
           }
         ]);
         setIsAgentSpeaking(true);
-        if (tokenData.isDemo) {
-          speakTurnIfEnabled(dynamicGreeting, () => setIsAgentSpeaking(false));
-        } else {
-          setTimeout(() => setIsAgentSpeaking(false), 2400);
-        }
+        // The agent speaks its own greeting over the session; browser speech
+        // synthesis is not used during a live call.
+        setTimeout(() => setIsAgentSpeaking(false), 2400);
       };
 
       // Utility to clean any Devanagari acoustic artifacts from STT and convert to clean English
@@ -1999,7 +2001,7 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
                   isUserSpeaking={isUserSpeaking}
                   agentName="Anna (GrowthOS Senior Advisor)"
                   samplingRate="24,000 Hz PCM16"
-                  modelName="universal-3-5-pro + Claude 3.5"
+                  modelName="AssemblyAI Voice Agent"
                   theme={theme}
                   visualMode={audioVisualizerType as VisualizerMode}
                   onSelectVisualMode={(mode) => setAudioVisualizerType(mode)}
