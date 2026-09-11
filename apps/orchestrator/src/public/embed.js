@@ -21,7 +21,10 @@
       return 'http://localhost:4000';
     })(),
     accent: (currentScript && currentScript.getAttribute('data-accent')) || '#d4af37',
-    position: (currentScript && currentScript.getAttribute('data-position')) || 'bottom-right'
+    position: (currentScript && currentScript.getAttribute('data-position')) || 'bottom-right',
+    // Optional US state code (e.g. "CA"). When absent the server applies the
+    // strictest policy, which is the correct default for an unknown visitor.
+    state: (currentScript && currentScript.getAttribute('data-state')) || null
   };
 
   // Inject Styles
@@ -199,6 +202,10 @@
   // error written straight into the transcript card — leaving a denied mic
   // looking like nothing happened.
   var lastError = null;
+  // Distinct from isCallActive: the modal enters "call" state as soon as the
+  // button is pressed, but the microphone only opens after policy and consent
+  // are settled. The UI must not claim to be listening before it is.
+  var micIsLive = false;
 
   function render() {
     container.innerHTML = '';
@@ -247,7 +254,11 @@
           </div>
 
           <div style="font-size: 14px; font-weight: 500; color: #f1f5f9; padding: 0 12px;">
-            ${isCallActive ? 'Live call — your microphone is on and being transcribed.' : 'Talk to Anna about pricing, roadmap, or book a consultation.'}
+            ${!isCallActive
+              ? 'Talk to Anna about pricing, roadmap, or book a consultation.'
+              : micIsLive
+              ? 'Live call — your microphone is on and being transcribed.'
+              : 'Your microphone is not on yet.'}
           </div>
 
           <div class="gvos-transcript-card" id="gvos-transcript">
@@ -387,6 +398,7 @@
   }
 
   function stopSpokenSession() {
+    micIsLive = false;
     abortPlayback();
     if (session.processor) { try { session.processor.disconnect(); } catch (e) {} session.processor = null; }
     if (session.source) { try { session.source.disconnect(); } catch (e) {} session.source = null; }
@@ -405,8 +417,82 @@
     session.scheduledTime = 0;
   }
 
+  var sessionId = 'gvos_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+  var consentGiven = false;
+
+  /**
+   * Consent gate. In all-party-consent states a live transcript can count as
+   * interception, so the microphone must not open until the visitor agrees.
+   * The server decides the policy; the widget only renders and records it.
+   */
+  function requestConsent(policy, onGranted) {
+    var el = document.getElementById('gvos-transcript');
+    if (!el) return;
+    el.innerHTML = '';
+
+    var notice = document.createElement('div');
+    notice.style.marginBottom = '10px';
+    notice.style.lineHeight = '1.45';
+    notice.textContent = policy.disclosureText;
+    el.appendChild(notice);
+
+    var agree = document.createElement('button');
+    agree.className = 'gvos-btn gvos-btn-primary';
+    agree.style.width = '100%';
+    agree.textContent = 'I agree — start the call';
+    agree.onclick = function() {
+      agree.disabled = true;
+      agree.textContent = 'Recording consent...';
+      fetch(config.apiUrl + '/api/compliance/consent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId: sessionId,
+          companyName: config.company,
+          state: config.state || null,
+          consentGranted: true
+        })
+      })
+        .then(function(r) { return r.json(); })
+        .then(function() {
+          consentGiven = true;
+          onGranted();
+        })
+        .catch(function(e) {
+          console.error('[GrowthVoice] consent error', e);
+          lastError = 'Could not record consent. Please try again.';
+          isCallActive = false;
+          render();
+        });
+    };
+    el.appendChild(agree);
+  }
+
   function startSpokenSession() {
     lastError = null;
+    setStatusLine('Checking requirements...');
+
+    // Policy first: the disclosure and, where required, consent must precede any
+    // microphone access — not follow it.
+    fetch(config.apiUrl + '/api/compliance/policy' + (config.state ? '?state=' + encodeURIComponent(config.state) : ''))
+      .then(function(r) { return r.json(); })
+      .then(function(body) {
+        var policy = body.policy;
+        if (policy && policy.consentRequirement === 'explicit_opt_in' && !consentGiven) {
+          requestConsent(policy, beginTokenExchange);
+          return;
+        }
+        beginTokenExchange();
+      })
+      .catch(function(e) {
+        console.error('[GrowthVoice] policy error', e);
+        lastError = 'Could not verify call requirements. Please try again.';
+        isCallActive = false;
+        render();
+      });
+  }
+
+  function beginTokenExchange() {
     setStatusLine('Connecting...');
 
     fetch(config.apiUrl + '/api/voice/token', {
@@ -430,7 +516,7 @@
           render();
           return;
         }
-        return openSocket(r.body.token);
+        return openSocket(r.body.token, (r.body.compliance && r.body.compliance.disclosureText) || '');
       })
       .catch(function(e) {
         console.error('[GrowthVoice] token error', e);
@@ -440,7 +526,7 @@
       });
   }
 
-  function openSocket(token) {
+  function openSocket(token, disclosureText) {
     return navigator.mediaDevices
       .getUserMedia({
         audio: { channelCount: 1, sampleRate: 24000, echoCancellation: true, noiseSuppression: true, autoGainControl: true }
@@ -454,6 +540,10 @@
         session.ws = ws;
 
         ws.onopen = function() {
+          // Disclosure is spoken first, before any substantive exchange.
+          var baseGreeting = 'Hi, this is Anna. What brought you to ' + config.company + ' today?';
+          var greeting = disclosureText ? disclosureText + ' ' + baseGreeting : baseGreeting;
+
           ws.send(
             JSON.stringify({
               type: 'session.update',
@@ -461,15 +551,16 @@
                 system_prompt:
                   'You are Anna, a senior growth advisor speaking with a visitor on the ' +
                   config.company +
-                  ' website. Be concise and consultative. Ask one question at a time.',
-                greeting: 'Hi, this is Anna. What brought you to ' + config.company + ' today?',
+                  ' website. Be concise and consultative. Ask one question at a time. ' +
+                  'If asked whether you are a human or an AI, say plainly that you are an AI.',
+                greeting: greeting,
                 input: { format: { encoding: 'audio/pcm' }, language_code: 'en' },
                 output: { voice: 'anna', format: { encoding: 'audio/pcm' } }
               }
             })
           );
 
-          session.source = session.ctx.createMediaStreamSource(session.stream);
+            session.source = session.ctx.createMediaStreamSource(session.stream);
           session.processor = session.ctx.createScriptProcessor(2048, 1, 1);
           session.processor.onaudioprocess = function(e) {
             if (!isCallActive || !session.ws || session.ws.readyState !== WebSocket.OPEN) return;
@@ -492,6 +583,8 @@
           session.processor.connect(mute);
           mute.connect(session.ctx.destination);
 
+          micIsLive = true;
+          render();
           setStatusLine('Listening...');
         };
 

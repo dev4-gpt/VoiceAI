@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { crmStore } from '../services/crmStore';
 import { brandVoiceService } from '../services/brandVoiceService';
 import { deepseekService } from '../services/deepseekService';
+import { complianceService } from '../services/complianceService';
 
 export const tokenRouter = Router();
 
@@ -60,7 +61,18 @@ tokenRouter.post('/token', async (req: Request, res: Response) => {
       }
     }
 
-    return res.json({ token: data.token, isDemo: false, brandVoice: bv });
+    // The disclosure policy ships with the token so the client cannot open a
+    // session without it. Deciding this server-side keeps it authoritative:
+    // a client that forgets to prepend the disclosure is a statutory violation,
+    // not a cosmetic bug.
+    const policy = complianceService.getPolicy((req.body && req.body.state) || null);
+
+    return res.json({
+      token: data.token,
+      isDemo: false,
+      brandVoice: bv,
+      compliance: policy
+    });
   } catch (err: any) {
     console.error('[Token Route Exception]', err);
     return res.status(500).json({ error: 'Internal server error during token generation', message: err.message });

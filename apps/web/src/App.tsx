@@ -887,11 +887,19 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
           console.warn('[Voice] No tools registered — the agent cannot take actions this session.');
         }
 
+        // The AI disclosure must be spoken before any substantive exchange
+        // (CA AB 2905; TX SB 140 gives 30 seconds). Prepending it to the greeting
+        // is what guarantees it is the first thing the visitor hears.
+        const disclosure = tokenData.compliance?.disclosureText || '';
+        const compliantGreeting = disclosure
+          ? `${disclosure} ${dynamicGreeting}`.trim()
+          : dynamicGreeting;
+
         const sessionUpdate = {
           type: 'session.update',
           session: {
             system_prompt: dynamicPrompt,
-            greeting: dynamicGreeting,
+            greeting: compliantGreeting,
             tools: registeredTools,
             output: {
               voice: 'anna',

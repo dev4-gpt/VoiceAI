@@ -14,6 +14,7 @@ import { graphRouter } from './routes/graph';
 import { credentialsRouter } from './routes/credentials';
 import { billingRouter } from './routes/billing';
 import { instaticRouter } from './routes/instatic';
+import { complianceRouter } from './routes/compliance';
 import { VOICE_AGENT_TOOLS } from './tools/registry';
 import { toolDispatcher } from './tools/dispatcher';
 import { crmStore } from './services/crmStore';
@@ -37,7 +38,7 @@ const allowedOrigins = (process.env.CORS_ALLOWED_ORIGINS || process.env.CLIENT_U
 // The embeddable widget runs on customer sites, so it cannot share the dashboard's
 // origin allowlist. Only the widget's own endpoint gets the wider policy; every
 // other route stays locked to CORS_ALLOWED_ORIGINS.
-const WIDGET_ROUTES = ['/api/voice/token'];
+const WIDGET_ROUTES = ['/api/voice/token', '/api/compliance/policy', '/api/compliance/consent'];
 const widgetOrigins = (process.env.WIDGET_ALLOWED_ORIGINS || '')
   .split(',')
   .map((origin) => origin.trim())
@@ -107,6 +108,7 @@ app.use('/api/graph', graphRouter);
 app.use('/api/credentials', credentialsRouter);
 app.use('/api/billing', billingRouter);
 app.use('/api/instatic', instaticRouter);
+app.use('/api/compliance', complianceRouter);
 
 // Root landing info
 app.get('/', (_req, res) => {

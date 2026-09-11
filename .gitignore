@@ -41,6 +41,10 @@ vault/Clients/*
 # otherwise sweep the demo client's file (and anything later written into it)
 # into the repo. This rule sits below the un-ignore so it wins.
 vault/**/Credentials.json
+
+# Consent evidence contains visitor user-agents and session ids. It is real
+# audit data about real people and does not belong in the repo.
+vault/Compliance/
 vault/Dossiers/*
 !vault/Dossiers/DesignAcademy_Studio.md
 !vault/Dossiers/.gitkeep
