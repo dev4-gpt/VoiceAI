@@ -622,6 +622,30 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
       .catch((err) => console.log('[API Jobs]', err.message));
 
     // Connect to orchestrator telemetry WS
+    // Bootstrap over HTTP first. The telemetry socket delivers initial_state,
+    // but it cannot open on a serverless host, and without this the dashboard
+    // would sit empty there. The socket is now purely a live-update channel on
+    // top of this, so losing it costs freshness rather than content.
+    void (async () => {
+      const load = async (path: string, apply: (data: any) => void) => {
+        try {
+          const res = await fetch(apiUrl(path));
+          if (res.ok) apply(await res.json());
+        } catch {
+          /* leave existing state; the socket may still deliver it */
+        }
+      };
+
+      await Promise.all([
+        load('/api/crm/leads', (d) => d.leads && setLeads(d.leads)),
+        load('/api/crm/members', (d) => d.members && setMembers(d.members)),
+        load('/api/content/jobs', (d) => d.jobs && setJobs(d.jobs)),
+        load('/api/voice/config', (d) => {
+          if (d.tools) voiceToolsRef.current = d.tools;
+        })
+      ]);
+    })();
+
     // Same-origin in dev (Vite proxies /ws); the orchestrator's own origin once
     // VITE_ORCHESTRATOR_URL is set, since a deployed frontend has no proxy.
     const telemetryUrl = wsUrl('/ws/telemetry');
@@ -691,6 +715,13 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
       } catch (e) {
         console.error(e);
       }
+    };
+
+    // Expected on serverless hosts, which cannot hold a socket open. Everything
+    // the dashboard needs has already been loaded over HTTP above, so this is a
+    // downgrade in liveness, not a failure worth alarming about.
+    tws.onerror = () => {
+      console.info('[Telemetry] Live updates unavailable; dashboard loaded over HTTP instead.');
     };
 
     return () => {
