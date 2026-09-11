@@ -195,6 +195,10 @@
   var isModalOpen = false;
   var isCallActive = false;
   var callStartTime = null;
+  // Survives render(), which rebuilds the modal and would otherwise erase an
+  // error written straight into the transcript card — leaving a denied mic
+  // looking like nothing happened.
+  var lastError = null;
 
   function render() {
     container.innerHTML = '';
@@ -243,28 +247,30 @@
           </div>
 
           <div style="font-size: 14px; font-weight: 500; color: #f1f5f9; padding: 0 12px;">
-            ${isCallActive ? 'Scripted preview — no microphone is active and nothing is being transcribed.' : 'Preview of the Anna voice agent. Scripted demo, not a live call.'}
+            ${isCallActive ? 'Live call — your microphone is on and being transcribed.' : 'Talk to Anna about pricing, roadmap, or book a consultation.'}
           </div>
 
           <div class="gvos-transcript-card" id="gvos-transcript">
-            <span style="opacity: 0.6;">Anna: "Hello! Welcome to ${config.company}. I'm Anna, Senior Growth Operating Architect. How can I help maximize your revenue today?"</span>
+            ${lastError
+              ? `<span style="color: #fca5a5;">${lastError}</span>`
+              : `<span style="opacity: 0.6;">Anna: "Hello! Welcome to ${config.company}. I'm Anna, Senior Growth Operating Architect. How can I help maximize your revenue today?"</span>`}
           </div>
 
           <div>
             ${!isCallActive ? `
               <button class="gvos-btn gvos-btn-primary" id="gvos-start-call">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
-                Play Scripted Demo
+                Start Spoken Call
               </button>
             ` : `
               <button class="gvos-btn gvos-btn-danger" id="gvos-end-call">
-                Stop Demo
+                End Consultation
               </button>
             `}
           </div>
 
           <div style="font-size: 10px; color: rgba(255,255,255,0.4);">
-            GrowthVoice OS • scripted preview (live voice not yet wired into this widget)
+            Powered by GrowthVoice OS • AssemblyAI Voice Agent
           </div>
         </div>
       `;
@@ -280,7 +286,7 @@
           isCallActive = true;
           callStartTime = Date.now();
           render();
-          startSimulatedSpokenSession();
+          startSpokenSession();
         };
       }
 
@@ -289,14 +295,14 @@
         endBtn.onclick = function() {
           isCallActive = false;
           callStartTime = null;
+          stopSpokenSession();
           render();
 
-          // No usage is reported here. This handler previously POSTed a hardcoded
-          // { leadCaptured: true, estimatedDealValueUsd: 3500 } to
-          // /api/billing/record-call on every close, so simply opening and closing
-          // this widget inflated the tenant's pipeline and ROI figures with
-          // revenue that never existed. Metering returns once this widget runs a
-          // real voice session the server can measure.
+          // Usage is deliberately not reported from the browser. This handler
+          // previously POSTed a hardcoded { leadCaptured: true,
+          // estimatedDealValueUsd: 3500 } on every close, so opening and closing
+          // the widget invented pipeline revenue. Metering belongs server-side,
+          // measured from the session itself, and lands with the usage tables.
         };
       }
 
@@ -304,29 +310,228 @@
     }
   }
 
-  function startSimulatedSpokenSession() {
-    var transcriptEl = document.getElementById('gvos-transcript');
-    if (!transcriptEl) return;
+  // ==========================================================================
+  // Real voice session: mic -> AssemblyAI Voice Agent -> speaker.
+  // 24 kHz mono PCM16 both directions, matching the dashboard pipeline.
+  // ==========================================================================
 
-    var scriptSteps = [
-      { speaker: 'User', text: 'Hey Anna, what is your pricing tier for a mid-market SaaS with 10k users?' },
-      { speaker: 'Anna', text: 'Under our GrowthOS framework, our flagship Growth Engine Pro tier is $397 monthly, which covers 2,500 minutes, 3 autonomous agents, and CRM sync. What is your current monthly inbound volume?' }
-    ];
+  var session = {
+    ws: null,
+    ctx: null,
+    stream: null,
+    source: null,
+    processor: null,
+    scheduledTime: 0,
+    playbackSources: []
+  };
 
-    var idx = 0;
-    var timer = setInterval(function() {
-      if (!isCallActive || idx >= scriptSteps.length) {
-        clearInterval(timer);
-        return;
-      }
-      var step = scriptSteps[idx];
-      var p = document.createElement('div');
-      p.style.marginTop = '6px';
-      p.innerHTML = '<strong>' + step.speaker + ':</strong> ' + step.text;
-      transcriptEl.appendChild(p);
-      transcriptEl.scrollTop = transcriptEl.scrollHeight;
-      idx++;
-    }, 2800);
+  function transcriptLine(speaker, text) {
+    var el = document.getElementById('gvos-transcript');
+    if (!el || !text) return;
+    var row = document.createElement('div');
+    row.style.marginTop = '6px';
+    var who = document.createElement('strong');
+    who.textContent = speaker + ': ';
+    row.appendChild(who);
+    // textContent, not innerHTML: transcripts are untrusted text on a third-party page.
+    row.appendChild(document.createTextNode(text));
+    el.appendChild(row);
+    el.scrollTop = el.scrollHeight;
+  }
+
+  function setStatusLine(text) {
+    var el = document.getElementById('gvos-transcript');
+    if (!el) return;
+    el.innerHTML = '';
+    var row = document.createElement('div');
+    row.style.opacity = '0.7';
+    row.textContent = text;
+    el.appendChild(row);
+  }
+
+  function playPcmChunk(base64Pcm) {
+    if (!session.ctx) return;
+    try {
+      var binary = window.atob(base64Pcm);
+      var bytes = new Uint8Array(binary.length);
+      for (var i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+      var int16 = new Int16Array(bytes.buffer);
+      var float32 = new Float32Array(int16.length);
+      for (var j = 0; j < int16.length; j++) float32[j] = int16[j] / 32768.0;
+
+      var buffer = session.ctx.createBuffer(1, float32.length, 24000);
+      buffer.copyToChannel(float32, 0);
+      var src = session.ctx.createBufferSource();
+      src.buffer = buffer;
+      src.connect(session.ctx.destination);
+      src.onended = function() {
+        session.playbackSources = session.playbackSources.filter(function(s) { return s !== src; });
+      };
+      session.playbackSources.push(src);
+
+      var now = session.ctx.currentTime;
+      if (session.scheduledTime < now) session.scheduledTime = now;
+      src.start(session.scheduledTime);
+      session.scheduledTime += buffer.duration;
+    } catch (e) {
+      console.error('[GrowthVoice] playback error', e);
+    }
+  }
+
+  function abortPlayback() {
+    if (session.ctx) session.scheduledTime = session.ctx.currentTime;
+    session.playbackSources.forEach(function(s) {
+      try { s.stop(); s.disconnect(); } catch (e) {}
+    });
+    session.playbackSources = [];
+  }
+
+  function stopSpokenSession() {
+    abortPlayback();
+    if (session.processor) { try { session.processor.disconnect(); } catch (e) {} session.processor = null; }
+    if (session.source) { try { session.source.disconnect(); } catch (e) {} session.source = null; }
+    if (session.stream) {
+      session.stream.getTracks().forEach(function(t) { t.stop(); });
+      session.stream = null;
+    }
+    if (session.ws) {
+      try {
+        if (session.ws.readyState === WebSocket.OPEN) session.ws.send(JSON.stringify({ type: 'Terminate' }));
+        session.ws.close();
+      } catch (e) {}
+      session.ws = null;
+    }
+    if (session.ctx) { try { session.ctx.close(); } catch (e) {} session.ctx = null; }
+    session.scheduledTime = 0;
+  }
+
+  function startSpokenSession() {
+    lastError = null;
+    setStatusLine('Connecting...');
+
+    fetch(config.apiUrl + '/api/voice/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ company: config.company })
+    })
+      .then(function(res) {
+        return res.json().then(function(body) { return { ok: res.ok, body: body }; });
+      })
+      .then(function(r) {
+        if (!r.ok || !r.body.token) {
+          if (r.body && r.body.code === 'VOICE_UNCONFIGURED') {
+            lastError = 'Voice is not configured on this site yet.';
+          } else if (r.body && r.body.code === 'RATE_LIMITED') {
+            lastError = 'Too many calls from this network right now. Please try again shortly.';
+          } else {
+            lastError = 'Could not start the call. Please try again.';
+          }
+          isCallActive = false;
+          render();
+          return;
+        }
+        return openSocket(r.body.token);
+      })
+      .catch(function(e) {
+        console.error('[GrowthVoice] token error', e);
+        lastError = 'Could not reach the voice service.';
+        isCallActive = false;
+        render();
+      });
+  }
+
+  function openSocket(token) {
+    return navigator.mediaDevices
+      .getUserMedia({
+        audio: { channelCount: 1, sampleRate: 24000, echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+      })
+      .then(function(stream) {
+        session.stream = stream;
+        session.ctx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 24000 });
+        if (session.ctx.state === 'suspended') session.ctx.resume();
+
+        var ws = new WebSocket('wss://agents.assemblyai.com/v1/ws?token=' + token);
+        session.ws = ws;
+
+        ws.onopen = function() {
+          ws.send(
+            JSON.stringify({
+              type: 'session.update',
+              session: {
+                system_prompt:
+                  'You are Anna, a senior growth advisor speaking with a visitor on the ' +
+                  config.company +
+                  ' website. Be concise and consultative. Ask one question at a time.',
+                greeting: 'Hi, this is Anna. What brought you to ' + config.company + ' today?',
+                input: { format: { encoding: 'audio/pcm' }, language_code: 'en' },
+                output: { voice: 'anna', format: { encoding: 'audio/pcm' } }
+              }
+            })
+          );
+
+          session.source = session.ctx.createMediaStreamSource(session.stream);
+          session.processor = session.ctx.createScriptProcessor(2048, 1, 1);
+          session.processor.onaudioprocess = function(e) {
+            if (!isCallActive || !session.ws || session.ws.readyState !== WebSocket.OPEN) return;
+            var input = e.inputBuffer.getChannelData(0);
+            var pcm16 = new Int16Array(input.length);
+            for (var i = 0; i < input.length; i++) {
+              var s = Math.max(-1, Math.min(1, input[i]));
+              pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
+            }
+            var bytes = new Uint8Array(pcm16.buffer);
+            var binary = '';
+            for (var k = 0; k < bytes.byteLength; k++) binary += String.fromCharCode(bytes[k]);
+            session.ws.send(JSON.stringify({ type: 'input.audio', audio: window.btoa(binary) }));
+          };
+          session.source.connect(session.processor);
+          // Zero-gain sink: ScriptProcessor needs a destination connection to run,
+          // but routing the mic to the speakers would cause feedback.
+          var mute = session.ctx.createGain();
+          mute.gain.value = 0;
+          session.processor.connect(mute);
+          mute.connect(session.ctx.destination);
+
+          setStatusLine('Listening...');
+        };
+
+        ws.onmessage = function(evt) {
+          var msg;
+          try { msg = JSON.parse(evt.data); } catch (e) { return; }
+
+          if (msg.type === 'transcript.user' && msg.text) {
+            transcriptLine('You', msg.text);
+          } else if (msg.type === 'transcript.agent' && msg.text) {
+            transcriptLine('Anna', msg.text);
+          } else if (msg.type === 'reply.audio' && msg.audio) {
+            playPcmChunk(msg.audio);
+          } else if (msg.type === 'reply.done' && msg.status === 'interrupted') {
+            abortPlayback();
+          }
+        };
+
+        ws.onerror = function() {
+          setStatusLine('Connection error.');
+        };
+
+        ws.onclose = function() {
+          if (isCallActive) {
+            isCallActive = false;
+            stopSpokenSession();
+            render();
+          }
+        };
+      })
+      .catch(function(e) {
+        console.error('[GrowthVoice] mic error', e);
+        lastError =
+          e && e.name === 'NotAllowedError'
+            ? 'Microphone permission was denied. Allow mic access to talk to Anna.'
+            : 'Could not access the microphone.';
+        isCallActive = false;
+        stopSpokenSession();
+        render();
+      });
   }
 
   // Initial render

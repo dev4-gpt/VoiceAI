@@ -34,8 +34,57 @@ const allowedOrigins = (process.env.CORS_ALLOWED_ORIGINS || process.env.CLIENT_U
   .map((origin) => origin.trim())
   .filter(Boolean);
 
-app.use(cors({ origin: allowedOrigins }));
+// The embeddable widget runs on customer sites, so it cannot share the dashboard's
+// origin allowlist. Only the widget's own endpoint gets the wider policy; every
+// other route stays locked to CORS_ALLOWED_ORIGINS.
+const WIDGET_ROUTES = ['/api/voice/token'];
+const widgetOrigins = (process.env.WIDGET_ALLOWED_ORIGINS || '')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+app.use(
+  cors((req, callback) => {
+    const isWidgetRoute = WIDGET_ROUTES.some((route) => req.path.startsWith(route));
+    if (!isWidgetRoute) {
+      return callback(null, { origin: allowedOrigins });
+    }
+    // Unset means "any site may embed", which is the demo posture and is warned
+    // about at boot. Set WIDGET_ALLOWED_ORIGINS in production to pin customers.
+    if (widgetOrigins.length === 0) {
+      return callback(null, { origin: true });
+    }
+    return callback(null, { origin: widgetOrigins });
+  })
+);
 app.use(express.json({ limit: '1mb' }));
+
+// Minting a token costs real AssemblyAI minutes, and the widget endpoint is
+// reachable by anyone who embeds the script. Cap it per client so a hostile or
+// looping page cannot drain the account. In-memory is enough for a single
+// instance; this moves to the datastore when the app scales horizontally.
+const TOKEN_RATE_LIMIT = Number(process.env.VOICE_TOKEN_RATE_LIMIT || 20);
+const TOKEN_RATE_WINDOW_MS = 60_000;
+const tokenHits = new Map<string, { count: number; resetAt: number }>();
+
+app.use('/api/voice/token', (req, res, next) => {
+  const key = req.ip || 'unknown';
+  const now = Date.now();
+  const entry = tokenHits.get(key);
+
+  if (!entry || now > entry.resetAt) {
+    tokenHits.set(key, { count: 1, resetAt: now + TOKEN_RATE_WINDOW_MS });
+    return next();
+  }
+  if (entry.count >= TOKEN_RATE_LIMIT) {
+    return res.status(429).json({
+      error: 'Too many voice sessions from this address. Try again shortly.',
+      code: 'RATE_LIMITED'
+    });
+  }
+  entry.count += 1;
+  next();
+});
 
 // Static assets & embeddable widget
 const publicDir = fs.existsSync(path.join(__dirname, 'public'))
@@ -256,6 +305,12 @@ server.listen(port, () => {
   console.log(`🎙️  AI Growth Operator Voice OS — Orchestrator Running`);
   console.log(`🚀 Port: http://localhost:${port}`);
   console.log(`⚡ Voice: AssemblyAI Voice Agent API`);
+  if (!process.env.ASSEMBLYAI_API_KEY) {
+    console.warn('⚠️  ASSEMBLYAI_API_KEY is unset — /api/voice/token will return 503 and voice calls are disabled.');
+  }
+  if (widgetOrigins.length === 0) {
+    console.warn('⚠️  WIDGET_ALLOWED_ORIGINS is unset — any site may embed the widget and mint voice tokens.');
+  }
   console.log(`🛠️  Tools Registered: ${VOICE_AGENT_TOOLS.length}`);
   console.log(`=======================================================`);
 });
