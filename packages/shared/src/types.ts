@@ -396,6 +396,14 @@ export interface ClientUsageTelemetry {
   pipelineGeneratedUsd: number;
   cacSavedUsd: number;
   estimatedRoiMultiplier: number;
+  /**
+   * Stripe's own subscription status (active, trialing, past_due, canceled...).
+   * Mirrored rather than reinterpreted, because Stripe is the authority on
+   * whether the customer is actually paying. Absent until a webhook arrives.
+   */
+  subscriptionStatus?: string;
+  stripeCustomerId?: string;
+  stripeSubscriptionId?: string;
 }
 
 export interface ROIParameters {

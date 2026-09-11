@@ -19,6 +19,8 @@ import { toolDispatcher } from './tools/dispatcher';
 import { crmStore } from './services/crmStore';
 import { contentFactoryEngine } from './services/contentFactoryEngine';
 import { graphDatabaseService } from './services/graphDatabaseService';
+import { stripeService } from './services/stripeService';
+import { billingService } from './services/billingService';
 
 /**
  * Load .env from the app directory first, then walk up to the monorepo root.
@@ -75,6 +77,49 @@ app.use(
     return callback(null, { origin: widgetOrigins });
   })
 );
+/**
+ * Stripe webhook. Mounted BEFORE express.json() because signature verification
+ * needs the exact bytes Stripe signed — the JSON parser re-serialises the body
+ * and the signature then never matches.
+ *
+ * This endpoint is the only authority on whether a payment happened. It is
+ * unauthenticated by design (Stripe cannot send our bearer key) and is instead
+ * authenticated by the signature, so an unverified request must be rejected.
+ */
+app.post('/api/billing/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  const signature = req.header('stripe-signature');
+  if (!signature) {
+    return res.status(400).json({ error: 'Missing stripe-signature header' });
+  }
+
+  let event;
+  try {
+    event = stripeService.constructEvent(req.body as Buffer, signature);
+  } catch (err: any) {
+    console.error('[Stripe Webhook] Signature verification failed:', err.message);
+    return res.status(400).json({ error: `Webhook signature verification failed: ${err.message}` });
+  }
+
+  try {
+    const state = stripeService.extractSubscriptionState(event);
+    const tenantId = state?.tenantId;
+    if (state && tenantId) {
+      await billingService.applySubscriptionState({ ...state, tenantId });
+      console.log(`[Stripe Webhook] ${event.type} applied for tenant ${tenantId}`);
+    } else if (state) {
+      // Metadata is set when the session is created, so a missing tenantId means
+      // the subscription was made outside this app. Log it rather than guessing.
+      console.warn(`[Stripe Webhook] ${event.type} had no tenantId in metadata; skipped.`);
+    }
+    // Always acknowledge a verified event, even one we do not act on. Returning
+    // an error makes Stripe retry an event we are simply not interested in.
+    res.json({ received: true });
+  } catch (err: any) {
+    console.error('[Stripe Webhook] Handler error:', err.message);
+    res.status(500).json({ error: 'Webhook handler failed' });
+  }
+});
+
 app.use(express.json({ limit: '1mb' }));
 
 // Minting a token costs real AssemblyAI minutes, and the widget endpoint is

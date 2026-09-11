@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { billingService } from '../services/billingService';
 import { requireApiKey } from '../middleware/auth';
+import { stripeService } from '../services/stripeService';
 import type { SubscriptionTierId, ROIParameters } from '@voice-os/shared';
 
 export const billingRouter = Router();
@@ -64,9 +65,9 @@ billingRouter.post('/calculate-roi', (req: Request, res: Response) => {
 });
 
 // POST /api/billing/subscribe
-billingRouter.post('/subscribe', requireApiKey, (req: Request, res: Response) => {
+billingRouter.post('/subscribe', requireApiKey, async (req: Request, res: Response) => {
   try {
-    const { clientId, planId, billingCycle } = req.body;
+    const { clientId, planId, billingCycle, email } = req.body;
     if (!clientId || !planId) {
       return res.status(400).json({ error: 'Missing required fields: clientId, planId' });
     }
@@ -77,14 +78,56 @@ billingRouter.post('/subscribe', requireApiKey, (req: Request, res: Response) =>
     }
 
     const cycle = billingCycle === 'annual' ? 'annual' : 'monthly';
-    const checkout = billingService.simulateCheckout(clientId, planId, cycle);
+    const plan = billingService.getPlans().find((p) => p.id === planId);
+    if (!plan) {
+      return res.status(400).json({ error: `Unknown planId '${planId}'` });
+    }
+
+    // No payment provider means no checkout. Saying so beats the previous
+    // behaviour of returning a Stripe-shaped session that charged nobody while
+    // activating the plan anyway.
+    if (!stripeService.isConfigured()) {
+      return res.status(503).json({
+        error: 'Billing is not configured on this server.',
+        code: 'BILLING_UNCONFIGURED',
+        message: 'Set STRIPE_SECRET_KEY to enable checkout.'
+      });
+    }
+
+    const origin = req.header('origin') || process.env.CLIENT_URL || 'http://localhost:3000';
+    const checkout = await stripeService.createCheckoutSession({
+      tenantId: clientId,
+      plan: {
+        id: plan.id,
+        name: plan.name,
+        // The catalog is authored in dollars; Stripe bills in cents.
+        priceMonthlyCents: Math.round(plan.priceMonthlyUsd * 100),
+        priceAnnualMonthlyCents: Math.round(plan.priceAnnualMonthlyUsd * 100),
+        minutesLimit: plan.voiceMinutesMonthly
+      },
+      billingCycle: cycle,
+      successUrl: `${origin}/?checkout=success&plan=${planId}`,
+      cancelUrl: `${origin}/?checkout=cancelled`,
+      customerEmail: typeof email === 'string' ? email : undefined
+    });
+
+    if (!checkout.checkoutUrl) {
+      return res.status(502).json({
+        error: checkout.reason || 'Could not create a checkout session.',
+        code: 'CHECKOUT_FAILED'
+      });
+    }
 
     res.json({
       status: 'success',
-      message: `Successfully updated subscription to plan ${planId} (${cycle})`,
-      checkout
+      // The plan is NOT active yet. It activates when Stripe confirms payment on
+      // the webhook, which is the only source of truth for whether money moved.
+      message: `Checkout session created for ${planId} (${cycle}). Subscription activates on payment confirmation.`,
+      checkout: { checkoutUrl: checkout.checkoutUrl, sessionId: checkout.sessionId },
+      testMode: stripeService.isTestMode()
     });
   } catch (err: any) {
+    console.error('[Checkout Error]', err.message);
     res.status(500).json({ error: err.message });
   }
 });

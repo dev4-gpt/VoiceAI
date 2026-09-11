@@ -241,24 +241,44 @@ export class BillingService {
     };
   }
 
-  public simulateCheckout(
-    clientId: string,
-    planId: SubscriptionTierId,
-    billingCycle: 'monthly' | 'annual'
-  ): { checkoutUrl: string; sessionId: string; status: string } {
-    const sessionId = `cs_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-    const plan = SUBSCRIPTION_PLANS.find((p) => p.id === planId) || SUBSCRIPTION_PLANS[1];
-    const amountUsd = billingCycle === 'annual' ? plan.priceAnnualMonthlyUsd * 12 : plan.priceMonthlyUsd;
+  /**
+   * Applies subscription state from a signature-verified Stripe webhook.
+   *
+   * This is the only path that may activate a paid plan. The previous
+   * `simulateCheckout` activated it locally and returned a fabricated Stripe-
+   * shaped session, so a plan could go "active" with no payment anywhere.
+   * Activation now requires Stripe to confirm the money moved.
+   */
+  public async applySubscriptionState(state: {
+    tenantId: string;
+    planId: string | null;
+    billingCycle: string | null;
+    status: string;
+    stripeCustomerId: string | null;
+    stripeSubscriptionId: string | null;
+    currentPeriodStart: Date | null;
+    currentPeriodEnd: Date | null;
+  }): Promise<void> {
+    const planId = (state.planId as SubscriptionTierId) || 'starter';
+    const plan = SUBSCRIPTION_PLANS.find((p) => p.id === planId);
+    if (!plan) {
+      console.warn(`[Billing] Webhook referenced unknown plan '${state.planId}'; ignoring.`);
+      return;
+    }
 
-    // In a live production environment, this delegates to Stripe Checkout Session API.
-    // For the hackathon sandbox, it returns a deterministic session token and self-activates.
-    this.updateSubscription(clientId, planId, billingCycle);
+    const cycle = state.billingCycle === 'annual' ? 'annual' : 'monthly';
+    // Only a paying status grants the plan's minutes. A past_due or canceled
+    // subscription must not keep its allowance.
+    const isEntitled = state.status === 'active' || state.status === 'trialing';
 
-    return {
-      checkoutUrl: `https://checkout.growthvoice.os/pay/${sessionId}?plan=${planId}&cycle=${billingCycle}&amount=${amountUsd}`,
-      sessionId,
-      status: 'active'
-    };
+    this.updateSubscription(state.tenantId, planId, cycle);
+
+    const usage = this.getClientUsage(state.tenantId);
+    usage.planId = planId;
+    usage.subscriptionStatus = state.status;
+    usage.minutesLimit = isEntitled ? plan.voiceMinutesMonthly : 0;
+    usage.stripeCustomerId = state.stripeCustomerId || usage.stripeCustomerId;
+    usage.stripeSubscriptionId = state.stripeSubscriptionId || usage.stripeSubscriptionId;
   }
 }
 

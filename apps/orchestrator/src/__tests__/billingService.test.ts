@@ -63,15 +63,57 @@ describe('BillingService — SaaS Subscription & ROI Engine', () => {
     expect(roi.estimatedRoiMultiple).toBeGreaterThan(50);
   });
 
-  it('simulates instantaneous checkout activation with valid URL', () => {
-    const res = service.simulateCheckout('test_client_checkout', 'enterprise', 'annual');
-    expect(res.status).toBe('active');
-    expect(res.checkoutUrl).toContain('checkout.growthvoice.os');
-    expect(res.sessionId).toMatch(/^cs_/);
+  describe('subscription activation', () => {
+    // The previous test here asserted that simulateCheckout returned a
+    // `cs_`-prefixed id and a checkout.growthvoice.os URL with status 'active' —
+    // it locked in a fabricated payment. Activation now requires a
+    // signature-verified Stripe webhook, which is the only thing that knows
+    // whether money actually moved.
 
-    const client = service.getClientUsage('test_client_checkout');
-    expect(client.planId).toBe('enterprise');
-    expect(client.billingCycle).toBe('annual');
-    expect(client.minutesLimit).toBe(10000);
+    const webhookState = (overrides: Record<string, unknown> = {}) => ({
+      tenantId: 'test_client_checkout',
+      planId: 'enterprise',
+      billingCycle: 'annual',
+      status: 'active',
+      stripeCustomerId: 'cus_test123',
+      stripeSubscriptionId: 'sub_test123',
+      currentPeriodStart: null,
+      currentPeriodEnd: null,
+      ...overrides
+    });
+
+    it('activates the plan when Stripe confirms payment', async () => {
+      await service.applySubscriptionState(webhookState() as any);
+
+      const client = service.getClientUsage('test_client_checkout');
+      expect(client.planId).toBe('enterprise');
+      expect(client.billingCycle).toBe('annual');
+      expect(client.minutesLimit).toBe(10000);
+      expect(client.subscriptionStatus).toBe('active');
+      expect(client.stripeSubscriptionId).toBe('sub_test123');
+    });
+
+    it('grants no minutes when the subscription is not in a paying state', async () => {
+      // past_due and canceled customers must lose their allowance, or a failed
+      // payment would still buy a month of voice minutes.
+      for (const status of ['past_due', 'canceled', 'incomplete', 'unpaid']) {
+        await service.applySubscriptionState(webhookState({ tenantId: `t_${status}`, status }) as any);
+        expect(service.getClientUsage(`t_${status}`).minutesLimit).toBe(0);
+      }
+    });
+
+    it('grants minutes while trialing', async () => {
+      await service.applySubscriptionState(webhookState({ tenantId: 't_trial', status: 'trialing' }) as any);
+      expect(service.getClientUsage('t_trial').minutesLimit).toBe(10000);
+    });
+
+    it('ignores a webhook naming an unknown plan rather than defaulting one', async () => {
+      await service.applySubscriptionState(
+        webhookState({ tenantId: 't_unknown', planId: 'free-forever' }) as any
+      );
+      // Must not silently provision a paid tier for a plan that does not exist.
+      expect(service.getClientUsage('t_unknown').planId).not.toBe('free-forever');
+      expect(service.getClientUsage('t_unknown').subscriptionStatus).toBeUndefined();
+    });
   });
 });
