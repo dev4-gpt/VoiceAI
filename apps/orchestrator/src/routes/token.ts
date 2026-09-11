@@ -182,7 +182,10 @@ Rules for Spoken Voice Dialogue:
       ]
     });
 
-    if (completion && completion.content) {
+    // Only accept genuine model output. The fallback also returns truthy content,
+    // so without this check Anna would speak the service's placeholder string to
+    // prospects and the contextual fallback below could never run.
+    if (completion && completion.content && !completion.isFallback) {
       reply = completion.content
         .replace(/^["']|["']$/g, '')
         .replace(/\n+/g, ' ')
@@ -192,7 +195,7 @@ Rules for Spoken Voice Dialogue:
     console.warn('[DeepSeek Chat Completion Error, using fallback]', llmErr);
   }
 
-  // High-fidelity fallback if LLM is unavailable
+  // Contextual fallback when no live model reply is available.
   if (!reply) {
     if (emailMatch || phoneMatch) {
       reply = `I have logged your contact details (${prospectEmail || ''}) and synchronized your GrowthOS dossier into your vault. What is your target deployment timeline and capital allocation for this phase?`;

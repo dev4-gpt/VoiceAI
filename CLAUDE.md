@@ -28,6 +28,14 @@ Some capabilities are real only when the relevant API key/flag is configured; wi
 | YouTube publish | Not supported yet — the stored credential shape (a bare API key) can't authenticate a publish call; real publishing needs OAuth2 user consent + refresh tokens, which isn't implemented | Always a simulated, honestly-labeled `stub_unsupported` receipt |
 | Substack publish | `webhookUrl` configured | A real webhook `fetch()` is attempted; failure is reported as `status: 'failed'`, not silently swallowed |
 | `/api/evals/*` | N/A | Always returns static demo numbers (`mode: 'static_demo'`) — not a real evaluator |
+| Billing / checkout | **Never — no Stripe integration exists yet** | `simulateCheckout()` returns a fabricated `cs_`-prefixed session id and a `checkout.growthvoice.os` URL, then self-activates the plan. **No money moves and no payment provider is contacted.** |
+| `embed.js` widget | **Never — not yet wired to audio** | A scripted preview: no `getUserMedia`, no WebSocket, no AssemblyAI call. Plays two hardcoded lines on a timer. Labeled as a scripted demo in its own UI. |
+| Usage metering | **Never for real calls** | `recordCallUsage` is only reachable via `POST /api/billing/record-call`. Live AssemblyAI sessions do not meter. Dashboard usage figures come from `seedDefaultUsage()`. |
+| CRM / leads / billing state | **Never — no database** | All state is in-memory `Map`s seeded at boot. Nothing survives a restart; `clientCredentialsService` writes `Credentials.json` but never reads it back. |
+| RAG engine | **Never** | 4 hardcoded documents with substring keyword scoring. No embeddings, no vector store. |
+| Calendar booking | **Never** | Writes a confirmation code into the in-memory lead record. No Google Calendar or Cal.com integration. |
+| Latency / eval metrics | **Never** | Every TTFA, p50/p95, and eval score in the UI is a hardcoded constant. Nothing is measured at runtime yet. |
+| Voice agent tool calls | **Never — tools are not registered** | `VOICE_AGENT_TOOLS` is exposed over HTTP and logged at startup, but is **not** sent in `session.update`, so `tool.call` cannot fire. A live voice call creates no lead and books nothing. Fixed in Track B. |
 
 Every publish receipt includes `isSimulated: boolean` so you can check at runtime whether a given post was real or simulated — don't infer it from response shape alone.
 

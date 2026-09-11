@@ -1,10 +1,52 @@
 import { Router, Request, Response } from 'express';
 import { instaticService } from '../services/instaticService';
+import { requireApiKey } from '../middleware/auth';
 
 export const instaticRouter = Router();
 
+/** Props a caller is permitted to set on a node. Anything else is refused. */
+const ALLOWED_NODE_PROPS = new Set(['text', 'href', 'src', 'alt', 'level', 'align', 'variant']);
+
+/** Keys that would walk the prototype chain when spread into an existing object. */
+const FORBIDDEN_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
+const MAX_PROP_LENGTH = 5000;
+
+/**
+ * Validates a patch-node payload, returning sanitized props or an error string.
+ * Values stay scalar — nested objects are refused rather than merged, since the
+ * compiler only ever renders scalars.
+ */
+function validateNodeProps(input: unknown): { props: Record<string, unknown> } | { error: string } {
+  if (typeof input !== 'object' || input === null || Array.isArray(input)) {
+    return { error: 'newProps must be a JSON object' };
+  }
+
+  const props: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(input as Record<string, unknown>)) {
+    if (FORBIDDEN_KEYS.has(key)) {
+      return { error: `Illegal property name: ${key}` };
+    }
+    if (!ALLOWED_NODE_PROPS.has(key)) {
+      return { error: `Unsupported property '${key}'. Allowed: ${[...ALLOWED_NODE_PROPS].join(', ')}` };
+    }
+    if (value !== null && typeof value === 'object') {
+      return { error: `Property '${key}' must be a string, number, or boolean` };
+    }
+    if (typeof value === 'string' && value.length > MAX_PROP_LENGTH) {
+      return { error: `Property '${key}' exceeds ${MAX_PROP_LENGTH} characters` };
+    }
+    props[key] = value;
+  }
+
+  if (Object.keys(props).length === 0) {
+    return { error: 'newProps must contain at least one supported property' };
+  }
+  return { props };
+}
+
 // GET /api/instatic/pages
-instaticRouter.get('/pages', (req: Request, res: Response) => {
+instaticRouter.get('/pages', requireApiKey, (req: Request, res: Response) => {
   try {
     const company = (req.query.company as string) || undefined;
     const pages = instaticService.getPages(company);
@@ -19,7 +61,7 @@ instaticRouter.get('/pages', (req: Request, res: Response) => {
 });
 
 // GET /api/instatic/pages/:pageId
-instaticRouter.get('/pages/:pageId', (req: Request, res: Response) => {
+instaticRouter.get('/pages/:pageId', requireApiKey, (req: Request, res: Response) => {
   try {
     const page = instaticService.getPage(req.params.pageId);
     if (!page) {
@@ -32,7 +74,7 @@ instaticRouter.get('/pages/:pageId', (req: Request, res: Response) => {
 });
 
 // POST /api/instatic/generate
-instaticRouter.post('/generate', (req: Request, res: Response) => {
+instaticRouter.post('/generate', requireApiKey, (req: Request, res: Response) => {
   try {
     const { companyName, title, topic, thesis, hook, coreProblem, tacticalFramework } = req.body;
     const pageTitle = title || topic;
@@ -57,14 +99,19 @@ instaticRouter.post('/generate', (req: Request, res: Response) => {
 });
 
 // POST /api/instatic/patch-node
-instaticRouter.post('/patch-node', (req: Request, res: Response) => {
+instaticRouter.post('/patch-node', requireApiKey, (req: Request, res: Response) => {
   try {
     const { pageId, nodeId, newProps } = req.body;
     if (!pageId || !nodeId || !newProps) {
       return res.status(400).json({ error: 'Missing pageId, nodeId, or newProps' });
     }
 
-    const updated = instaticService.patchNode(pageId, nodeId, newProps);
+    const validated = validateNodeProps(newProps);
+    if ('error' in validated) {
+      return res.status(400).json({ error: validated.error });
+    }
+
+    const updated = instaticService.patchNode(pageId, nodeId, validated.props);
     if (!updated) {
       return res.status(404).json({ error: 'Page or node not found' });
     }
@@ -76,7 +123,7 @@ instaticRouter.post('/patch-node', (req: Request, res: Response) => {
 });
 
 // POST /api/instatic/ai-assist
-instaticRouter.post('/ai-assist', async (req: Request, res: Response) => {
+instaticRouter.post('/ai-assist', requireApiKey, async (req: Request, res: Response) => {
   try {
     const { pageId, nodeId, prompt } = req.body;
     if (!pageId || !nodeId || !prompt) {

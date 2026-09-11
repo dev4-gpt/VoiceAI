@@ -1,5 +1,36 @@
 import { deepseekService } from './deepseekService';
 import { brandVoiceService } from './brandVoiceService';
+import { escapeHtml, escapeUrl, escapeCssValue } from '../utils/html';
+
+/**
+ * Elements the compiler will emit. `semanticTag` is caller-controlled, so
+ * anything outside this set degrades to a <div> rather than being trusted.
+ */
+const SAFE_HTML_TAGS = new Set([
+  'section', 'div', 'span', 'p', 'a', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+  'ul', 'ol', 'li', 'header', 'footer', 'main', 'article', 'aside', 'nav',
+  'figure', 'figcaption', 'blockquote', 'strong', 'em', 'small', 'label'
+]);
+
+/** StyleDeclaration keys → CSS property names. Keys absent here are not emitted. */
+const STYLE_PROPERTY_MAP: Record<string, string> = {
+  fontSize: 'font-size',
+  fontWeight: 'font-weight',
+  lineHeight: 'line-height',
+  color: 'color',
+  textAlign: 'text-align',
+  padding: 'padding',
+  margin: 'margin',
+  backgroundColor: 'background',
+  borderRadius: 'border-radius',
+  border: 'border',
+  display: 'display',
+  flexDirection: 'flex-direction',
+  justifyContent: 'justify-content',
+  alignItems: 'align-items',
+  gap: 'gap',
+  gridTemplateColumns: 'grid-template-columns'
+};
 
 export type Breakpoint = 'base' | 'sm' | 'md' | 'lg' | 'xl';
 
@@ -389,10 +420,13 @@ export class InstaticService {
       if (modified) break;
     }
 
-    if (modified) {
-      page.updatedAt = new Date().toISOString();
-      this.pages.set(pageId, page);
-    }
+    // A nodeId that matched nothing is a failed patch, not a successful no-op —
+    // returning the page here would make the route's 404 unreachable and silently
+    // discard the caller's edit.
+    if (!modified) return null;
+
+    page.updatedAt = new Date().toISOString();
+    this.pages.set(pageId, page);
     return page;
   }
 
@@ -475,53 +509,42 @@ Refinement Request: "${prompt}"`;
 
   public compileToStaticHtml(page: InstaticPageDocument): string {
     const renderNode = (node: InstaticNode): string => {
-      const tag = node.semanticTag || (node.type === 'section' ? 'section' : node.type === 'button' ? 'a' : 'div');
-      
+      const requestedTag =
+        node.semanticTag || (node.type === 'section' ? 'section' : node.type === 'button' ? 'a' : 'div');
+      // semanticTag is caller-controlled; an unrecognised value (e.g. "script")
+      // must never become the emitted element.
+      const tag = SAFE_HTML_TAGS.has(requestedTag) ? requestedTag : 'div';
+
       if (node.type === 'embed') {
-        const company = node.props.company || page.companyName;
-        const clientId = node.props.clientId || 'lead_jm_901';
-        const accent = node.props.accent || '#d4af37';
-        return `<!-- Embedded GrowthVoice OS Widget -->\n<script src="${node.props.scriptUrl || '/embed.js'}" data-company="${company}" data-client-id="${clientId}" data-accent="${accent}"></script>`;
+        const company = escapeHtml(node.props.company || page.companyName);
+        const clientId = escapeHtml(node.props.clientId || 'lead_jm_901');
+        const accent = escapeHtml(node.props.accent || '#d4af37');
+        // A rejected scriptUrl falls back to the first-party widget rather than
+        // emitting an attacker-supplied <script src>.
+        const scriptUrl = escapeUrl(node.props.scriptUrl || '/embed.js') || '/embed.js';
+        return `<!-- Embedded GrowthVoice OS Widget -->\n<script src="${scriptUrl}" data-company="${company}" data-client-id="${clientId}" data-accent="${accent}"></script>`;
       }
 
-      let styleStr = '';
       const baseStyles = node.styles.base || {};
-      if (baseStyles.typography) {
-        const t = baseStyles.typography;
-        if (t.fontSize) styleStr += `font-size: ${t.fontSize}; `;
-        if (t.fontWeight) styleStr += `font-weight: ${t.fontWeight}; `;
-        if (t.lineHeight) styleStr += `line-height: ${t.lineHeight}; `;
-        if (t.color) styleStr += `color: ${t.color}; `;
-        if (t.textAlign) styleStr += `text-align: ${t.textAlign}; `;
-      }
-      if (baseStyles.spacing) {
-        const s = baseStyles.spacing;
-        if (s.padding) styleStr += `padding: ${s.padding}; `;
-        if (s.margin) styleStr += `margin: ${s.margin}; `;
-      }
-      if (baseStyles.visual) {
-        const v = baseStyles.visual;
-        if (v.backgroundColor) styleStr += `background: ${v.backgroundColor}; `;
-        if (v.borderRadius) styleStr += `border-radius: ${v.borderRadius}; `;
-        if (v.border) styleStr += `border: ${v.border}; `;
-      }
-      if (baseStyles.layout) {
-        const l = baseStyles.layout;
-        if (l.display) styleStr += `display: ${l.display}; `;
-        if (l.flexDirection) styleStr += `flex-direction: ${l.flexDirection}; `;
-        if (l.justifyContent) styleStr += `justify-content: ${l.justifyContent}; `;
-        if (l.alignItems) styleStr += `align-items: ${l.alignItems}; `;
-        if (l.gap) styleStr += `gap: ${l.gap}; `;
-        if (l.gridTemplateColumns) styleStr += `grid-template-columns: ${l.gridTemplateColumns}; `;
+      const declarations: string[] = [];
+      for (const group of [baseStyles.typography, baseStyles.spacing, baseStyles.visual, baseStyles.layout]) {
+        if (!group) continue;
+        for (const [key, value] of Object.entries(group as Record<string, unknown>)) {
+          const cssProperty = STYLE_PROPERTY_MAP[key];
+          if (!cssProperty || value === undefined || value === null || value === '') continue;
+          const safeValue = escapeCssValue(value);
+          if (safeValue) declarations.push(`${cssProperty}: ${safeValue};`);
+        }
       }
 
-      const styleAttr = styleStr ? ` style="${styleStr.trim()}"` : '';
-      const hrefAttr = node.props.href ? ` href="${node.props.href}"` : '';
-      const textContent = node.props.text || '';
+      const styleAttr = declarations.length ? ` style="${escapeHtml(declarations.join(' '))}"` : '';
+      const safeHref = escapeUrl(node.props.href);
+      const hrefAttr = safeHref ? ` href="${safeHref}"` : '';
+      const textContent = escapeHtml(node.props.text);
 
       const childrenContent = (node.children || []).map(renderNode).join('\n');
 
-      return `<${tag} id="${node.id}"${hrefAttr}${styleAttr}>\n${textContent}${childrenContent}\n</${tag}>`;
+      return `<${tag} id="${escapeHtml(node.id)}"${hrefAttr}${styleAttr}>\n${textContent}${childrenContent}\n</${tag}>`;
     };
 
     const sectionsHtml = page.sections.map(renderNode).join('\n\n');
@@ -531,14 +554,14 @@ Refinement Request: "${prompt}"`;
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>${page.metadata.title}</title>
-  <meta name="description" content="${page.metadata.description}" />
+  <title>${escapeHtml(page.metadata.title)}</title>
+  <meta name="description" content="${escapeHtml(page.metadata.description)}" />
   <style>
     :root {
-      --primary: ${page.themeTokens.primaryColor};
-      --accent: ${page.themeTokens.accentColor};
-      --bg: ${page.themeTokens.backgroundColor};
-      --text: ${page.themeTokens.textColor};
+      --primary: ${escapeCssValue(page.themeTokens.primaryColor)};
+      --accent: ${escapeCssValue(page.themeTokens.accentColor)};
+      --bg: ${escapeCssValue(page.themeTokens.backgroundColor)};
+      --text: ${escapeCssValue(page.themeTokens.textColor)};
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {

@@ -25,7 +25,7 @@
    * [Neuro-Cognitive Mapping Matrix](#neuro-cognitive-mapping-matrix)
    * [Synaptic Plasticity & Self-Evolution](#synaptic-plasticity--self-evolution)
 4. [Core Technical Pipelines (In-Depth Deep Dives)](#4-core-technical-pipelines-in-depth-deep-dives)
-   * [Pipeline A: Voice AudioWorklet & Sub-50ms Barge-In Pipeline](#pipeline-a-voice-audioworklet--sub-50ms-barge-in-pipeline)
+   * [Pipeline A: Voice AudioWorklet & Barge-In Pipeline](#pipeline-a-voice-audioworklet--barge-in-pipeline)
    * [Pipeline B: Hermes 10-Step Content Factory & Self-Healing Engine](#pipeline-b-hermes-10-step-content-factory--self-healing-engine)
    * [Pipeline C: Deterministic Policy Clamping & Margin Protection](#pipeline-c-deterministic-policy-clamping--margin-protection)
    * [Pipeline D: Persistent Knowledge Graph & Obsidian Second-Brain](#pipeline-d-persistent-knowledge-graph--obsidian-second-brain)
@@ -49,10 +49,10 @@
     * [Pricing Architecture](#pricing-architecture)
     * [Outreach Copy & Scripts (Cold Voice DM, Cold Email, LinkedIn Sequence)](#outreach-copy--scripts)
     * [Creator Objection Handling Matrix](#creator-objection-handling-matrix)
-11. [Flagship Case Study: DesignAcademy.io ($1.2M ARR)](#11-flagship-case-study-designacademyio-12m-arr)
-    * [Client Profile & Baseline Metrics](#client-profile--baseline-metrics)
-    * [Implementation Roadmap (3 Weeks)](#implementation-roadmap-3-weeks)
-    * [30-Day Measurable Results & 18.8x ROI Audit](#30-day-measurable-results--188x-roi-audit)
+11. [Unit Economics (Illustrative Model)](#11-unit-economics-illustrative-model)
+    * [Cost of goods sold, per voice-minute](#cost-of-goods-sold-per-voice-minute)
+    * [Gross margin by tier](#gross-margin-by-tier)
+    * [Worked ROI example](#worked-roi-example--assumptions-stated-not-asserted)
 12. [License](#12-license)
 
 ---
@@ -309,7 +309,7 @@ Human brains exhibit synaptic plasticity: neural connections strengthen through 
 
 ## 4. Core Technical Pipelines (In-Depth Deep Dives)
 
-### Pipeline A: Voice AudioWorklet & Sub-50ms Barge-In Pipeline
+### Pipeline A: Voice AudioWorklet & Barge-In Pipeline
 
 ```mermaid
 sequenceDiagram
@@ -343,7 +343,7 @@ sequenceDiagram
     AAI-->>Console: Binary Audio PCM16 (Voice: Anna)
     Console->>User: Spoken Audio: "Fantastic Jason! You're an ideal fit..."
 
-    Note over User,Console: Sub-50ms Barge-In Interruption Event
+    Note over User,Console: Barge-In Interruption Event
     User->>Worklet: User Speaks While Agent Is Talking
     Worklet->>AAI: New Inbound Audio Frames
     AAI-->>Console: {"type": "interruption", "timestamp": "..."}
@@ -351,7 +351,7 @@ sequenceDiagram
     Console->>User: Immediate Silence (Zero Agent Over-talk)
 ```
 
-#### The Physics of Sub-50ms Barge-In Latency:
+#### The Physics of Barge-In Latency:
 
 $$T_{\text{barge-in}} = T_{\text{acoustic}} + T_{\text{VAD}} + T_{\text{WebSocket}} + T_{\text{flush}} \le 52\text{ms}$$
 
@@ -551,7 +551,7 @@ flowchart TD
 
 | Pillar | Finding / Bottleneck | High-Impact Autonomous Solution | Business Impact |
 | :--- | :--- | :--- | :---: |
-| **1. Speed-to-Lead** | Average human response delay exceeds 14 hours. Lead decay begins sharply at 5 minutes. | Sub-50ms conversational voice SDR engages inbound visitors while intent is at peak. | **21x** higher pipeline conversion |
+| **1. Speed-to-Lead** | Human response to inbound is typically measured in hours, and lead quality decays within minutes. | A conversational voice SDR engages the visitor in the same session, while intent is at its peak. | Higher capture rate on after-hours traffic (see the illustrative model in §11) |
 | **2. After-Hours Capture** | 38%–45% of traffic lands outside 9am–5pm EST or across European/Asian timezones. | 24/7 autonomous voice intake qualifies and books consultations directly to Google Calendar. | **+35%** incremental qualified pipeline |
 | **3. Objection Handling** | High-ticket price hesitation ($2,997) is met with static text FAQs. | Dynamic risk-reversal reframes using the 14-Day Action Guarantee without discounting. | **4.2x** higher course completion |
 | **4. BANT Qualification** | Generic inquiry forms fail to distinguish between $500 hobbyists and $15,000 accounts. | Real-time conversational BANT scoring filters and fast-tracks enterprise buyers. | **85%** calendar efficiency gain |
@@ -890,7 +890,7 @@ docker compose exec orchestrator npx ts-node packages/evals/src/index.ts
    * Click **"Start Voice Session"**; grant microphone access. Speak naturally to test real-time turn-taking.
    * Click **"Lead Inbound ($10k BANT)"** to simulate Jason Miller. Observe Anna qualify the lead and book the consultation.
    * Click **"Churn Save (Clamp 35% to 15%)"** to simulate Sarah Jenkins. Verify discount clamping.
-   * Speak while the agent is talking to verify **Sub-50ms Barge-In** (immediate silence).
+   * Speak while the agent is talking to verify **Barge-In** (immediate silence).
 3. **Tab 2 — Revenue CRM:**
    * Verify Jason Miller appears in `Strategy Call Booked` stage with BANT score 85.
    * Verify Sarah Jenkins appears in the retained members roster with the 15% discount.
@@ -939,17 +939,25 @@ High-ticket digital creators and agencies suffer from three catastrophic structu
 
 ### Pricing Architecture
 
-1. **Base Operator Retainer:** **$1,497 / month**
-   * 24/7 Inbound Voice SDR (AssemblyAI `universal-3-5-pro`).
-   * Real-time BANT Qualification & Calendar Booking.
-   * Deterministic Churn Save & Margin Protection Guardrails.
-   * CRM Pipeline Integration.
-2. **Hermes Content Studio Add-on:** **$997 / month**
-   * Spoken Objection-to-Marketing Engine.
-   * 4 Multi-Channel Content Packs / month (16 X threads, 4 newsletters, 4 webinar scripts).
-   * Autonomous Self-Healing Quality Gate.
-   * Persistent Obsidian Second-Brain Synchronization.
-3. **Performance Rev Share:** **5% of Closed Revenue** on calls scheduled and closed by the agent.
+These are the tiers the product actually implements and bills against — see
+`SUBSCRIPTION_PLANS` in `apps/orchestrator/src/services/billingService.ts`, which is
+the single source of truth. Margins for each are derived in [§11](#11-unit-economics-illustrative-model).
+
+| Tier | Monthly | Annual (per mo) | Included minutes | Overage / min | Agents |
+| :--- | ---: | ---: | ---: | ---: | ---: |
+| **Starter Operator** | $149 | $119 | 500 | $0.18 | 1 |
+| **Growth Engine Pro** | $397 | $317 | 2,500 | $0.14 | 3 |
+| **Sovereign Enterprise** | $1,497 | $1,197 | 10,000 | $0.10 | Unlimited |
+
+* **Starter** — inbound voice SDR, BANT qualification, calendar booking, basic CRM sync.
+* **Pro** — adds the Hermes content pipeline, Obsidian vault sync, the embeddable
+  widget, and the full voice reactor suite.
+* **Enterprise** — adds custom voice cloning, isolated per-client vaults, custom
+  compliance and margin clamps, and dedicated workers.
+
+> An earlier draft of this section described a different business entirely
+> ($1,497 base + $997 add-on + 5% revenue share). That model was never implemented
+> in code. The table above is what the software does.
 
 ---
 
@@ -984,7 +992,7 @@ Mind if I send you the 2-minute interactive link to test the voice agent yoursel
 
     We built GrowthVoice OS — an autonomous AI Growth Operator powered by AssemblyAI that conducts real-time spoken discovery calls, qualifies leads on BANT criteria, and locks appointments onto your Google Calendar 24/7.
 
-    In our last 30-day deployment with a $1.2M creator, it captured $41,958 in after-hours pipeline and saved 5 members from cancelling.
+    It answers the inbound traffic that arrives after your team logs off, instead of leaving a contact form to catch it.
 
     Open to testing a 3-minute voice demo customized for [Course Name]?
 
@@ -1019,7 +1027,7 @@ Mind if I send you the 2-minute interactive link to test the voice agent yoursel
     1. Your after-hours inbound pipeline is already 100% captured by human SDRs.
     2. You're swamped running your current cohort.
 
-    If you'd like to see how we added $46,943 in 30 days for DesignAcademy.io, let me know. If not, I'll close your file.
+    If you'd like to see the voice agent handle a live discovery call on your own site, let me know. If not, I'll close your file.
 
     Wishing you continued growth!
     ```
@@ -1030,66 +1038,74 @@ Mind if I send you the 2-minute interactive link to test the voice agent yoursel
 
 | Creator Objection | Root Hesitation | GrowthVoice OS Counter-Argument |
 | :--- | :--- | :--- |
-| *"AI voices sound robotic and will ruin my personal brand."* | Fear of cheap robotic TTS repelling high-ticket prospects. | *"GrowthVoice OS uses AssemblyAI's newest `universal-3-5-pro` model with conversational turn-taking, breathing pauses, and sub-50ms barge-in. Test the live demo right now for 30 seconds—prospects literally cannot distinguish it from a top-tier US-based human SDR."* |
+| *"AI voices sound robotic and will ruin my personal brand."* | Fear of cheap robotic TTS repelling high-ticket prospects. | *"GrowthVoice OS runs on AssemblyAI's Voice Agent API with conversational turn-taking and barge-in, so a prospect can interrupt mid-sentence and be heard. Don't take my word for it — try the live demo for 30 seconds and judge the voice yourself."* |
 | *"What if the voice agent promises a 50% discount or halluncinates my refund terms?"* | Fear of LLM hallucination damaging profit margins. | *"We do not rely on prompt instructions. All discount offers pass through a deterministic code gate in our orchestrator. The maximum discount is hardcoded to 15.0% in code. The model physically cannot authorize more than that."* |
 | *"I don't have time to configure and train an AI system."* | Operational bandwidth constraint. | *"You don't configure anything. We ingest your existing sales call recordings, landing pages, and Notion docs into our Creator RAG lane within 48 hours. You simply paste our 1-line script onto your website."* |
 
 ---
 
-## 11. Flagship Case Study: DesignAcademy.io ($1.2M ARR)
+## 11. Unit Economics (Illustrative Model)
 
-### Client Profile & Baseline Metrics
-* **Organization:** DesignAcademy.io — A premier UI/UX and product design mentorship community.
-* **Founder:** Alex Rivers (180,000 YouTube subscribers, 45,000 newsletter readers).
-* **Flagship Products:**
-  * Pro Mentorship Program: **$2,997 one-time**
-  * VIP Design Mastermind: **$997 / month recurring**
-* **Baseline Bottlenecks:**
-  * 68% of website traffic arrived between 7:00 PM and 3:00 AM EST. Consultation form completion was only 26%.
-  * Alex spent 14 hours every week manually writing social posts to address recurring objections: *"Will this work if I have no design portfolio?"*
-  * 18 members churned in Q2 due to temporary project dips with zero retention negotiation.
+> **No customer results are claimed.** GrowthVoice OS has no deployed customers and
+> therefore no case study. Everything below is a **cost model and a worked example
+> using stated assumptions** — not measured outcomes. Any figure here is arithmetic
+> you can re-run yourself, not a result we observed.
 
----
+### Cost of goods sold, per voice-minute
 
-### Implementation Roadmap (3 Weeks)
+The structural point: this is a **browser-native** voice agent, so there is **no
+telephony termination cost**. That is the single largest line item for phone-based
+competitors, and we do not pay it.
 
-* **Week 1: Knowledge Ingestion & Persona Calibration**
-  * Ingested DesignAcademy's syllabus, case study archives, and 14-day action guarantee into the Creator RAG lane.
-  * Calibrated voice persona *Anna* with professional, empathetic design-mentor tone over AssemblyAI Voice Agent API.
-* **Week 2: Guardrail Hardening & Inbound Routing**
-  * Mounted deterministic guardrail clamping at 15% discount maximum.
-  * Replaced static after-hours consultation forms with the GrowthVoice OS live voice widget.
-* **Week 3: Hermes Content Studio Activation**
-  * Connected Hermes Content Studio to Alex's X and Substack accounts.
-  * Synced all qualified leads and objection notes into the local Obsidian second-brain vault.
+| Component | Provider | Published rate | Per minute |
+| :--- | :--- | :--- | :--- |
+| Streaming STT | AssemblyAI Universal-Streaming | $0.15 / hour | $0.0025 |
+| LLM turns | DeepSeek | token-based | ~$0.0015 |
+| TTS | Deepgram Aura-2 (if enabled) | $0.0135 / min | $0.0135 |
+| Telephony | — none (in-browser audio) | — | $0.0000 |
+| **Total COGS** | | | **≈ $0.018 / min** |
 
----
+Using AssemblyAI's own voice output instead of a third-party TTS removes the
+largest remaining line and drops COGS to roughly **$0.004/min**.
 
-### 30-Day Measurable Results & 18.8x ROI Audit
+### Gross margin by tier
+
+| Tier | Price / mo | Included minutes | Revenue / min | COGS / min | Gross margin |
+| :--- | ---: | ---: | ---: | ---: | ---: |
+| Starter | $149 | 500 | $0.298 | $0.018 | **~94%** |
+| Pro | $397 | 2,500 | $0.159 | $0.018 | **~89%** |
+| Enterprise | $1,497 | 10,000 | $0.150 | $0.018 | **~88%** |
+
+For comparison, published all-in rates for phone-based voice agents (Vapi, Retell,
+Bland) run **$0.09–$0.36 per minute**, driven largely by telephony and premium TTS.
+
+### Worked ROI example — assumptions stated, not asserted
+
+This is a model. Substitute your own numbers; the in-product calculator lets you.
 
 ```text
-======================================================================
-📊 DESIGNACADEMY.IO — 30-DAY GROWTHVOICE OS PERFORMANCE AUDIT
-======================================================================
-Inbound Voice Consultations Handled:   342 calls (100% after 6:00 PM EST)
-BANT Qualified Prospects (Score ≥ 60):  85 leads (24.8% qualification rate)
-Strategy Consultations Booked:         62 appointments locked on Calendar
-High-Ticket Enrollments Closed:        14 students ($2,997 Pro Mentorship)
-Direct Inbound Revenue Generated:      $41,958 in 30 Days
+ASSUMPTIONS (all user-adjustable, none measured by us)
+  Monthly website visitors ................... 5,000
+  Share arriving outside business hours ...... 32%
+  Baseline conversion on a static form ....... 0.8%
+  Conversion when a voice agent answers ...... 4.5%
+  Average contract value ..................... $3,500
+  Close rate on qualified conversations ...... 20%
 
-Churn Cancellation Requests Handled:   7 cancellation calls
-Members Retained via 15% Clamp:        5 members retained ($997/mo VIP tier)
-Monthly Recurring Revenue Saved:       $4,985 / month ($59,820 Annualized)
-
-Content Packs Generated by Hermes:     8 verified multi-channel packs
-Social Marketing Output:               40 Tweets (all ≤280 chars) + 8 Newsletters
-Founder Time Saved on Writing:         56 Hours in Month 1
-======================================================================
-TOTAL 30-DAY ECONOMIC VALUE:           $46,943 Direct Revenue + $59,820 Saved MRR
-SOFTWARE INVESTMENT:                   $2,494 (Platform Retainer + Hermes Studio)
-NET RETURN ON INVESTMENT (ROI):        18.8x ROI in First 30 Days
-======================================================================
+DERIVED
+  After-hours visitors ....................... 1,600
+  Baseline captured leads .................... 13
+  Voice-captured leads ....................... 72
+  Incremental leads .......................... 59
+  Incremental CLOSED deals (59 x 20%) ........ 11.8
+  Incremental closed revenue ................. $41,300
+  Software cost (Pro tier) ................... $397
 ```
+
+**On the arithmetic:** incremental revenue is computed from *closed* deals, not
+gross pipeline. An earlier version of this document divided gross pipeline by
+software cost, which overstated the return by roughly the inverse of the close
+rate. Pipeline is not revenue, and this model no longer conflates them.
 
 ---
 

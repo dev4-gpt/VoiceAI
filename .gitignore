@@ -35,6 +35,12 @@ __pycache__/
 vault/Clients/*
 !vault/Clients/DesignAcademy_Studio/
 !vault/Clients/.gitkeep
+
+# Never track third-party OAuth tokens. clientCredentialsService writes real
+# customer secrets to this filename in plaintext, and the un-ignore above would
+# otherwise sweep the demo client's file (and anything later written into it)
+# into the repo. This rule sits below the un-ignore so it wins.
+vault/**/Credentials.json
 vault/Dossiers/*
 !vault/Dossiers/DesignAcademy_Studio.md
 !vault/Dossiers/.gitkeep

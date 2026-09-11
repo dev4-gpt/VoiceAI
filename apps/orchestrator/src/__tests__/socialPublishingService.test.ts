@@ -38,7 +38,14 @@ describe('SocialPublishingService', () => {
     const substackReceipt = result.receipts.find((r) => r.platform === 'substack');
     expect(substackReceipt).toBeDefined();
     expect(substackReceipt!.status).toBe('failed');
-    expect(substackReceipt!.isSimulated).toBe(false);
+    // Nothing was published, so this is not a real post. The previous assertion
+    // here required isSimulated:false, which meant a caller filtering on
+    // `isSimulated === false` to mean "verified real" would count this failure
+    // as a genuine live post. `status`/`details` still distinguish a failed
+    // attempt from one that was never made.
+    expect(substackReceipt!.isSimulated).toBe(true);
+    expect(substackReceipt!.details).toMatch(/failed/i);
+    expect(substackReceipt!.postUrl).toBe('');
   });
 
   it('labels youtube as stub_unsupported rather than pretending to publish', async () => {

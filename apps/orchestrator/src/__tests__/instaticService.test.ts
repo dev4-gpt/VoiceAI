@@ -80,4 +80,58 @@ describe('InstaticService — Visual CMS & AI Web Builder', () => {
     expect(result.updatedPage).not.toBeNull();
     expect(result.explanation).toBeDefined();
   });
+
+  describe('compiled HTML is not injectable', () => {
+    // The compiled page is served as text/html from GET /api/instatic/preview/:pageId,
+    // and node props are caller-controlled via POST /api/instatic/patch-node.
+    const findTextNode = (svc: InstaticService) => {
+      const page = svc.generatePageFromContentPack('TestCo', 'Title', { thesis: 'Thesis' });
+      const node = page.sections[0].children?.find((c) => c.semanticTag === 'h1')!;
+      return { page, node };
+    };
+
+    it('escapes markup injected through node text', () => {
+      const { page, node } = findTextNode(service);
+      service.patchNode(page.id, node.id, { text: '<script>alert(1)</script>' });
+
+      const html = service.compileToStaticHtml(service.getPage(page.id)!);
+      expect(html).not.toContain('<script>alert(1)</script>');
+      expect(html).toContain('&lt;script&gt;alert(1)&lt;/script&gt;');
+    });
+
+    it('drops javascript: URLs from href instead of emitting them', () => {
+      const { page, node } = findTextNode(service);
+      service.patchNode(page.id, node.id, { href: 'javascript:alert(1)' });
+
+      const html = service.compileToStaticHtml(service.getPage(page.id)!);
+      expect(html).not.toContain('javascript:');
+    });
+
+    it('refuses to emit an attacker-chosen tag name', () => {
+      const { page, node } = findTextNode(service);
+      // semanticTag is not patchable via the route, but the compiler must still
+      // not trust it if a document reaches it by another path.
+      (node as any).semanticTag = 'script';
+
+      const html = service.compileToStaticHtml(service.getPage(page.id)!);
+      expect(html).not.toMatch(/<script(?![^>]*embed\.js)/);
+    });
+
+    it('escapes page metadata into title and description', () => {
+      const page = service.generatePageFromContentPack('TestCo', '"><script>alert(1)</script>', {
+        thesis: 'Thesis'
+      });
+
+      const html = service.compileToStaticHtml(page);
+      expect(html).not.toContain('<script>alert(1)</script>');
+      expect(html).toContain('&lt;script&gt;');
+    });
+  });
+
+  it('returns null when patching a node id that does not exist', () => {
+    const page = service.generatePageFromContentPack('TestCo', 'Title', { thesis: 'Thesis' });
+    // A stale nodeId must surface as a failure so the route can 404, rather than
+    // reporting success while silently discarding the edit.
+    expect(service.patchNode(page.id, 'node_does_not_exist', { text: 'x' })).toBeNull();
+  });
 });

@@ -4,8 +4,14 @@ import * as path from 'path';
 import { crmStore } from '../services/crmStore';
 import { toolDispatcher } from '../tools/dispatcher';
 import { websiteScraperService } from '../services/websiteScraperService';
+import { requireApiKey } from '../middleware/auth';
 
 export const crmRouter = Router();
+
+// Every CRM route reads or writes tenant business data — leads, telemetry, vault
+// files — or dispatches arbitrary tools. All of it is gated. No-ops in local demo
+// mode (ORCHESTRATOR_API_KEY unset), same as the credentials router.
+crmRouter.use(requireApiKey);
 
 crmRouter.get('/local-profile', (_req: Request, res: Response) => {
   const profilePath = path.resolve(process.cwd(), 'data', 'local_profile.json');

@@ -243,7 +243,7 @@
           </div>
 
           <div style="font-size: 14px; font-weight: 500; color: #f1f5f9; padding: 0 12px;">
-            ${isCallActive ? 'Listening & speaking via AssemblyAI Voice Engine...' : 'Ask about pricing, roadmap, or schedule an executive consultation.'}
+            ${isCallActive ? 'Scripted preview — no microphone is active and nothing is being transcribed.' : 'Preview of the Anna voice agent. Scripted demo, not a live call.'}
           </div>
 
           <div class="gvos-transcript-card" id="gvos-transcript">
@@ -254,17 +254,17 @@
             ${!isCallActive ? `
               <button class="gvos-btn gvos-btn-primary" id="gvos-start-call">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
-                Start Spoken Call
+                Play Scripted Demo
               </button>
             ` : `
               <button class="gvos-btn gvos-btn-danger" id="gvos-end-call">
-                End Consultation
+                Stop Demo
               </button>
             `}
           </div>
 
           <div style="font-size: 10px; color: rgba(255,255,255,0.4);">
-            Powered by GrowthVoice OS • AssemblyAI universal-3-5-pro
+            GrowthVoice OS • scripted preview (live voice not yet wired into this widget)
           </div>
         </div>
       `;
@@ -287,25 +287,16 @@
       var endBtn = modal.querySelector('#gvos-end-call');
       if (endBtn) {
         endBtn.onclick = function() {
-          var durationSec = callStartTime ? Math.round((Date.now() - callStartTime) / 1000) : 30;
           isCallActive = false;
           callStartTime = null;
           render();
 
-          // Report call telemetry to orchestrator billing engine
-          try {
-            fetch(config.apiUrl + '/api/billing/record-call', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                clientId: config.clientId,
-                durationSeconds: durationSec,
-                isAfterHours: true,
-                leadCaptured: true,
-                estimatedDealValueUsd: 3500
-              })
-            }).catch(function() {});
-          } catch (e) {}
+          // No usage is reported here. This handler previously POSTed a hardcoded
+          // { leadCaptured: true, estimatedDealValueUsd: 3500 } to
+          // /api/billing/record-call on every close, so simply opening and closing
+          // this widget inflated the tenant's pipeline and ROI figures with
+          // revenue that never existed. Metering returns once this widget runs a
+          // real voice session the server can measure.
         };
       }
 

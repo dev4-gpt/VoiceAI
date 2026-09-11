@@ -1,4 +1,16 @@
 import { Request, Response, NextFunction } from 'express';
+import { createHash, timingSafeEqual } from 'crypto';
+
+/**
+ * Constant-time comparison. Both sides are SHA-256'd first so the buffers are
+ * always 32 bytes — timingSafeEqual throws on length mismatch, and comparing
+ * raw strings leaks both the key length and its matching prefix via timing.
+ */
+function safeMatch(provided: string, expected: string): boolean {
+  const a = createHash('sha256').update(provided).digest();
+  const b = createHash('sha256').update(expected).digest();
+  return timingSafeEqual(a, b);
+}
 
 /**
  * Shared-secret bearer auth, matching the fallback philosophy used elsewhere
@@ -13,7 +25,7 @@ export function requireApiKey(req: Request, res: Response, next: NextFunction) {
   const header = req.header('authorization') || '';
   const provided = header.replace(/^Bearer\s+/i, '').trim();
 
-  if (provided !== expected) {
+  if (!provided || !safeMatch(provided, expected)) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
   next();

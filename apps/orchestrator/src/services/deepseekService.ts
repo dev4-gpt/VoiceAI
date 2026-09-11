@@ -29,6 +29,13 @@ export class DeepSeekService {
     reasoning_content?: string;
     tokens: { prompt: number; completion: number; total: number };
     model: string;
+    /**
+     * True when no live LLM call produced this content — no key configured, or
+     * the API errored. Callers MUST check this before publishing, billing for,
+     * or attributing the output to a model. Placeholder text presented as model
+     * output is what let fabricated metrics reach real customer accounts.
+     */
+    isFallback: boolean;
   }> {
     const model = options.model || (process.env.DEEPSEEK_MODEL || 'deepseek-chat');
 
@@ -70,7 +77,8 @@ export class DeepSeekService {
           completion: data.usage?.completion_tokens || 350,
           total: data.usage?.total_tokens || 500
         },
-        model: data.model || model
+        model: data.model || model,
+        isFallback: false
       };
     } catch (err: any) {
       console.error('[DeepSeek Exception]', err.message);
@@ -78,47 +86,60 @@ export class DeepSeekService {
     }
   }
 
+  /**
+   * Placeholder output for when no live model call happened.
+   *
+   * This must never contain invented metrics, named customers, testimonials, or
+   * claimed results. A previous version fabricated specifics ("Marcus added $42k
+   * MRR in 60 days") and a `reasoning_content` string asserting that DeepSeek-R1
+   * had reasoned about it. With ENABLE_REAL_PUBLISHING=true that content could be
+   * auto-posted to a customer's real accounts as their own marketing — a
+   * deceptive-endorsement problem, not just a bug.
+   *
+   * Structure is preserved so downstream JSON.parse callers keep working, but
+   * every field is unmistakably a placeholder.
+   */
   private generateFallback(options: DeepSeekCompletionOptions) {
     const userPrompt = options.messages[options.messages.length - 1]?.content || '';
+    const NOTICE =
+      'PLACEHOLDER — generated without a live model call because DEEPSEEK_API_KEY is unset or the API was unreachable. Not for publication.';
 
-    // Check if JSON format was requested
     if (options.response_format?.type === 'json_object' || userPrompt.includes('JSON')) {
       return {
         content: JSON.stringify({
-          thesis: 'Transforming high-stakes objections into scalable community authority and high-ticket sales.',
-          targetAudience: 'Creators and educators scaling digital communities to $50k+ MRR.',
+          _fallbackNotice: NOTICE,
+          thesis: '[Placeholder thesis — configure DEEPSEEK_API_KEY to generate real content.]',
+          targetAudience: '[Placeholder audience]',
           twitterThread: [
-            '1/ 90% of online creators lose high-ticket sales because of one catastrophic and preventable mistake: delaying after-hours inquiries until the following morning, by which time the prospective student has lost their emotional buying momentum, reviewed alternative courses, and abandoned their cart entirely without completing checkout.',
-            '2/ When a prospective student asks about pricing, they are not asking for a number. They are asking for risk removal.',
-            '3/ Action-based guarantees beat unconditional refunds 10:1. Here is why: commitment creates completion.',
-            '4/ By deploying an autonomous voice agent, you capture warm traffic when buying intent peaks.',
-            '5/ The result? Marcus added $42k MRR in 60 days without changing his YouTube production schedule. Link in bio.'
+            `1/ ${NOTICE}`,
+            '2/ [Placeholder post — no model output available.]'
           ],
           newsletter: {
-            subjectLine: 'Why After-Hours Sales Are Secretly Killing Your Creator Business',
-            previewText: 'The math behind missed inquiries and how to solve it with voice automation.',
-            bodyMarkdown:
-              '### The Hidden Cost of Delayed Responses\n\nMost educators think their funnel starts when someone opens their email. In reality, it starts the moment someone considers buying.\n\nHere is how we helped Marcus scale from $12k to $54k MRR using the GrowthVoice OS...',
-            callToAction: 'Book your 1-on-1 Growth Audit with our strategy team today.'
+            subjectLine: '[Placeholder subject line]',
+            previewText: NOTICE,
+            bodyMarkdown: `### Placeholder\n\n${NOTICE}`,
+            callToAction: '[Placeholder call to action]'
           },
           webinarScript: {
-            hook: 'If you could clone your top salesperson to handle every midnight inquiry in real-time, what would your MRR look like?',
-            coreProblem: 'Creators spend 80% of their time answering repetitive DMs instead of making content.',
-            valueProposition: 'Our Autonomous Growth Operator qualifies leads, handles objections, and books calls 24/7.',
-            offerClose: 'Enroll in the Pro Mentorship today with our 14-day action-based guarantee.'
+            hook: '[Placeholder hook]',
+            coreProblem: '[Placeholder problem statement]',
+            valueProposition: '[Placeholder value proposition]',
+            offerClose: '[Placeholder close]'
           }
         }),
-        reasoning_content:
-          'DeepSeek-R1 Reasoner: Evaluated creator RAG context, identified pricing objection patterns, framed hook around risk removal, verified 280-char tweet limits, and ensured policy alignment.',
-        tokens: { prompt: 210, completion: 450, total: 660 },
-        model: 'deepseek-reasoner'
+        // No reasoning happened, so no reasoning is reported.
+        tokens: { prompt: 0, completion: 0, total: 0 },
+        model: 'fallback:none',
+        isFallback: true
       };
     }
 
     return {
-      content: 'Strategic synthesis completed successfully across all research lanes.',
-      tokens: { prompt: 100, completion: 200, total: 300 },
-      model: 'deepseek-chat'
+      content:
+        'I can’t generate a full response right now — the language model isn’t configured on this server. Set DEEPSEEK_API_KEY to enable live replies.',
+      tokens: { prompt: 0, completion: 0, total: 0 },
+      model: 'fallback:none',
+      isFallback: true
     };
   }
 }
