@@ -1142,16 +1142,46 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
               audioPipelineRef.current.abortPlayback();
             }
           } else if (msg.type === 'tool.call') {
-            if (telemetryWsRef.current && telemetryWsRef.current.readyState === WebSocket.OPEN) {
-              telemetryWsRef.current.send(
-                JSON.stringify({
-                  type: 'tool_execution_request',
-                  call_id: msg.call_id,
+            // Executed over HTTP, not the telemetry socket. The agent is blocked
+            // on this call_id until it gets a result, so the path that completes
+            // it must not depend on a second long-lived connection being healthy.
+            // The socket is still used for live CRM updates, but is now optional.
+            void (async () => {
+              let result: unknown = { error: 'Tool execution failed' };
+              try {
+                const res = await fetch(apiUrl('/api/crm/tools/execute'), {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ name: msg.name, arguments: msg.arguments })
+                });
+                const body = await res.json();
+                result = res.ok ? body.result ?? body : { error: body.error || 'Tool execution failed' };
+              } catch (toolErr) {
+                console.error('[Tool execution failed]', toolErr);
+              }
+
+              const agentWs = wsRef.current;
+              if (agentWs && agentWs.readyState === WebSocket.OPEN) {
+                agentWs.send(
+                  JSON.stringify({
+                    type: 'tool.result',
+                    call_id: msg.call_id,
+                    result: JSON.stringify(result)
+                  })
+                );
+              }
+
+              setActiveTools((prev) => [
+                ...prev,
+                {
+                  id: msg.call_id || String(Date.now()),
                   name: msg.name,
-                  arguments: msg.arguments
-                })
-              );
-            }
+                  args: msg.arguments,
+                  result: result as Record<string, any>,
+                  status: 'completed'
+                }
+              ]);
+            })();
           }
         } catch (err) {
           console.error('[WS Message Parse Error]', err);

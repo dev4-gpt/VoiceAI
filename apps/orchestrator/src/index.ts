@@ -105,9 +105,17 @@ app.use('/api/voice/token', (req, res, next) => {
 });
 
 // Static assets & embeddable widget
-const publicDir = fs.existsSync(path.join(__dirname, 'public'))
-  ? path.join(__dirname, 'public')
-  : path.join(__dirname, '../src/public');
+// __dirname differs between ts-node (src/), the Docker build (dist/), and a
+// serverless bundle, so try each layout and fall back to cwd rather than
+// silently serving a directory that does not exist.
+const PUBLIC_DIR_CANDIDATES = [
+  path.join(__dirname, 'public'),
+  path.join(__dirname, '../src/public'),
+  path.join(__dirname, '../public'),
+  path.resolve(process.cwd(), 'src/public'),
+  path.resolve(process.cwd(), 'dist/public')
+];
+const publicDir = PUBLIC_DIR_CANDIDATES.find((dir) => fs.existsSync(dir)) || PUBLIC_DIR_CANDIDATES[0];
 
 app.use(express.static(publicDir));
 app.get('/embed.js', (_req, res) => {
@@ -319,6 +327,21 @@ wss.on('connection', (ws: WebSocket) => {
   });
 });
 
+/**
+ * Serverless hosts import this module and drive the Express app themselves, so
+ * binding a port there would be wrong (and on some platforms fatal). Listen only
+ * when this file is the entry point — i.e. local dev, Docker, or a container host.
+ */
+const isServerless = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
+
+if (!isServerless) {
+  startServer();
+}
+
+export default app;
+export { app, server };
+
+function startServer() {
 server.listen(port, () => {
   console.log(`=======================================================`);
   console.log(`🎙️  AI Growth Operator Voice OS — Orchestrator Running`);
@@ -338,3 +361,4 @@ server.listen(port, () => {
   console.log(`🛠️  Tools Registered: ${VOICE_AGENT_TOOLS.length}`);
   console.log(`=======================================================`);
 });
+}
