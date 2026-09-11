@@ -5,7 +5,6 @@ import path from 'path';
 import fs from 'fs';
 import { WebSocketServer, WebSocket } from 'ws';
 import dotenv from 'dotenv';
-dotenv.config();
 
 import { tokenRouter } from './routes/token';
 import { crmRouter } from './routes/crm';
@@ -21,10 +20,28 @@ import { crmStore } from './services/crmStore';
 import { contentFactoryEngine } from './services/contentFactoryEngine';
 import { graphDatabaseService } from './services/graphDatabaseService';
 
-if (typeof (process as any).loadEnvFile === 'function') {
-  try {
-    (process as any).loadEnvFile();
-  } catch {}
+/**
+ * Load .env from the app directory first, then walk up to the monorepo root.
+ *
+ * `npm run dev` leaves cwd at apps/orchestrator, so a repo-root .env was
+ * invisible and the server booted with no ASSEMBLYAI_API_KEY — every voice call
+ * returned 503 while the file sat two directories up. dotenv does not overwrite
+ * values already in process.env, so the nearest file wins and real environment
+ * variables (Docker, Railway) always beat any file.
+ */
+const ENV_CANDIDATES = [
+  path.resolve(process.cwd(), '.env'),
+  path.resolve(__dirname, '../.env'),
+  path.resolve(__dirname, '../../.env'),
+  path.resolve(__dirname, '../../../.env')
+];
+
+const loadedEnvFiles: string[] = [];
+for (const candidate of ENV_CANDIDATES) {
+  if (fs.existsSync(candidate)) {
+    dotenv.config({ path: candidate });
+    loadedEnvFiles.push(candidate);
+  }
 }
 
 const app = express();
@@ -307,6 +324,11 @@ server.listen(port, () => {
   console.log(`🎙️  AI Growth Operator Voice OS — Orchestrator Running`);
   console.log(`🚀 Port: http://localhost:${port}`);
   console.log(`⚡ Voice: AssemblyAI Voice Agent API`);
+  console.log(
+    loadedEnvFiles.length
+      ? `📄 Env loaded from: ${loadedEnvFiles.join(', ')}`
+      : '📄 No .env file found; using process environment only.'
+  );
   if (!process.env.ASSEMBLYAI_API_KEY) {
     console.warn('⚠️  ASSEMBLYAI_API_KEY is unset — /api/voice/token will return 503 and voice calls are disabled.');
   }
