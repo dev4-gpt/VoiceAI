@@ -577,6 +577,10 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
   const wsRef = useRef<WebSocket | null>(null);
   const telemetryWsRef = useRef<WebSocket | null>(null);
   const audioPipelineRef = useRef<AudioPipeline | null>(null);
+  // Tool definitions from the orchestrator, sent to AssemblyAI in session.update.
+  // Without these the agent has no tools and tool.call can never fire, so a live
+  // voice call creates no lead and books nothing.
+  const voiceToolsRef = useRef<any[]>([]);
 
   // Fetch initial CRM leads and connect to telemetry WS
   useEffect(() => {
@@ -659,10 +663,25 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
             }
             return [payload.lead, ...prev];
           });
+        } else if (payload.type === 'tool_result') {
+          // Close the AssemblyAI tool-calling loop. The agent is blocked waiting
+          // on this call_id; `result` must be a JSON-encoded string per the
+          // Voice Agent API.
+          const agentWs = wsRef.current;
+          if (agentWs && agentWs.readyState === WebSocket.OPEN) {
+            agentWs.send(
+              JSON.stringify({
+                type: 'tool.result',
+                call_id: payload.call_id,
+                result: JSON.stringify(payload.result ?? {})
+              })
+            );
+          }
         } else if (payload.type === 'initial_state') {
           if (payload.leads) setLeads(payload.leads);
           if (payload.members) setMembers(payload.members);
           if (payload.jobs) setJobs(payload.jobs);
+          if (payload.tools) voiceToolsRef.current = payload.tools;
         } else if (payload.type === 'pong' && payload.clientTimestamp) {
           const rtt = Math.max(1, Date.now() - payload.clientTimestamp);
           setWsLatencyMs(rtt);
@@ -838,11 +857,36 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
       ws.onopen = async () => {
         console.log('[AssemblyAI Voice Agent WS Connected]');
 
+        // Registering tools is what turns the call into an agent rather than a
+        // talking head: without them the model can describe booking a call but
+        // cannot actually create the lead. Verified against the live API — the
+        // server echoes these back in session.updated with a tool count.
+        // voiceToolsRef is filled by the telemetry socket's initial_state, which
+        // races with call start. Fetch directly if it hasn't arrived yet rather
+        // than silently opening a session with no tools.
+        let registeredTools = voiceToolsRef.current || [];
+        if (registeredTools.length === 0) {
+          try {
+            const cfgRes = await fetch('/api/voice/config');
+            if (cfgRes.ok) {
+              const cfg = await cfgRes.json();
+              registeredTools = cfg.tools || [];
+              voiceToolsRef.current = registeredTools;
+            }
+          } catch (cfgErr) {
+            console.error('[Voice] Could not load tool definitions', cfgErr);
+          }
+        }
+        if (registeredTools.length === 0) {
+          console.warn('[Voice] No tools registered — the agent cannot take actions this session.');
+        }
+
         const sessionUpdate = {
           type: 'session.update',
           session: {
             system_prompt: dynamicPrompt,
             greeting: dynamicGreeting,
+            tools: registeredTools,
             output: {
               voice: 'anna',
               format: { encoding: 'audio/pcm' }

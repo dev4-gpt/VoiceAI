@@ -207,7 +207,24 @@ wss.on('connection', (ws: WebSocket) => {
 
       if (data.type === 'tool_execution_request') {
         const { call_id, name, arguments: args } = data;
-        const result = await toolDispatcher.dispatch(name, args);
+        let result: unknown;
+        let failed = false;
+
+        try {
+          result = await toolDispatcher.dispatch(name, args);
+        } catch (toolErr: any) {
+          failed = true;
+          result = { error: toolErr?.message || 'Tool execution failed' };
+          console.error('[Tool Dispatch Error]', name, toolErr?.message);
+        }
+
+        // Return the result to the REQUESTING client only, so it can complete the
+        // AssemblyAI tool call. This must not be broadcast: with two tabs open,
+        // every tab would answer the same call_id. Without this the agent waits
+        // out its timeout_seconds and the conversation stalls mid-sentence.
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: 'tool_result', call_id, name, result, failed }));
+        }
 
         // Broadcast tool event to all connected UI clients
         const eventPayload = JSON.stringify({
