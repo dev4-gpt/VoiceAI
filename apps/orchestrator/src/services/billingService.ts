@@ -7,66 +7,79 @@ import type {
   ROICalculationResult
 } from '@voice-os/shared';
 
+/**
+ * Plan catalog — the single source of truth. The pricing page fetches this from
+ * GET /api/billing/plans rather than hardcoding prices, so the two cannot drift.
+ *
+ * Priced from real cost. AssemblyAI's Voice Agent API is $4.50/hour all-in
+ * ($0.075/min: speech recognition, LLM, voice, turn detection, tool calling), plus
+ * Stripe's 2.9% + $0.30. Each tier holds ~72% gross margin monthly (~66% annual)
+ * even if a customer uses every included minute; typical usage is lower, so real
+ * margins run higher. Overage never sells below cost: 72% / 67% / 60%.
+ *
+ * An earlier catalog costed minutes at the $0.0025/min streaming-STT rate, which is
+ * not what the product runs on, and claimed 87-93% margins. Those were wrong.
+ *
+ * Features list only what the code does today. Anything not yet built is left out
+ * rather than promised.
+ */
+export const COST_PER_VOICE_MINUTE_USD = 0.075;
+
 export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
   {
     id: 'starter',
-    name: 'Starter Operator',
-    tagline: 'Autonomous 24/7 Inbound SDR qualification & instant booking',
+    name: 'Starter',
+    tagline: 'One voice agent answering your website around the clock',
     priceMonthlyUsd: 149,
     priceAnnualMonthlyUsd: 119,
     voiceMinutesMonthly: 500,
-    overageRatePerMinUsd: 0.18,
+    overageRatePerMinUsd: 0.3,
     maxAutonomousAgents: 1,
     features: [
-      '1 Autonomous Inbound SDR Voice Agent',
-      '500 High-Fidelity Voice Minutes / mo',
-      'Real-Time BANT Qualification & CRM Kanban Sync',
-      'Automated Strategy Consultation Calendar Booking',
-      'Deterministic Policy Margin Clamps & Guardrails',
-      'Standard Web Audio Floating Pill',
-      'Community & Discord Support'
+      '1 voice agent persona',
+      '500 voice minutes / month, then $0.30/min',
+      'Live lead capture and BANT qualification into your CRM',
+      'Consultation requests recorded on each lead',
+      'US AI-disclosure and recording-consent layer',
+      'Embeddable website voice widget'
     ]
   },
   {
     id: 'pro',
-    name: 'Growth Engine Pro',
-    tagline: 'The full autonomous growth stack: SDR, Churn Save & Content Factory',
-    priceMonthlyUsd: 397,
-    priceAnnualMonthlyUsd: 317,
-    voiceMinutesMonthly: 2500,
-    overageRatePerMinUsd: 0.14,
+    name: 'Pro',
+    tagline: 'Voice qualification plus the content pipeline and CRM tooling',
+    priceMonthlyUsd: 449,
+    priceAnnualMonthlyUsd: 359,
+    voiceMinutesMonthly: 1500,
+    overageRatePerMinUsd: 0.25,
     maxAutonomousAgents: 3,
     recommended: true,
     features: [
-      '3 Autonomous Voice Agents (Inbound SDR, Outbound Reactivator, Churn Rescue)',
-      '2,500 Spoken Voice Minutes / mo',
-      'Sub-350ms Barge-In Interruption Latency',
-      'Autonomous Hermes Content Factory (Auto-Publish to X, LinkedIn, Substack)',
-      'Local Obsidian Vault Bi-Directional Graph Sync',
-      'Custom Brand Voice DNA & Anti-Slop Guardrail',
-      '6-Mode 3D Glassy Voice Reactor Suite (Cymatic Plane default)',
-      '1-Click Embeddable Web Widget (embed.js)',
-      'Priority Email & Telegram Architect Support'
+      'Everything in Starter',
+      '3 configurable agent personas (e.g. inbound SDR, churn rescue)',
+      '1,500 voice minutes / month, then $0.25/min',
+      'Content pipeline: conversations into X, LinkedIn and Substack drafts',
+      'Publishes live once you connect your accounts',
+      'Encrypted storage for your platform credentials',
+      'Obsidian vault export of leads and dossiers'
     ]
   },
   {
     id: 'enterprise',
-    name: 'Sovereign Enterprise',
-    tagline: 'Custom voice clones, multi-client credential isolation & SLA guarantees',
+    name: 'Enterprise',
+    tagline: 'For agencies running voice for several brands',
     priceMonthlyUsd: 1497,
     priceAnnualMonthlyUsd: 1197,
-    voiceMinutesMonthly: 10000,
-    overageRatePerMinUsd: 0.1,
+    voiceMinutesMonthly: 5000,
+    overageRatePerMinUsd: 0.2,
     maxAutonomousAgents: 999,
     features: [
-      'Unlimited Autonomous Voice Agents & Custom Voice Clone Tuning',
-      '10,000 Spoken Voice Minutes / mo + Volume Discounts',
-      'Multi-Client Isolated Encrypted Credential Vaults',
-      'Custom Legal Compliance & Financial Margin Clamps',
-      'Dedicated Cloud Workers / Docker Pods',
-      'Native CRM Webhooks (Salesforce, HubSpot, Zapier, Slack)',
-      'Deterministic Zero-Data Retention Guarantee',
-      '24/7 Dedicated Solutions Architect & 99.9% Uptime SLA'
+      'Everything in Pro',
+      'Unlimited agent personas',
+      '5,000 voice minutes / month, then $0.20/min',
+      'Separate credentials and vault exports per client brand',
+      'Enforced discount ceilings on retention offers',
+      'Priority onboarding'
     ]
   }
 ];
@@ -78,44 +91,37 @@ export class BillingService {
     this.seedDefaultUsage();
   }
 
+  /**
+   * Demo clients so the dashboard renders. Usage starts at zero: live calls do not
+   * meter yet, and the previous seed invented activity ($56,943 pipeline, 18.8x ROI,
+   * 412 minutes) that the header displayed as if it were real.
+   */
   private seedDefaultUsage() {
     const now = new Date();
     const cycleStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
     const cycleEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString();
 
-    // Seed DesignAcademy Studio (Pro Plan)
-    this.clientUsageMap.set('lead_jm_901', {
-      clientId: 'lead_jm_901',
-      companyName: 'DesignAcademy Studio',
-      planId: 'pro',
-      billingCycle: 'annual',
-      billingCycleStart: cycleStart,
-      billingCycleEnd: cycleEnd,
-      minutesUsed: 412,
-      minutesLimit: 2500,
-      callsCount: 68,
-      afterHoursLeadsCaptured: 19,
-      pipelineGeneratedUsd: 56943,
-      cacSavedUsd: 4750,
-      estimatedRoiMultiplier: 18.8
-    });
+    const seed = (clientId: string, companyName: string, planId: SubscriptionTierId, cycle: 'monthly' | 'annual') => {
+      const plan = SUBSCRIPTION_PLANS.find((p) => p.id === planId)!;
+      this.clientUsageMap.set(clientId, {
+        clientId,
+        companyName,
+        planId,
+        billingCycle: cycle,
+        billingCycleStart: cycleStart,
+        billingCycleEnd: cycleEnd,
+        minutesUsed: 0,
+        minutesLimit: plan.voiceMinutesMonthly,
+        callsCount: 0,
+        afterHoursLeadsCaptured: 0,
+        pipelineGeneratedUsd: 0,
+        cacSavedUsd: 0,
+        estimatedRoiMultiplier: 0
+      });
+    };
 
-    // Seed Acme Growth (Starter Plan)
-    this.clientUsageMap.set('acme_growth', {
-      clientId: 'acme_growth',
-      companyName: 'Acme SaaS',
-      planId: 'starter',
-      billingCycle: 'monthly',
-      billingCycleStart: cycleStart,
-      billingCycleEnd: cycleEnd,
-      minutesUsed: 148,
-      minutesLimit: 500,
-      callsCount: 22,
-      afterHoursLeadsCaptured: 7,
-      pipelineGeneratedUsd: 18500,
-      cacSavedUsd: 1750,
-      estimatedRoiMultiplier: 12.4
-    });
+    seed('lead_jm_901', 'DesignAcademy Studio', 'pro', 'annual');
+    seed('acme_growth', 'Acme SaaS', 'starter', 'monthly');
   }
 
   public getPlans(): SubscriptionPlan[] {
@@ -131,12 +137,14 @@ export class BillingService {
       const newUsage: ClientUsageTelemetry = {
         clientId,
         companyName: companyName || clientId,
-        planId: 'pro',
+        // Not entitled to anything until Stripe confirms a subscription. This used
+        // to auto-provision any unknown id as Pro with 2,500 minutes.
+        planId: 'starter',
         billingCycle: 'monthly',
         billingCycleStart: cycleStart,
         billingCycleEnd: cycleEnd,
         minutesUsed: 0,
-        minutesLimit: 2500,
+        minutesLimit: 0,
         callsCount: 0,
         afterHoursLeadsCaptured: 0,
         pipelineGeneratedUsd: 0,
@@ -170,13 +178,6 @@ export class BillingService {
       usage.cacSavedUsd += 250;
     }
 
-    // Recalculate ROI multiplier
-    const plan = SUBSCRIPTION_PLANS.find((p) => p.id === usage.planId) || SUBSCRIPTION_PLANS[1];
-    const planCost = usage.billingCycle === 'annual' ? plan.priceAnnualMonthlyUsd : plan.priceMonthlyUsd;
-    if (planCost > 0 && usage.pipelineGeneratedUsd > 0) {
-      usage.estimatedRoiMultiplier = Number((usage.pipelineGeneratedUsd / planCost).toFixed(1));
-    }
-
     this.clientUsageMap.set(clientId, usage);
     return usage;
   }
@@ -193,39 +194,53 @@ export class BillingService {
     usage.billingCycle = billingCycle;
     usage.minutesLimit = plan.voiceMinutesMonthly;
 
-    const planCost = billingCycle === 'annual' ? plan.priceAnnualMonthlyUsd : plan.priceMonthlyUsd;
-    if (planCost > 0 && usage.pipelineGeneratedUsd > 0) {
-      usage.estimatedRoiMultiplier = Number((usage.pipelineGeneratedUsd / planCost).toFixed(1));
-    }
-
     this.clientUsageMap.set(clientId, usage);
     return usage;
   }
 
+  /**
+   * Worked ROI model. Every output derives from assumptions the caller controls and
+   * which are echoed back; nothing here is a measured outcome.
+   *
+   * Corrects the previous version, which valued every voice lead as pipeline
+   * (including ones the contact form would have caught anyway), applied no close
+   * rate, divided pipeline by software cost as if pipeline were revenue, and
+   * hardcoded the plan price — together overstating ROI by roughly the inverse of
+   * the close rate.
+   *
+   * Lead with `breakEvenDealsPerMonth` when presenting this: it depends only on
+   * plan price and contract value, not on the unmeasured conversion assumptions.
+   */
   public calculateRoi(params: ROIParameters): ROICalculationResult {
+    const pct = (value: number | undefined, fallback: number) =>
+      Math.min(100, Math.max(0, Number.isFinite(value as number) ? (value as number) : fallback));
+
     const traffic = Math.max(100, params.monthlyTraffic || 5000);
     const acv = Math.max(100, params.averageContractValueUsd || 3500);
-    const baselineConversionPct = params.currentConversionPct ?? 0.8; // 0.8% typical form completion
-    const afterHoursPct = params.afterHoursTrafficSharePct ?? 32; // 32% after-hours web traffic
+    const afterHoursPct = pct(params.afterHoursTrafficSharePct, 32);
+    const baselinePct = pct(params.currentConversionPct, 0.8);
+    const voicePct = pct(params.voiceConversionPct, 4.5);
+    const closeRatePct = pct(params.closeRatePct, 20);
+
+    const plan = SUBSCRIPTION_PLANS.find((p) => p.id === (params.planId || 'pro')) || SUBSCRIPTION_PLANS[1];
+    const planCostMonthlyUsd =
+      params.billingCycle === 'annual' ? plan.priceAnnualMonthlyUsd : plan.priceMonthlyUsd;
 
     const afterHoursVisitors = Math.round(traffic * (afterHoursPct / 100));
-
-    // Static form baseline: only converts ~0.8% of after-hours traffic because users drop off
-    const staticFormBaselineLeads = Math.round(afterHoursVisitors * (baselineConversionPct / 100));
-
-    // Spoken conversational Voice AI conversion rate: ~4.5% of after-hours visitors speak & qualify
-    const expectedSpokenLeads = Math.round(afterHoursVisitors * 0.045);
-
+    const staticFormBaselineLeads = Math.round(afterHoursVisitors * (baselinePct / 100));
+    const expectedSpokenLeads = Math.round(afterHoursVisitors * (voicePct / 100));
     const incrementalLeads = Math.max(0, expectedSpokenLeads - staticFormBaselineLeads);
-    const grossPipelineGeneratedUsd = expectedSpokenLeads * acv;
-    
-    // Pro Plan monthly price
-    const growthOsCostMonthlyUsd = 397;
-    const netRevenueGainUsd = grossPipelineGeneratedUsd - growthOsCostMonthlyUsd;
-    const estimatedRoiMultiple = Number((grossPipelineGeneratedUsd / growthOsCostMonthlyUsd).toFixed(1));
-    
-    // CAC savings ($250 per qualified lead that doesn't need paid retargeting or human SDR dialer)
-    const cacSavedUsd = expectedSpokenLeads * 250;
+
+    const incrementalPipelineUsd = incrementalLeads * acv;
+    const incrementalClosedDeals = Math.round(incrementalLeads * (closeRatePct / 100) * 10) / 10;
+    const incrementalRevenueUsd = Math.round(incrementalClosedDeals * acv);
+    const netRevenueGainUsd = incrementalRevenueUsd - planCostMonthlyUsd;
+    const estimatedRoiMultiple =
+      planCostMonthlyUsd > 0 ? Math.round((incrementalRevenueUsd / planCostMonthlyUsd) * 10) / 10 : 0;
+
+    const breakEvenDealsPerMonth = Math.round((planCostMonthlyUsd / acv) * 100) / 100;
+    const monthsPerDealToBreakEven =
+      planCostMonthlyUsd > 0 ? Math.round((acv / planCostMonthlyUsd) * 10) / 10 : 0;
 
     return {
       monthlyTraffic: traffic,
@@ -234,11 +249,20 @@ export class BillingService {
       expectedSpokenLeadsMonthly: expectedSpokenLeads,
       staticFormBaselineLeadsMonthly: staticFormBaselineLeads,
       incrementalLeadsMonthly: incrementalLeads,
-      grossPipelineGeneratedUsd,
+      incrementalPipelineUsd,
+      incrementalClosedDealsMonthly: incrementalClosedDeals,
+      incrementalRevenueUsd,
       netRevenueGainUsd,
-      growthOsCostMonthlyUsd,
+      planCostMonthlyUsd,
       estimatedRoiMultiple,
-      cacSavedUsd
+      breakEvenDealsPerMonth,
+      monthsPerDealToBreakEven,
+      assumptions: {
+        afterHoursTrafficSharePct: afterHoursPct,
+        currentConversionPct: baselinePct,
+        voiceConversionPct: voicePct,
+        closeRatePct
+      }
     };
   }
 

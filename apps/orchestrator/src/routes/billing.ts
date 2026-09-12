@@ -46,12 +46,28 @@ billingRouter.get('/usage/:clientId', requireApiKey, (req: Request, res: Respons
 // POST /api/billing/calculate-roi
 billingRouter.post('/calculate-roi', (req: Request, res: Response) => {
   try {
-    const { monthlyTraffic, averageContractValueUsd, currentConversionPct, afterHoursTrafficSharePct } = req.body;
+    const {
+      monthlyTraffic,
+      averageContractValueUsd,
+      currentConversionPct,
+      afterHoursTrafficSharePct,
+      voiceConversionPct,
+      closeRatePct,
+      planId,
+      billingCycle
+    } = req.body;
+    // Optional percentages pass through undefined so the service applies its
+    // documented defaults; a caller-supplied 0 is a real value and is kept.
+    const optionalNumber = (v: unknown) => (v === undefined || v === null || v === '' ? undefined : Number(v));
     const params: ROIParameters = {
       monthlyTraffic: Number(monthlyTraffic) || 5000,
       averageContractValueUsd: Number(averageContractValueUsd) || 3500,
-      currentConversionPct: currentConversionPct !== undefined ? Number(currentConversionPct) : 0.8,
-      afterHoursTrafficSharePct: afterHoursTrafficSharePct !== undefined ? Number(afterHoursTrafficSharePct) : 32
+      currentConversionPct: optionalNumber(currentConversionPct),
+      afterHoursTrafficSharePct: optionalNumber(afterHoursTrafficSharePct),
+      voiceConversionPct: optionalNumber(voiceConversionPct),
+      closeRatePct: optionalNumber(closeRatePct),
+      planId: isValidPlanId(planId) ? planId : 'pro',
+      billingCycle: billingCycle === 'annual' ? 'annual' : 'monthly'
     };
 
     const calculation = billingService.calculateRoi(params);

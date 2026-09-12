@@ -409,21 +409,51 @@ export interface ClientUsageTelemetry {
 export interface ROIParameters {
   monthlyTraffic: number;
   averageContractValueUsd: number;
-  currentConversionPct?: number; // default ~0.8%
-  afterHoursTrafficSharePct?: number; // default ~32%
+  /** Share of after-hours visitors a static contact form converts. Default 0.8. */
+  currentConversionPct?: number;
+  /** Share of web traffic arriving outside business hours. Default 32. */
+  afterHoursTrafficSharePct?: number;
+  /**
+   * Share of after-hours visitors the voice agent turns into a qualified lead.
+   * Default 4.5. Unmeasured — the whole model rests on this, so it is an input
+   * the prospect sets, not a claim we make.
+   */
+  voiceConversionPct?: number;
+  /** Share of qualified leads that close. Default 20. Pipeline is not revenue without it. */
+  closeRatePct?: number;
+  planId?: SubscriptionTierId;
+  billingCycle?: 'monthly' | 'annual';
 }
 
+/**
+ * Worked ROI model. Every figure is derived from the assumptions echoed back in
+ * `assumptions`; nothing here is a measured outcome.
+ */
 export interface ROICalculationResult {
   monthlyTraffic: number;
   averageContractValueUsd: number;
   afterHoursVisitors: number;
   expectedSpokenLeadsMonthly: number;
   staticFormBaselineLeadsMonthly: number;
+  /** Leads the voice agent adds over what the form would have caught anyway. */
   incrementalLeadsMonthly: number;
-  grossPipelineGeneratedUsd: number;
+  /** Incremental leads x contract value. Pipeline, NOT revenue. */
+  incrementalPipelineUsd: number;
+  incrementalClosedDealsMonthly: number;
+  /** Incremental closed deals x contract value. The figure ROI is computed from. */
+  incrementalRevenueUsd: number;
   netRevenueGainUsd: number;
-  growthOsCostMonthlyUsd: number;
+  planCostMonthlyUsd: number;
   estimatedRoiMultiple: number;
-  cacSavedUsd: number;
+  /** Closed deals per month needed to cover the plan. Independent of the conversion assumptions. */
+  breakEvenDealsPerMonth: number;
+  /** How often one extra closed deal is needed to cover the plan, in months. */
+  monthsPerDealToBreakEven: number;
+  assumptions: {
+    afterHoursTrafficSharePct: number;
+    currentConversionPct: number;
+    voiceConversionPct: number;
+    closeRatePct: number;
+  };
 }
 

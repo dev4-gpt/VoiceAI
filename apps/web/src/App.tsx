@@ -2379,14 +2379,16 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
                 ? 'bg-amber-50/90 hover:bg-amber-100 border-amber-200/90 text-amber-950 shadow-2xs'
                 : 'bg-amber-950/40 hover:bg-amber-900/50 border-amber-500/40 text-amber-200'
             }`}
-            title="Click to view subscription plan, quota usage, and spoken ROI calculator"
+            title="Leads captured by the voice agent. Click for plans and the ROI calculator."
           >
+            {/* Real, persisted CRM count. This pill used to show hardcoded strings
+                ("Quota: 412/2,500m", "+$56.9k Pipeline") that no data backed. */}
             <div className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-              <span>Quota: <strong>412/2,500m</strong></span>
+              <span>
+                Leads captured: <strong>{leads.length}</strong>
+              </span>
             </div>
-            <span className="text-slate-300">|</span>
-            <span className="text-emerald-600 font-bold">+$56.9k Pipeline</span>
           </button>
 
           {/* 📥 1-Click Revenue Dossier Export */}
@@ -2418,9 +2420,6 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
           >
             <Sparkles className="w-3.5 h-3.5 text-amber-500" />
             <span>💎 Plans & ROI</span>
-            <span className="hidden sm:inline-block text-[9px] px-1.5 py-0.5 rounded bg-amber-400/30 text-amber-950 dark:text-amber-200 font-extrabold ml-0.5">
-              {activePlanId.toUpperCase()}
-            </span>
           </button>
 
           {/* 🌐 1-Click Embed Snippet Trigger */}
@@ -3176,8 +3175,7 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
       <SubscriptionPlansModal
         isOpen={isPlansModalOpen}
         onClose={() => setIsPlansModalOpen(false)}
-        currentPlanId={activePlanId}
-        onSelectPlan={(planId) => setActivePlanId(planId)}
+        clientId={prospectCompany || 'DesignAcademy Studio'}
         onOpenEmbedModal={() => setIsEmbedModalOpen(true)}
         isGlass={isGlass}
       />

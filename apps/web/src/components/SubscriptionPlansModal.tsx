@@ -1,415 +1,313 @@
-import React, { useState, useMemo } from 'react';
-import {
-  Check,
-  Zap,
-  Sparkles,
-  TrendingUp,
-  ShieldCheck,
-  DollarSign,
-  Layers,
-  Clock,
-  Award,
-  X,
-  ArrowRight,
-  Calculator
-} from 'lucide-react';
-import type { SubscriptionTierId } from '@voice-os/shared';
+import React, { useEffect, useState } from 'react';
+import { Check, Sparkles, X, ArrowRight, Calculator, ShieldCheck, Loader2, AlertTriangle } from 'lucide-react';
+import type { SubscriptionPlan, SubscriptionTierId, ROICalculationResult } from '@voice-os/shared';
+import { apiUrl } from '../config/api';
+
+/**
+ * Pricing and ROI.
+ *
+ * A view over the server, not a second copy of it. Prices come from
+ * GET /api/billing/plans and ROI from POST /api/billing/calculate-roi, so this page
+ * cannot drift from what checkout actually charges. It used to hardcode both, and
+ * its Subscribe button showed "Activated PRO tier!" without charging anyone. It now
+ * sends the visitor to Stripe Checkout; a plan becomes active only when Stripe's
+ * webhook confirms payment.
+ */
 
 interface SubscriptionPlansModalProps {
   isOpen: boolean;
   onClose: () => void;
-  currentPlanId?: SubscriptionTierId;
-  onSelectPlan?: (planId: SubscriptionTierId, cycle: 'monthly' | 'annual') => void;
+  /** Tenant the subscription is for. There is no login yet, so this is the company. */
+  clientId: string;
   onOpenEmbedModal?: () => void;
   isGlass?: boolean;
 }
 
+const usd = (n: number) => `$${Math.round(n).toLocaleString()}`;
+
 export const SubscriptionPlansModal: React.FC<SubscriptionPlansModalProps> = ({
   isOpen,
   onClose,
-  currentPlanId = 'pro',
-  onSelectPlan,
-  onOpenEmbedModal,
-  isGlass = true
+  clientId,
+  onOpenEmbedModal
 }) => {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('annual');
-  const [monthlyTraffic, setMonthlyTraffic] = useState<number>(5000);
-  const [dealValue, setDealValue] = useState<number>(3500);
-  const [selectedTier, setSelectedTier] = useState<SubscriptionTierId>(currentPlanId);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [plans, setPlans] = useState<SubscriptionPlan[] | null>(null);
+  const [plansError, setPlansError] = useState<string | null>(null);
 
-  // Dynamic Spoken ROI calculations
-  const roiMetrics = useMemo(() => {
-    const afterHoursTraffic = Math.round(monthlyTraffic * 0.32); // 32% after-hours
-    const baselineLeads = Math.round(afterHoursTraffic * 0.008); // 0.8% static form baseline
-    const spokenLeads = Math.round(afterHoursTraffic * 0.045); // 4.5% conversational voice conversion
-    const incrementalLeads = Math.max(0, spokenLeads - baselineLeads);
-    const grossPipeline = spokenLeads * dealValue;
-    const planCostMonthly = billingCycle === 'annual' ? 317 : 397;
-    const netRevenue = grossPipeline - planCostMonthly;
-    const roiMultiplier = Number((grossPipeline / planCostMonthly).toFixed(1));
-    const cacSaved = spokenLeads * 250; // $250 SDR labor saved per qualified call
+  const [monthlyTraffic, setMonthlyTraffic] = useState(5000);
+  const [dealValue, setDealValue] = useState(3500);
+  const [voiceConversionPct, setVoiceConversionPct] = useState(4.5);
+  const [closeRatePct, setCloseRatePct] = useState(20);
+  const [roi, setRoi] = useState<ROICalculationResult | null>(null);
 
-    return {
-      afterHoursTraffic,
-      baselineLeads,
-      spokenLeads,
-      incrementalLeads,
-      grossPipeline,
-      netRevenue,
-      roiMultiplier,
-      cacSaved,
-      planCostMonthly
-    };
-  }, [monthlyTraffic, dealValue, billingCycle]);
+  const [checkoutPlan, setCheckoutPlan] = useState<SubscriptionTierId | null>(null);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isOpen || plans) return;
+    fetch(apiUrl('/api/billing/plans'))
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
+      .then((d) => setPlans(d.plans))
+      .catch(() => setPlansError('Could not load pricing. Please try again.'));
+  }, [isOpen, plans]);
+
+  // Debounced so dragging a slider does not fire a request per pixel.
+  useEffect(() => {
+    if (!isOpen) return;
+    const timer = setTimeout(() => {
+      fetch(apiUrl('/api/billing/calculate-roi'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          monthlyTraffic,
+          averageContractValueUsd: dealValue,
+          voiceConversionPct,
+          closeRatePct,
+          planId: 'pro',
+          billingCycle
+        })
+      })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => d && setRoi(d.result))
+        .catch(() => undefined);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [isOpen, monthlyTraffic, dealValue, voiceConversionPct, closeRatePct, billingCycle]);
 
   if (!isOpen) return null;
 
-  const handleSubscribe = (tier: SubscriptionTierId) => {
-    setSelectedTier(tier);
-    if (onSelectPlan) {
-      onSelectPlan(tier, billingCycle);
+  const startCheckout = async (planId: SubscriptionTierId) => {
+    setCheckoutPlan(planId);
+    setCheckoutError(null);
+    try {
+      const res = await fetch(apiUrl('/api/billing/subscribe'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clientId, planId, billingCycle })
+      });
+      const body = await res.json();
+      if (res.ok && body.checkout?.checkoutUrl) {
+        window.location.href = body.checkout.checkoutUrl;
+        return;
+      }
+      setCheckoutError(
+        body.code === 'BILLING_UNCONFIGURED'
+          ? 'Checkout is not configured on this server.'
+          : body.error || 'Could not start checkout.'
+      );
+    } catch {
+      setCheckoutError('Could not reach the billing service.');
     }
-    setToastMessage(`Activated ${tier.toUpperCase()} tier (${billingCycle})! Syncing credentials & quotas...`);
-    setTimeout(() => {
-      setToastMessage(null);
-    }, 3500);
+    setCheckoutPlan(null);
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md overflow-y-auto animate-fade-in">
-      <div
-        className={`relative w-full max-w-5xl rounded-3xl border shadow-2xl p-6 sm:p-8 my-8 transition-all max-h-[90vh] overflow-y-auto ${
-          isGlass
-            ? 'bg-[#121217]/95 border-white/10 text-slate-100 shadow-[0_20px_70px_rgba(0,0,0,0.6)]'
-            : 'bg-slate-950 border-slate-800 text-slate-100 shadow-2xl'
-        }`}
-      >
-        {/* Toast */}
-        {toastMessage && (
-          <div className="fixed top-8 left-1/2 -translate-x-1/2 z-50 px-5 py-3 rounded-2xl bg-emerald-500/90 text-slate-950 font-bold font-mono text-xs shadow-xl backdrop-blur-md flex items-center gap-2 border border-emerald-300">
-            <Check className="w-4 h-4" />
-            <span>{toastMessage}</span>
-          </div>
-        )}
+  const slider = (
+    label: string,
+    value: string,
+    input: React.InputHTMLAttributes<HTMLInputElement>,
+    accent: string
+  ) => (
+    <div className="p-4 rounded-2xl bg-black/30 border border-white/5">
+      <div className="flex justify-between items-center text-xs font-mono mb-2">
+        <span className="text-slate-300">{label}</span>
+        <span className={`font-bold text-sm ${accent}`}>{value}</span>
+      </div>
+      <input type="range" className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400" {...input} />
+    </div>
+  );
 
-        {/* Close Button */}
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md overflow-y-auto">
+      <div className="relative w-full max-w-5xl rounded-3xl border border-white/10 bg-[#121217]/95 text-slate-100 shadow-[0_20px_70px_rgba(0,0,0,0.6)] p-6 sm:p-8 my-8 max-h-[90vh] overflow-y-auto">
         <button
           onClick={onClose}
+          aria-label="Close pricing"
           className="absolute top-6 right-6 p-2 rounded-full bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-all"
         >
           <X className="w-5 h-5" />
         </button>
 
-        {/* Modal Header */}
         <div className="text-center max-w-2xl mx-auto mb-8">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-mono font-semibold mb-3">
-            <Award className="w-3.5 h-3.5" />
-            <span>VENTURE SAAS MODEL & UNIT ECONOMICS</span>
-          </div>
-          <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight bg-gradient-to-r from-white via-slate-200 to-amber-200 bg-clip-text text-transparent">
-            GrowthVoice OS Subscription Engine
-          </h2>
+          <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">Plans & pricing</h2>
           <p className="text-sm text-slate-400 mt-2">
-            Turn passive website traffic into high-ticket qualified pipeline 24/7 with AssemblyAI-powered autonomous spoken operators.
+            A voice agent that answers your website around the clock and writes every qualified lead into your CRM.
           </p>
 
-          {/* Monthly / Annual Toggle */}
           <div className="flex items-center justify-center gap-3 mt-6">
-            <span className={`text-xs font-semibold ${billingCycle === 'monthly' ? 'text-white' : 'text-slate-400'}`}>
-              Monthly Billing
-            </span>
+            <span className={`text-xs font-semibold ${billingCycle === 'monthly' ? 'text-white' : 'text-slate-400'}`}>Monthly</span>
             <button
               onClick={() => setBillingCycle(billingCycle === 'monthly' ? 'annual' : 'monthly')}
-              className="relative w-14 h-7 rounded-full bg-white/10 border border-white/20 p-1 transition-all"
+              aria-label="Toggle annual billing"
+              className="relative w-14 h-7 rounded-full bg-white/10 border border-white/20 p-1"
             >
               <div
-                className={`w-5 h-5 rounded-full bg-gradient-to-tr from-amber-400 to-amber-200 shadow-md transition-all transform ${
+                className={`w-5 h-5 rounded-full bg-gradient-to-tr from-amber-400 to-amber-200 shadow-md transition-transform ${
                   billingCycle === 'annual' ? 'translate-x-7' : 'translate-x-0'
                 }`}
               />
             </button>
             <span className={`text-xs font-semibold flex items-center gap-1.5 ${billingCycle === 'annual' ? 'text-white' : 'text-slate-400'}`}>
-              Annual Billing
-              <span className="px-2 py-0.5 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 font-bold text-[10px] font-mono">
-                20% OFF • 2 MO FREE
-              </span>
+              Annual
+              <span className="px-2 py-0.5 rounded-full bg-emerald-500 text-slate-950 font-bold text-[10px] font-mono">20% OFF</span>
             </span>
           </div>
         </div>
 
-        {/* Pricing Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-          {/* Tier 1: Starter */}
-          <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-6 flex flex-col justify-between hover:border-white/20 transition-all">
-            <div>
-              <div className="text-xs font-mono font-bold text-slate-400 uppercase tracking-wider">Starter Operator</div>
-              <div className="mt-3 flex items-baseline gap-1">
-                <span className="text-3xl font-extrabold text-white">
-                  ${billingCycle === 'annual' ? '119' : '149'}
-                </span>
-                <span className="text-xs text-slate-400">/mo</span>
-              </div>
-              <p className="text-xs text-slate-400 mt-2 min-h-[32px]">
-                Autonomous 24/7 Inbound SDR qualification & instant booking.
-              </p>
-              <div className="my-5 border-t border-white/10" />
-              <ul className="space-y-2.5 text-xs text-slate-300">
-                <li className="flex items-start gap-2">
-                  <Check className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
-                  <span><strong>1 Autonomous Agent</strong> (Inbound SDR)</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <Check className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
-                  <span><strong>500 Voice Minutes / mo</strong></span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <Check className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
-                  <span>Real-Time BANT Lead Scoring & CRM Sync</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <Check className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
-                  <span>Automated Strategy Session Booking</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <Check className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
-                  <span>Standard Floating Audio Pill</span>
-                </li>
-              </ul>
-            </div>
-            <button
-              onClick={() => handleSubscribe('starter')}
-              className={`mt-6 w-full py-2.5 px-4 rounded-xl text-xs font-bold font-mono transition-all border ${
-                selectedTier === 'starter'
-                  ? 'bg-white/10 text-white border-white/30'
-                  : 'bg-white/5 hover:bg-white/10 text-slate-200 border-white/10'
-              }`}
-            >
-              {selectedTier === 'starter' ? 'Selected Plan' : 'Select Starter'}
-            </button>
+        {plansError && <p className="text-center text-sm text-rose-300 mb-6">{plansError}</p>}
+        {checkoutError && (
+          <div className="mb-6 flex items-center justify-center gap-2 text-sm text-rose-300">
+            <AlertTriangle className="w-4 h-4" />
+            <span>{checkoutError}</span>
           </div>
+        )}
 
-          {/* Tier 2: Pro (Flagship / Winner) */}
-          <div className="relative rounded-2xl border-2 border-amber-400/60 bg-gradient-to-b from-amber-500/[0.08] to-amber-500/[0.02] p-6 flex flex-col justify-between shadow-[0_0_30px_rgba(245,158,11,0.15)] transform md:-translate-y-2">
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-gradient-to-r from-amber-400 to-amber-200 text-slate-950 font-extrabold text-[10px] font-mono tracking-wide shadow-md">
-              RECOMMENDED • 90% MARGIN
-            </div>
-            <div>
-              <div className="text-xs font-mono font-bold text-amber-300 uppercase tracking-wider flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Growth Engine Pro</span>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-4">
+          {(plans ?? []).map((plan) => {
+            const price = billingCycle === 'annual' ? plan.priceAnnualMonthlyUsd : plan.priceMonthlyUsd;
+            const featured = Boolean(plan.recommended);
+            const busy = checkoutPlan === plan.id;
+            return (
+              <div
+                key={plan.id}
+                className={`relative rounded-2xl p-6 flex flex-col justify-between ${
+                  featured
+                    ? 'border-2 border-amber-400/60 bg-gradient-to-b from-amber-500/[0.08] to-amber-500/[0.02] md:-translate-y-2'
+                    : 'border border-white/10 bg-white/[0.02]'
+                }`}
+              >
+                {featured && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-gradient-to-r from-amber-400 to-amber-200 text-slate-950 font-extrabold text-[10px] font-mono">
+                    RECOMMENDED
+                  </div>
+                )}
+                <div>
+                  <div className={`text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 ${featured ? 'text-amber-300' : 'text-slate-400'}`}>
+                    {featured && <Sparkles className="w-3.5 h-3.5" />}
+                    <span>{plan.name}</span>
+                  </div>
+                  <div className="mt-3 flex items-baseline gap-1">
+                    <span className="text-3xl font-extrabold text-white">{usd(price)}</span>
+                    <span className="text-xs text-slate-400">/mo{billingCycle === 'annual' ? ', billed yearly' : ''}</span>
+                  </div>
+                  <p className="text-xs text-slate-400 mt-2 min-h-[32px]">{plan.tagline}</p>
+                  <div className="my-5 border-t border-white/10" />
+                  <ul className="space-y-2.5 text-xs text-slate-300">
+                    {plan.features.map((f) => (
+                      <li key={f} className="flex items-start gap-2">
+                        <Check className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
+                        <span>{f}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <button
+                  onClick={() => startCheckout(plan.id)}
+                  disabled={checkoutPlan !== null}
+                  className={`mt-6 w-full py-2.5 px-4 rounded-xl text-xs font-bold font-mono transition-all flex items-center justify-center gap-2 disabled:opacity-60 ${
+                    featured
+                      ? 'bg-gradient-to-r from-amber-400 to-amber-200 text-slate-950 hover:from-amber-300'
+                      : 'bg-white/5 hover:bg-white/10 text-slate-200 border border-white/10'
+                  }`}
+                >
+                  {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
+                  {busy ? 'Opening checkout…' : `Choose ${plan.name}`}
+                </button>
               </div>
-              <div className="mt-3 flex items-baseline gap-1">
-                <span className="text-3xl font-extrabold text-white">
-                  ${billingCycle === 'annual' ? '317' : '397'}
-                </span>
-                <span className="text-xs text-slate-400">/mo</span>
-              </div>
-              <p className="text-xs text-slate-300 mt-2 min-h-[32px]">
-                The complete autonomous growth stack: SDR, Churn Save & Content Factory.
-              </p>
-              <div className="my-5 border-t border-amber-400/20" />
-              <ul className="space-y-2.5 text-xs text-slate-200">
-                <li className="flex items-start gap-2">
-                  <Check className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
-                  <span><strong>3 Autonomous Agents</strong> (SDR, Outbound, Churn)</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <Check className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
-                  <span><strong>2,500 Voice Minutes / mo</strong> (&lt;350ms TTFA)</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <Check className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
-                  <span>Autonomous Hermes Content Factory (X/LinkedIn/Substack)</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <Check className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
-                  <span>Local Obsidian Vault Bi-Directional Graph Sync</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <Check className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
-                  <span>6-Mode 3D Glassy Voice Reactor Suite</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <Check className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
-                  <span><strong>1-Click Embeddable Web Widget</strong> (embed.js)</span>
-                </li>
-              </ul>
-            </div>
-            <button
-              onClick={() => handleSubscribe('pro')}
-              className="mt-6 w-full py-2.5 px-4 rounded-xl text-xs font-extrabold font-mono transition-all bg-gradient-to-r from-amber-400 to-amber-200 hover:from-amber-300 hover:to-amber-100 text-slate-950 shadow-lg shadow-amber-400/20 hover:scale-[1.01]"
-            >
-              {selectedTier === 'pro' ? 'Current Active Plan' : 'Upgrade to Pro Engine'}
-            </button>
-          </div>
-
-          {/* Tier 3: Enterprise */}
-          <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-6 flex flex-col justify-between hover:border-white/20 transition-all">
-            <div>
-              <div className="text-xs font-mono font-bold text-slate-400 uppercase tracking-wider">Sovereign Enterprise</div>
-              <div className="mt-3 flex items-baseline gap-1">
-                <span className="text-3xl font-extrabold text-white">
-                  ${billingCycle === 'annual' ? '1,197' : '1,497'}
-                </span>
-                <span className="text-xs text-slate-400">/mo</span>
-              </div>
-              <p className="text-xs text-slate-400 mt-2 min-h-[32px]">
-                Custom voice clones, multi-client isolated vaults & 99.9% SLA.
-              </p>
-              <div className="my-5 border-t border-white/10" />
-              <ul className="space-y-2.5 text-xs text-slate-300">
-                <li className="flex items-start gap-2">
-                  <Check className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
-                  <span><strong>Unlimited Voice Agents</strong> & Custom Voice Clone</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <Check className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
-                  <span><strong>10,000 Voice Minutes / mo</strong> + Volume Pricing</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <Check className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
-                  <span>Multi-Client Isolated Encrypted Credential Vaults</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <Check className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
-                  <span>Custom Legal Compliance & Financial Margin Clamps</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <Check className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
-                  <span>Dedicated Cloud Workers & 24/7 Solution Architect</span>
-                </li>
-              </ul>
-            </div>
-            <button
-              onClick={() => handleSubscribe('enterprise')}
-              className={`mt-6 w-full py-2.5 px-4 rounded-xl text-xs font-bold font-mono transition-all border ${
-                selectedTier === 'enterprise'
-                  ? 'bg-white/10 text-white border-white/30'
-                  : 'bg-white/5 hover:bg-white/10 text-slate-200 border-white/10'
-              }`}
-            >
-              {selectedTier === 'enterprise' ? 'Selected Plan' : 'Deploy Enterprise'}
-            </button>
-          </div>
+            );
+          })}
         </div>
 
-        {/* Interactive Spoken ROI & Revenue Bleed Calculator */}
-        <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 sm:p-8 backdrop-blur-xl">
+        <p className="flex items-center justify-center gap-1.5 text-[11px] text-slate-500 mb-10">
+          <ShieldCheck className="w-3.5 h-3.5" />
+          Secure checkout by Stripe. A plan activates only after payment is confirmed.
+        </p>
+
+        <div className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 sm:p-8">
           <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-400/20 to-amber-200/20 border border-amber-400/30 flex items-center justify-center text-amber-300">
+              <div className="w-10 h-10 rounded-2xl bg-amber-400/15 border border-amber-400/30 flex items-center justify-center text-amber-300">
                 <Calculator className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-                  Interactive Spoken Revenue Recovery Calculator
-                </h3>
-                <p className="text-xs text-slate-400">
-                  Quantify the revenue lost to after-hours website bounces vs. captured by GrowthVoice OS
-                </p>
+                <h3 className="text-base sm:text-lg font-bold text-white">ROI calculator</h3>
+                <p className="text-xs text-slate-400">Set your own numbers. Every figure below is derived from them.</p>
               </div>
             </div>
-
             {onOpenEmbedModal && (
               <button
                 onClick={() => {
                   onClose();
                   onOpenEmbedModal();
                 }}
-                className="px-4 py-2 rounded-xl bg-sky-500/20 hover:bg-sky-500/30 border border-sky-400/40 text-sky-200 text-xs font-mono font-bold flex items-center gap-2 transition-all"
+                className="px-4 py-2 rounded-xl bg-sky-500/20 hover:bg-sky-500/30 border border-sky-400/40 text-sky-200 text-xs font-mono font-bold flex items-center gap-2"
               >
-                <span>Get 1-Line Embed Script</span>
+                <span>Get the embed script</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
             )}
           </div>
 
-          {/* Sliders */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <div className="p-4 rounded-2xl bg-black/30 border border-white/5">
-              <div className="flex justify-between items-center text-xs font-mono mb-2">
-                <span className="text-slate-300">Monthly Website Visitors:</span>
-                <span className="text-amber-300 font-bold text-sm">{monthlyTraffic.toLocaleString()} visitors</span>
-              </div>
-              <input
-                type="range"
-                min="1000"
-                max="50000"
-                step="500"
-                value={monthlyTraffic}
-                onChange={(e) => setMonthlyTraffic(Number(e.target.value))}
-                className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-amber-400"
-              />
-              <div className="flex justify-between text-[10px] text-slate-500 mt-1 font-mono">
-                <span>1,000 / mo</span>
-                <span>25,000 / mo</span>
-                <span>50,000 / mo</span>
-              </div>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-black/30 border border-white/5">
-              <div className="flex justify-between items-center text-xs font-mono mb-2">
-                <span className="text-slate-300">Average Deal / ACV:</span>
-                <span className="text-emerald-300 font-bold text-sm">${dealValue.toLocaleString()}</span>
-              </div>
-              <input
-                type="range"
-                min="500"
-                max="15000"
-                step="250"
-                value={dealValue}
-                onChange={(e) => setDealValue(Number(e.target.value))}
-                className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-emerald-400"
-              />
-              <div className="flex justify-between text-[10px] text-slate-500 mt-1 font-mono">
-                <span>$500</span>
-                <span>$7,500</span>
-                <span>$15,000</span>
-              </div>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            {slider('Monthly website visitors', monthlyTraffic.toLocaleString(), {
+              min: 1000, max: 50000, step: 500, value: monthlyTraffic,
+              onChange: (e) => setMonthlyTraffic(Number(e.target.value))
+            }, 'text-amber-300')}
+            {slider('Average contract value', usd(dealValue), {
+              min: 500, max: 15000, step: 250, value: dealValue,
+              onChange: (e) => setDealValue(Number(e.target.value))
+            }, 'text-emerald-300')}
+            {slider('After-hours visitors who become a qualified voice lead', `${voiceConversionPct}%`, {
+              min: 0.5, max: 10, step: 0.5, value: voiceConversionPct,
+              onChange: (e) => setVoiceConversionPct(Number(e.target.value))
+            }, 'text-amber-300')}
+            {slider('Qualified leads that close', `${closeRatePct}%`, {
+              min: 1, max: 60, step: 1, value: closeRatePct,
+              onChange: (e) => setCloseRatePct(Number(e.target.value))
+            }, 'text-emerald-300')}
           </div>
 
-          {/* Quantified Metrics Dashboard */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5">
-              <div className="text-[11px] font-mono text-slate-400">After-Hours Traffic (32%)</div>
-              <div className="text-xl font-extrabold text-white mt-1">
-                {roiMetrics.afterHoursTraffic.toLocaleString()}
+          {roi && (
+            <>
+              <div className="rounded-2xl bg-gradient-to-br from-emerald-500/15 to-emerald-300/5 border border-emerald-400/30 p-5 mb-4">
+                <div className="text-[11px] font-mono text-emerald-300 font-semibold">Break-even</div>
+                <div className="text-lg sm:text-xl font-extrabold text-white mt-1">
+                  One extra closed deal every {roi.monthsPerDealToBreakEven} months pays for the Pro plan
+                </div>
+                <div className="text-[11px] text-slate-400 mt-1">
+                  {usd(roi.planCostMonthlyUsd)}/mo ÷ {usd(roi.averageContractValueUsd)} contract value. This depends only on price and deal size — not on any conversion assumption.
+                </div>
               </div>
-              <div className="text-[10px] text-slate-500 mt-1">Visitors when staff is offline</div>
-            </div>
 
-            <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5">
-              <div className="text-[11px] font-mono text-slate-400">Spoken Qualified Leads</div>
-              <div className="text-xl font-extrabold text-amber-300 mt-1">
-                {roiMetrics.spokenLeads} calls/mo
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5">
+                  <div className="text-[11px] font-mono text-slate-400">After-hours visitors</div>
+                  <div className="text-xl font-extrabold text-white mt-1">{roi.afterHoursVisitors.toLocaleString()}</div>
+                  <div className="text-[10px] text-slate-500 mt-1">{roi.assumptions.afterHoursTrafficSharePct}% of traffic</div>
+                </div>
+                <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5">
+                  <div className="text-[11px] font-mono text-slate-400">Extra qualified leads</div>
+                  <div className="text-xl font-extrabold text-amber-300 mt-1">+{roi.incrementalLeadsMonthly}/mo</div>
+                  <div className="text-[10px] text-slate-500 mt-1">beyond what a form catches</div>
+                </div>
+                <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5">
+                  <div className="text-[11px] font-mono text-slate-400">Extra closed revenue</div>
+                  <div className="text-xl font-extrabold text-emerald-400 mt-1">{usd(roi.incrementalRevenueUsd)}/mo</div>
+                  <div className="text-[10px] text-slate-500 mt-1">{roi.incrementalClosedDealsMonthly} deals at {roi.assumptions.closeRatePct}% close</div>
+                </div>
+                <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-400/30">
+                  <div className="text-[11px] font-mono text-amber-300 font-semibold">Return on the plan</div>
+                  <div className="text-2xl font-black text-white mt-1">{roi.estimatedRoiMultiple}×</div>
+                  <div className="text-[10px] text-amber-200/80 mt-1">on {usd(roi.planCostMonthlyUsd)}/mo Pro</div>
+                </div>
               </div>
-              <div className="text-[10px] text-emerald-400 mt-1 font-mono">
-                +{roiMetrics.incrementalLeads} vs static form
-              </div>
-            </div>
 
-            <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5">
-              <div className="text-[11px] font-mono text-slate-400">Recovered Pipeline</div>
-              <div className="text-xl font-extrabold text-emerald-400 mt-1">
-                ${(roiMetrics.grossPipeline / 1000).toFixed(0)}k <span className="text-xs text-slate-400">/mo</span>
-              </div>
-              <div className="text-[10px] text-slate-400 mt-1 font-mono">
-                ${roiMetrics.cacSaved.toLocaleString()} CAC saved
-              </div>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-500/20 to-amber-200/10 border border-amber-400/40">
-              <div className="text-[11px] font-mono text-amber-300 font-semibold">Net Spoken ROI</div>
-              <div className="text-2xl font-black text-white mt-1">
-                {roiMetrics.roiMultiplier}x
-              </div>
-              <div className="text-[10px] text-amber-200 mt-1 font-mono">
-                on ${roiMetrics.planCostMonthly}/mo Pro plan
-              </div>
-            </div>
-          </div>
+              <p className="text-[11px] text-slate-500 mt-4">
+                A model, not a measured result. The voice conversion and close rates are your assumptions; GrowthVoice OS has not
+                measured them for your business. Revenue counts closed deals only — pipeline is not revenue.
+              </p>
+            </>
+          )}
         </div>
       </div>
     </div>
