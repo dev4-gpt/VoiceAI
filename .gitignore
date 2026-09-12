@@ -64,3 +64,7 @@ apps/orchestrator/vault/
 
 .vercel
 .env*
+
+# Third-party reference PDFs: keep locally, never publish.
+*.pdf
+!docs/submission/*.pdf

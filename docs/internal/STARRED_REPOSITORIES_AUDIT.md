@@ -1,5 +1,11 @@
 # 🌟 Starred Repositories Architectural Audit & Infrastructure Integration
 
+> **Internal / historical document.** Kept for reference; it reflects plans or
+> research at the time it was written, not the current product. For what the code
+> does today, see the [README](../../README.md) and the status table in
+> [CLAUDE.md](../../CLAUDE.md).
+
+
 This document provides a comprehensive technical audit of the **100+ starred repositories**, evaluates their exact architectural fit for **GrowthVoice OS**, and identifies which components are directly integrated into our production stack.
 
 ---

@@ -27,7 +27,7 @@ A deep research and synthesis loop (generating verified X threads, long-form new
 
 ```mermaid
 graph TD
-    S1["01 & 02. Spoken Brief Capture<br/>(AssemblyAI universal-3-5-pro Voice Agent)"] --> S3["03. Control Plane & Budgets<br/>(DeepSeek Harness dsh - Max $0.05 budget)"]
+    S1["01 & 02. Spoken Brief Capture<br/>(AssemblyAI Voice Agent API)"] --> S3["03. Control Plane & Budgets<br/>(DeepSeek Harness dsh - Max $0.05 budget)"]
     S3 --> S4["04. Load Capability Packs<br/>(X-Hook, Newsletter, Webinar Scripts)"]
     S4 --> S5["05. Three Parallel Research Lanes"]
     
@@ -88,7 +88,7 @@ Following Raja Ashok's principle: **"Route work by fitness, not by model loyalty
 
 | Stage | Default Model | Rationale | Cost per Content Pack |
 | :--- | :--- | :--- | :--- |
-| **Spoken Input & Voice Synthesis** | AssemblyAI `universal-3-5-pro` (Voice Agent API) | ~1s end-to-end turn latency, full-duplex speech, natural `anna` voice. | ~$0.015 |
+| **Spoken Input & Voice Synthesis** | AssemblyAI Voice Agent API | full-duplex speech, natural `anna` voice. | ~$0.015 |
 | **Parallel Research Extraction** | DeepSeek-V3 (`deepseek-chat`) | High token volume, fast extraction, low cost ($0.14 / 1M tokens). | ~$0.002 |
 | **Deep Synthesis & Self-Healing** | DeepSeek-R1 (`deepseek-reasoner`) | Unmatched reasoning depth, handles contradiction, reflection loop. | ~$0.015 |
 | **Verification Gates & Approval** | Deterministic Code & Regex Graders | Fast, free, reproducible, 100% deterministic. | $0.000 |

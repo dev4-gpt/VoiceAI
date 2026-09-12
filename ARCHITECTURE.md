@@ -5,7 +5,7 @@
 **AI Growth Operator Voice OS** is an enterprise-grade, voice-first revenue engine engineered for online creators, educators, and digital product agencies. It automates high-stakes inbound SDR qualification, outbound reactivation campaigns, customer churn intervention, and autonomous content generation using real-time voice interactions.
 
 The platform unites five architectural pillars:
-1. **AssemblyAI Voice Infrastructure:** Native managed Voice Agent API (`universal-3-5-pro`) with real-time speech-in/speech-out streaming, low-latency turn detection, flat tool-calling schemas, and sub-second barge-in cancellation.
+1. **AssemblyAI Voice Infrastructure:** Native managed Voice Agent API with real-time speech-in/speech-out streaming, turn detection, flat tool-calling schemas, and sub-second barge-in cancellation.
 2. **Production GenAI Systems Engineering:** Hybrid RAG & re-ranking, Anthropic Evals harness ($pass@k$ and $pass^k$), distributed turn-level observability (TTFA, turn latency), multi-layer caching with TTL invalidation, and deterministic guardrails (*"Model proposes, application enforces"*).
 3. **DeepSeek Harness & Model-as-a-Judge Reasoning:** Integrated with [DeepSeek Harness (`dsh`)](https://github.com/deepseek-ai/deepseek-harness) utilizing `deepseek-reasoner` (DeepSeek-R1) and `deepseek-chat` (DeepSeek-V3) for deep mathematical/tactical analysis, multi-agent arbitration, and high-fidelity Model-as-a-Judge conversational grading.
 4. **Hermes Content Factory & Autonomous Self-Healing:** Codified implementation of [Raja Ashok's 10-step Hermes Content Factory Blueprint](docs/CONTENT_FACTORY_PIPELINE.md). Resolves the 15–45s content generation latency hurdle via instant spoken dispatch in AssemblyAI followed by 3 parallel research lanes, multi-asset drafting (X threads, newsletters, webinars), and an automated self-healing error analysis and repair loop.
@@ -19,7 +19,7 @@ Inspired by the "Build Your Whole Team with Claude" framework, the GrowthVoice O
 
 ```mermaid
 graph TD
-    VOICE["AssemblyAI Voice Agent (universal-3-5-pro) - Spoken Interface"]
+    VOICE["AssemblyAI Voice Agent API - Spoken Interface"]
     CEO["Growth Operator Orchestrator (CEO / Dispatcher)"]
 
     subgraph DEPTS["Autonomous Creator Departments"]
@@ -102,7 +102,6 @@ graph TD
 
 * **WebSocket Gateway:**
   * Endpoint: `wss://agents.assemblyai.com/v1/ws`
-  * Model: `universal-3-5-pro` (real-time, ~1s end-to-end turn latency, native code-switching across 18 languages).
   * Audio Specification: Single-channel (mono), 16-bit signed Linear PCM at 24,000 Hz.
   * Message Structure: JSON-encapsulated events. Mic frames sent as:
     ```json

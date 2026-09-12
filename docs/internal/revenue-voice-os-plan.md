@@ -1,5 +1,11 @@
 # AI Growth Operator Voice OS – AssemblyAI Hackathon Plan
 
+> **Internal / historical document.** Kept for reference; it reflects plans or
+> research at the time it was written, not the current product. For what the code
+> does today, see the [README](../../README.md) and the status table in
+> [CLAUDE.md](../../CLAUDE.md).
+
+
 ## 1. Problem & Vision
 
 Creators with large audiences make most of their money from digital products (courses, communities, mentorship, templates), but they rarely have the time or skills to run reliable sales, operations, and retention funnels.

@@ -1,5 +1,12 @@
 # AssemblyAI Voice Agent Hackathon (lablab.ai) — Strategy & Submission Blueprint
 
+> **Historical planning document — superseded.** Written early in the build, before
+> the product was audited. Figures marked *corrected* have been fixed in place;
+> anything else here reflects intent at the time, not the current product. For
+> current pricing, unit economics and capabilities, see the [README](../../README.md)
+> and the status table in [CLAUDE.md](../../CLAUDE.md).
+
+
 > **Event:** [AssemblyAI - Voice Agent Hackathon on lablab.ai](https://lablab.ai/event/assemblyai-voice-agent-hackathon)  
 > **Dates:** September 1 – September 30, 2026  
 > **Prize Pool:** $10,000 ($5,000 Cash + $5,000 AssemblyAI Credits)  
@@ -26,7 +33,7 @@ Judges on lablab.ai evaluate submissions across four core dimensions:
 | Criterion | What Judges Look For | How GrowthVoice OS Dominates |
 | :--- | :--- | :--- |
 | **Technical Implementation & Depth** | Clean code, proper SDK/API usage, robust handling of async streams, error resilience, audio pipeline. | Strictly follows AssemblyAI Coding Agent rules: ephemeral token minting, 24 kHz mono PCM16, flat tool schema, interruption handling, explicit `Terminate`. |
-| **Use of AssemblyAI Technology** | Going beyond basic transcription; utilizing real-time Voice Agent features. | Deep utilization of Voice Agent API (`universal-3-5-pro`), dynamic `UpdateConfiguration` (`agent_context`, `keyterms_prompt`), flat tool calling, and low-latency full-duplex speech. |
+| **Use of AssemblyAI Technology** | Going beyond basic transcription; utilizing real-time Voice Agent features. | Voice Agent API end to end: server-minted ephemeral tokens, `session.update` with 7 registered tools, the `tool.call` → `tool.result` loop, and barge-in via `interrupt_response`. (*corrected* — previously cited a model name and config fields the code does not use.) |
 | **Innovation & Concept** | A novel, high-impact use case that moves beyond generic AI voice bots. | Replaces the \$10k/mo human "Growth Operator" agency model with an autonomous Voice OS capturing after-hours creator revenue. |
 | **Business Value & Usability** | Clear ROI, practical utility, polished UI/UX, measurable metrics. | Direct revenue metric tracking (qualified leads, meetings booked, churn save rate) displayed in a dark-mode, glassmorphic operator dashboard. |
 | **Presentation & Documentation** | Clear README, architecture diagrams, concise video walkthrough (≤5 mins). | Architectural diagrams, complete Docker Compose setup, interactive Evals dashboard, and polished video storyboard. |
@@ -83,30 +90,27 @@ A winning lablab.ai demo video must be crisp, engaging, and show live functional
 
 ---
 
-## 5. Venture-Scale SaaS Startup Model & Unit Economics
+## 5. Pricing & Unit Economics (*corrected*)
 
-Unlike student or toy hackathon projects that stop at API wrappers, **GrowthVoice OS** is engineered as a venture-scale, high-gross-margin B2B SaaS startup targeting the 50M+ creator & digital knowledge economy.
+The original version of this section costed voice at ~$0.018/min and claimed
+87–93% gross margins and a ">14.6x LTV:CAC". All three were wrong: the product runs
+on AssemblyAI's **Voice Agent API at $4.50/hour ($0.075/min), all-in**, and there is
+no retention or acquisition data to support any LTV:CAC figure. Tiers were re-priced
+from the real cost.
 
-### 💰 Subscription Pricing Tiers
-| Dimension | **Starter Operator** | **Growth Engine Pro** *(Flagship)* | **Sovereign Enterprise** |
-| :--- | :--- | :--- | :--- |
-| **Monthly Pricing** | **$149 / mo** | **$397 / mo** *(Recommended)* | **$1,497 / mo** |
-| **Annual Pricing (20% Off)** | **$119 / mo** ($1,428 / yr) | **$317 / mo** ($3,804 / yr) | **$1,197 / mo** ($14,364 / yr) |
-| **Autonomous Voice Agents** | 1 (Inbound SDR) | 3 (SDR, Outbound, Churn Rescue) | Unlimited + Custom Voice Clones |
-| **Monthly Voice Quota** | 500 Spoken Minutes | 2,500 Spoken Minutes | 10,000 Spoken Minutes |
-| **Overage Rate** | $0.18 / min | $0.14 / min | $0.10 / min |
-| **Barge-In Pacing & Latency** | Standard (<500ms) | Priority (<350ms TTFA) | Dedicated GPU Edge (<250ms) |
-| **Hermes Content Factory** | Basic (Text only) | Full Multi-Platform (X, LinkedIn, Substack) | Custom Fine-Tuned Voice Models |
-| **Knowledge Sync** | Static Docs | Obsidian Bi-Directional Graph Sync | Enterprise Vaults + Webhook SLAs |
-| **Embeddable Website Widget** | Standard Pill | Custom 3D Glassy Widget | Whitelabel CNAME + Zero-Data Vault |
+| Plan | Monthly | Annual (per mo) | Voice minutes | Overage |
+| :--- | ---: | ---: | ---: | ---: |
+| Starter | $149 | $119 | 500 | $0.30 / min |
+| Pro | $449 | $359 | 1,500 | $0.25 / min |
+| Enterprise | $1,497 | $1,197 | 5,000 | $0.20 / min |
 
-### 📈 Unit Economics & Margins
-- **COGS per Voice Minute (AssemblyAI + LLM + Redis):** ~\$0.018 – \$0.024 / min.
-- **Gross Margins:**
-  - Starter ($149 / 500 min): \$149 revenue vs \$10.50 COGS = **92.9% Gross Margin**
-  - Growth Engine Pro ($397 / 2,500 min): \$397 revenue vs \$52.50 COGS = **86.8% Gross Margin**
-  - Sovereign Enterprise ($1,497 / 10,000 min): \$1,497 revenue vs \$190 COGS = **87.3% Gross Margin**
-- **LTV / CAC Ratio:** With an average client retention of 14 months and organic inbound adoption from the embed widget, projected LTV is \$5,558 on a blended CAC under \$380 (**>14.6x LTV:CAC**).
+- **Gross margin at 100% use of included minutes, after Stripe fees:** ~72% monthly,
+  ~66% annual, on every tier. Real margins run higher at typical usage.
+- **Overage margin:** 72% / 67% / 60%. Never below cost; a test enforces the floors.
+- **Break-even for the customer:** at a $3,500 contract value, one extra closed deal
+  every 7.8 months pays for Pro.
+- Latency tiers ("<350ms TTFA", "<250ms GPU edge"), voice cloning, "zero-data vault"
+  and webhook SLAs were listed here but never built or measured; they are removed.
 
 ---
 
@@ -117,7 +121,7 @@ Customer onboarding requires zero engineering overhead. Any creator, agency, or 
 ```html
 <!-- GrowthVoice OS Spoken Assistant Embed -->
 <script
-  src="http://localhost:4000/embed.js"
+  src="https://growthvoice-os.vercel.app/embed.js"
   data-company="DesignAcademy Studio"
   data-client-id="lead_jm_901"
   data-accent="#d4af37"
@@ -127,7 +131,7 @@ Customer onboarding requires zero engineering overhead. Any creator, agency, or 
 
 ### Technical Specs:
 1. **Zero External Dependencies:** Pure vanilla JavaScript IIFE with scoped CSS and dynamic DOM injection.
-2. **Ephemeral Token Handshake:** Requests secure minting via `GET /api/voice/token?client_id=...` without exposing server secrets or AssemblyAI master keys.
+2. **Ephemeral Token Handshake:** Requests secure minting via `POST /api/voice/token` without exposing server secrets or AssemblyAI master keys.
 3. **Responsive Glassmorphism:** Renders a floating, pulsing droplet that expands into a 3D canvas voice visualizer with live transcript streaming and barge-in capability.
 4. **Live Verification Sandbox:** Includes an automated testbed at `http://localhost:4000/widget-preview` simulating external customer site integration.
 
@@ -140,9 +144,16 @@ When presenting to AssemblyAI and lablab.ai judges, follow this 3-step anchor fo
 1. **The $10k Revenue Bleed Problem:**
    *"50 million online creators and tech businesses lose 60% of high-intent traffic because 32% of visitors browse outside business hours. Static contact forms convert at 0.8%. Human SDR agencies charge $10,000/mo plus 40% commission."*
 
-2. **The AssemblyAI Voice Agent Moat:**
-   *"GrowthVoice OS replaces the human agency with a real-time spoken voice operator powered by AssemblyAI's universal-3-5-pro. With sub-350ms time-to-first-audio, instant barge-in abort, and flat tool calling, Anna qualifies leads using BANT, saves churn risks under strict financial guardrails, and publishes research across X and LinkedIn."*
+2. **The AssemblyAI Voice Agent Moat:** (*corrected* — the original quoted
+   `universal-3-5-pro` and "sub-350ms time-to-first-audio"; the API has no model
+   selection field and latency was never measured)
+   *"GrowthVoice OS runs on AssemblyAI's Voice Agent API: the agent registers seven
+   tools and calls them mid-conversation, so a lead lands in the CRM while the visitor
+   is still talking — and it discloses it is an AI, and asks consent where state law
+   requires it, before it listens."*
 
-3. **The Venture-Scale Business Model:**
-   *"This isn't a prototype. It's a venture-ready SaaS operating at 88% gross margins with a 3-tier subscription model ($149 / $397 / $1,497), an interactive ROI engine showing clients a 21x return, and a 1-line embed script that works on any website in seconds."*
+3. **The Business Model:** (*corrected* — the original claimed "88% gross margins"
+   and "a 21x return"; both came from arithmetic errors)
+   *"Three subscription tiers priced from real cost: about 72% gross margin even at
+   full usage. For a customer, one extra closed deal every eight months pays for Pro."*
 

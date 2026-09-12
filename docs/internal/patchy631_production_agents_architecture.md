@@ -1,5 +1,11 @@
 # 🧠 patchy631/ai-engineering-hub Production Agents & Cindy Zhu Scroll Architecture
 
+> **Internal / historical document.** Kept for reference; it reflects plans or
+> research at the time it was written, not the current product. For what the code
+> does today, see the [README](../../README.md) and the status table in
+> [CLAUDE.md](../../CLAUDE.md).
+
+
 This document synthesizes key architectural patterns from [`patchy631/ai-engineering-hub`](https://github.com/patchy631/ai-engineering-hub) and details the implementation of the **Cindy Zhu 5k Scroll Animation & 3D Depth Engine** ([Cindy Zhu Guide Reference](https://cindyzhu.com.au/guides/5k-scroll-animation)).
 
 ---

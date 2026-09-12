@@ -1,5 +1,11 @@
 # 🚀 GrowthVoice OS — Developer & Codex Integration Guide
 
+> **Internal / historical document.** Kept for reference; it reflects plans or
+> research at the time it was written, not the current product. For what the code
+> does today, see the [README](../../README.md) and the status table in
+> [CLAUDE.md](../../CLAUDE.md).
+
+
 > **Welcome Codex / AI Engineers!**  
 > This document is designed specifically for **Codex** and automated coding agents to rapidly ingest, understand, and integrate new business use cases into **GrowthVoice OS**.
 
@@ -11,7 +17,7 @@ GrowthVoice OS is a sovereign, voice-first growth operating system that automate
 
 ### Monorepo Stack
 * **Web Command Console (`apps/web`)**: React 18, Vite, Tailwind CSS, Lucide Icons, native WebGL Raymarching Shader Reactor (`NeuralAudioOrb.tsx`). Running on `http://localhost:3000`.
-* **Autonomous Orchestrator (`apps/orchestrator`)**: Node.js, Express, WebSocket (`ws`), AssemblyAI Voice Agent API (`universal-3-5-pro`), DeepSeek LLM, Redis 7. Running on `http://localhost:4000`.
+* **Autonomous Orchestrator (`apps/orchestrator`)**: Node.js, Express, WebSocket (`ws`), AssemblyAI Voice Agent API, DeepSeek LLM, Redis 7. Running on `http://localhost:4000`.
 * **Shared Types (`packages/shared`)**: Monorepo contracts, BANT schemas, tool definitions, and content models.
 * **Persistent Obsidian Vault (`vault/`)**: Local-first markdown second-brain storing client brand voices, dossiers, knowledge graphs, credentials, and social publications.
 

@@ -9,7 +9,7 @@ Welcome, Claude! This file provides the essential context, commands, architectur
 **GrowthVoice OS** is an autonomous, voice-first growth operating system built for founders, creators, agencies, and enterprise operators. Powered by **AssemblyAI's Voice Agent API**, it:
 1. **Captures and qualifies inbound buyers 24/7** in the browser, with the agent creating and qualifying CRM leads through registered tool calls. (Time-to-first-audio is not yet measured — do not quote a latency figure.)
 2. **Acts as Anna, Senior Growth Operating Architect at GrowthOS** (an elite revenue systems consultancy advising clients—not an internal employee claiming credit).
-3. **Renders an interactive 3D WebGL Glassy Voice Reactor** running at 60 FPS on the GPU, defaulting to **The Cymatic Plane (Liquid & Organic)**.
+3. **Renders an interactive 3D WebGL Glassy Voice Reactor** rendered on the GPU, defaulting to **The Cymatic Plane (Liquid & Organic)**.
 4. **Isolates direct user credentials per client in the cloud/vault layer** for Twitter/X, LinkedIn, Substack, YouTube, and Cloud Storage.
 5. **Executes an autonomous thought leadership pipeline (`Research ➔ Voice ➔ Create ➔ Publish`)** that turns sales conversations into syndicated Twitter threads, LinkedIn authority posts, and Substack newsletters.
 6. **Persists everything into a local-first Obsidian Markdown Second-Brain (`vault/`)**.
