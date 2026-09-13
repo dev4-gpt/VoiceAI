@@ -85,14 +85,14 @@ export const PricingPage: React.FC = () => {
                     : 'border border-slate-200 bg-white shadow-sm'
                 }`}
               >
-                <h2 className="text-lg font-bold text-slate-900">
-                  {plan.name}
+                <div className="flex items-center gap-2">
+                  <h2 className="text-lg font-bold text-slate-900">{plan.name}</h2>
                   {plan.recommended && (
-                    <span className="ml-2 rounded-full bg-orange-600 px-2 py-0.5 align-middle text-[10px] font-extrabold text-slate-950">
+                    <span className="rounded-full bg-orange-600 px-2 py-0.5 align-middle text-[10px] font-extrabold text-slate-950">
                       RECOMMENDED
                     </span>
                   )}
-                </h2>
+                </div>
                 <p className="mt-1 text-sm text-slate-600">{plan.tagline}</p>
                 <p className="mt-5">
                   <span className="text-4xl font-extrabold text-slate-900">{usd(primary)}</span>
