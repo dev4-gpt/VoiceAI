@@ -1,7 +1,10 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { fileURLToPath } from 'node:url';
 
-export default defineConfig({
+const entry = (path: string) => fileURLToPath(new URL(path, import.meta.url));
+
+export default defineConfig(({ isSsrBuild }) => ({
   plugins: [react()],
   server: {
     port: 3000,
@@ -15,5 +18,17 @@ export default defineConfig({
         ws: true
       }
     }
-  }
-});
+  },
+  // The SSR build (prerender) takes its entry from --ssr; only the client build is multi-page.
+  build: isSsrBuild
+    ? {}
+    : {
+        rollupOptions: {
+          input: {
+            main: entry('./index.html'),
+            product: entry('./product/index.html'),
+            pricing: entry('./pricing/index.html')
+          }
+        }
+      }
+}));
