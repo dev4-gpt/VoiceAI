@@ -196,4 +196,37 @@ None found. Recommended JSON-LD for `apps/web/index.html` `<head>`:
 
 **Fetch failures (404):** `/robots.txt`, `/sitemap.xml`, `/sitemap_index.xml`, `/llms.txt`, `/llms-full.txt`, `/pricing`, `/about`, `/blog`
 
+---
+
+## Re-audit after quick wins (2026-09-13, commit `11c8a67`)
+
+**Overall GEO Score: 33/100 (Critical → just below Poor)** — up from 12.
+
+| Category | Before | After | Weighted | What changed |
+|---|---|---|---|---|
+| AI Citability | 10 | 35 | 8.8 | Raw HTML now carries a 137-word `<noscript>` summary + meta description; `llms.txt` gives crawlers a clean product brief |
+| Brand Authority | 8 | 10 | 2.0 | `sameAs` link to GitHub; no new third-party mentions yet |
+| Content E-E-A-T | 20 | 30 | 6.0 | Unverified badge, latency fallback and 3.8x claim removed; `llms.txt` states current limitations |
+| Technical GEO | 25 | 60 | 9.0 | `robots.txt`, `sitemap.xml`, `llms.txt` all 200; canonical, description, OG/Twitter present in raw HTML |
+| Schema & Structured Data | 0 | 50 | 5.0 | `Organization` + `SoftwareApplication` with 3 `Offer`s, valid JSON |
+| Platform Optimization | 5 | 20 | 2.0 | Non-JS crawlers (GPTBot, ClaudeBot, PerplexityBot) now receive a description of the product |
+| **Overall** | **12** | | **33** | |
+
+**Verified on production:**
+
+| Check | Result |
+|---|---|
+| `/robots.txt`, `/sitemap.xml`, `/llms.txt` | ✅ 200 |
+| Raw HTML size | 974 B → 4,678 B |
+| Meta description, canonical, `og:title`, `twitter:card` in raw HTML | ✅ |
+| JSON-LD parses | ✅ `Organization`, `SoftwareApplication` |
+| `Universal-3.5` / `<25ms` / `3.8x` on live pages | ✅ gone |
+| `/widget-preview` `noindex` | ✅ |
+| `/api/health`, `POST /api/voice/token` | ✅ 200 — voice unaffected |
+| CI on `f2d9f3a` | ✅ success |
+
+Screenshots after the change: [`screenshots/after/`](screenshots/after/).
+
+**Still open (from the 30-day plan):** pre-rendered landing page and SPA fallback rewrite (the console is still client-rendered; the noscript block is a stopgap), a real `/pricing` page, FAQ content + `FAQPage` schema, security headers, sample-persona links pointing at real-looking accounts, and brand presence beyond GitHub.
+
 **Sources:** [Growth OS (LinkedIn)](https://sg.linkedin.com/company/growth-os) · [GrowthOS](https://growthos.net/) · [Publicis Growth OS](https://shell.growthos.publicismedia.com/) · [Intempt: Growth OS](https://apps.shopify.com/intempt?locale=de) · [AssemblyAI Voice Agent Hackathon (lablab.ai)](https://lablab.ai/ai-hackathons/assemblyai-voice-agent-hackathon)
