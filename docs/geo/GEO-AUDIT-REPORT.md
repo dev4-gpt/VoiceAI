@@ -229,4 +229,50 @@ Screenshots after the change: [`screenshots/after/`](screenshots/after/).
 
 **Still open (from the 30-day plan):** pre-rendered landing page and SPA fallback rewrite (the console is still client-rendered; the noscript block is a stopgap), a real `/pricing` page, FAQ content + `FAQPage` schema, security headers, sample-persona links pointing at real-looking accounts, and brand presence beyond GitHub.
 
+---
+
+## Re-audit after /product and /pricing (2026-09-13, commit `c6f3826`)
+
+**Overall GEO Score: 48/100 (Poor)** — up from 33.
+
+### Verified on production
+
+| Check | Result |
+|---|---|
+| `/product`, `/pricing` status | ✅ 200 (deploy live ~45 s after push; CI passed on `c6f3826`) |
+| `/product` raw HTML (no JS, GPTBot user-agent) | ✅ 18.9 KB, 866 words, H1 "A voice agent that qualifies your website visitors", canonical `/product`, OG, `FAQPage` JSON-LD |
+| `/pricing` raw HTML (no JS) | ✅ 20.1 KB, 456 words, H1 "Pricing", canonical `/pricing`, all 9 figures ($149/$119, $449/$359, $1,497/$1,197, $0.30/$0.25/$0.20 per min), `SoftwareApplication` + `FAQPage` JSON-LD |
+| Empty `#root` on new pages | ✅ none — content is prerendered |
+| `/api/billing/plans` matches `plans.json` | ✅ Starter 149/119, Pro 449/359, Enterprise 1497/1197 |
+| Voice token `POST /api/voice/token` | ✅ 200 — voice unaffected |
+| `sitemap.xml` | ✅ lists `/`, `/product`, `/pricing` |
+| Light pages keep the console's dark background out | ✅ computed `body` background-image `none` on both pages; console unchanged |
+| Content hidden above the fold after hydration | ✅ 0 elements on every page |
+| Pricing → console flow | ✅ "Get started with Pro" lands on `/` (`?plan=` cleared) with the plans modal open and the Pro card ringed |
+| Console errors | Only the pre-existing `/ws/telemetry` WebSocket 404 (documented: cannot open on Vercel); no hydration errors |
+
+### Score
+
+| Category | Before | After | Weighted | What changed |
+|---|---|---|---|---|
+| AI Citability | 35 | 60 | 15.0 | Two prerendered pages with self-contained answer blocks: 5 product FAQs, 3 pricing FAQs, how-it-works steps, compliance section, full price table in plain text |
+| Brand Authority | 10 | 10 | 2.0 | No change — on-site work can't add third-party mentions |
+| Content E-E-A-T | 30 | 45 | 9.0 | "What is real today / not built yet" published on-site, compliance scope and "not legal advice" stated, unit economics explained from the tested margin floor |
+| Technical GEO | 60 | 75 | 11.3 | Crawlable pages with canonicals in the sitemap; still open: console is client-rendered, no security headers, `/product/` and `/pricing/` also return 200 (canonical covers it) |
+| Schema & Structured Data | 50 | 75 | 7.5 | `FAQPage` on both pages and `SoftwareApplication` with per-plan `Offer`s generated from the catalog; still open: two `SoftwareApplication` nodes without a shared `@id` |
+| Platform Optimization | 20 | 35 | 3.5 | ChatGPT/Claude/Perplexity crawlers now receive product and pricing answers without JavaScript |
+| **Overall** | **33** | | **48** | |
+
+Screenshots: [`screenshots/landing-pricing/`](screenshots/landing-pricing/) — [product mobile](screenshots/landing-pricing/product-mobile.png), [pricing mobile](screenshots/landing-pricing/pricing-mobile.png), [pricing → console flow](screenshots/landing-pricing/cta-flow-desktop.png).
+
+**Still open:**
+- **Brand presence beyond GitHub.** This is now the biggest lever, since it carries 20% of the score.
+- **Security headers** in `vercel.json`.
+- **The pricing modal defaults to annual.** A visitor who clicks from monthly prices sees annual prices; pass `?cycle=` to fix it.
+- **Duplicate `SoftwareApplication` JSON-LD.** Link both nodes with a shared `@id`.
+- **Hard-coded prices in `index.html` and `llms.txt`.** Add a drift test against `plans.json`.
+- **Nav polish:** add a skip link and `aria-current`.
+- **Console header links are desktop-only.**
+- **Sample-persona social links** still point at real-looking accounts.
+
 **Sources:** [Growth OS (LinkedIn)](https://sg.linkedin.com/company/growth-os) · [GrowthOS](https://growthos.net/) · [Publicis Growth OS](https://shell.growthos.publicismedia.com/) · [Intempt: Growth OS](https://apps.shopify.com/intempt?locale=de) · [AssemblyAI Voice Agent Hackathon (lablab.ai)](https://lablab.ai/ai-hackathons/assemblyai-voice-agent-hackathon)
