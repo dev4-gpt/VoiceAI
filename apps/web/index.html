@@ -5,12 +5,59 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>GrowthVoice OS — AI Growth Operator Voice Console</title>
+    <meta name="description" content="GrowthVoice OS is a browser voice agent that answers your website around the clock, qualifies visitors out loud, and writes each lead into your CRM mid-call — with US AI-disclosure and recording-consent built in. Built on the AssemblyAI Voice Agent API." />
+    <link rel="canonical" href="https://growthvoice-os.vercel.app/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="GrowthVoice OS" />
+    <meta property="og:title" content="GrowthVoice OS — a voice agent that qualifies your website visitors" />
+    <meta property="og:description" content="Visitors click, speak, and are qualified in real time. Leads land in your CRM while the call is still going, with US AI-disclosure and consent handled first." />
+    <meta property="og:url" content="https://growthvoice-os.vercel.app/" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="GrowthVoice OS — a voice agent that qualifies your website visitors" />
+    <meta name="twitter:description" content="Visitors click, speak, and are qualified in real time. Leads land in your CRM while the call is still going, with US AI-disclosure and consent handled first." />
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://growthvoice-os.vercel.app/#org",
+          "name": "GrowthVoice OS",
+          "url": "https://growthvoice-os.vercel.app/",
+          "sameAs": ["https://github.com/dev4-gpt/VoiceAI"]
+        },
+        {
+          "@type": "SoftwareApplication",
+          "name": "GrowthVoice OS",
+          "url": "https://growthvoice-os.vercel.app/",
+          "applicationCategory": "BusinessApplication",
+          "operatingSystem": "Web",
+          "description": "Browser voice agent that qualifies website visitors out loud and writes leads into a CRM, with US AI-disclosure and recording-consent built in. Built on the AssemblyAI Voice Agent API.",
+          "publisher": { "@id": "https://growthvoice-os.vercel.app/#org" },
+          "offers": [
+            { "@type": "Offer", "name": "Starter", "price": "149", "priceCurrency": "USD", "description": "Monthly; 500 voice minutes included" },
+            { "@type": "Offer", "name": "Pro", "price": "449", "priceCurrency": "USD", "description": "Monthly; 1,500 voice minutes included" },
+            { "@type": "Offer", "name": "Enterprise", "price": "1497", "priceCurrency": "USD", "description": "Monthly; 5,000 voice minutes included" }
+          ]
+        }
+      ]
+    }
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   </head>
   <body class="bg-[#080C14] text-slate-100 font-['Plus_Jakarta_Sans',sans-serif] antialiased selection:bg-cyan-500/30 selection:text-cyan-200 min-h-screen">
     <div id="root"></div>
+    <noscript>
+      <main>
+        <h1>GrowthVoice OS</h1>
+        <p>GrowthVoice OS is a browser voice agent for B2B websites. A visitor clicks, speaks, and is answered in real time — no phone number, no download. While it talks, the agent calls tools that create the lead, record budget, authority, need and timeline, and capture a consultation request in a Postgres-backed CRM, so the lead exists before the call ends.</p>
+        <p>Before it listens, it tells the visitor they are talking to an AI. In the 13 US all-party-consent states it asks permission before anything is transcribed, and it keeps an append-only record of that consent. It runs on the AssemblyAI Voice Agent API and embeds on any site with one script tag.</p>
+        <p>Plans: Starter $149/month (500 voice minutes), Pro $449/month (1,500 minutes), Enterprise $1,497/month (5,000 minutes).</p>
+        <p>The live console needs JavaScript. Source code: <a href="https://github.com/dev4-gpt/VoiceAI">github.com/dev4-gpt/VoiceAI</a>.</p>
+      </main>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

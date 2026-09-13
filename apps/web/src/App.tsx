@@ -2295,7 +2295,7 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
             <div className="flex items-center space-x-2">
               <h1 className={`text-lg font-bold tracking-tight ${isGlass ? "text-slate-900" : "text-white"}`}>GrowthVoice OS</h1>
               <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-950/80 text-cyan-400 border border-cyan-800/60 font-semibold">
-                AssemblyAI Universal-3.5 Pro
+                AssemblyAI Voice Agent API
               </span>
             </div>
             <p className={`text-xs ${isGlass ? "text-slate-500" : "text-slate-400"}`}>Autonomous AI Growth Operator for Creators & High-Ticket Programs</p>
@@ -2366,7 +2366,7 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
             isGlass ? 'bg-[#faf7f0]/90 border-[#e5e0d6] text-slate-700 shadow-2xs' : 'bg-slate-900/90 border-slate-800 text-slate-200'
           }`}>
             <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span>WS RTT: <strong className="text-emerald-600 font-bold">{wsLatencyMs !== null ? `${wsLatencyMs}ms` : '<25ms'}</strong></span>
+            <span>WS RTT: <strong className="text-emerald-600 font-bold">{wsLatencyMs !== null ? `${wsLatencyMs}ms` : '—'}</strong></span>
             <span className="text-slate-300">|</span>
             <span>VAD: <strong className="text-sky-600 font-bold">{PACING_OPTIONS[voicePacing].label}</strong></span>
           </div>
