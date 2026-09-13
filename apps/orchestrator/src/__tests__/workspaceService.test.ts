@@ -81,6 +81,18 @@ describe('WorkspaceService', () => {
     await new WorkspaceService(store).ensureForUser('user-a');
     expect(store.orgs[0].name).toBe('Workspace');
   });
+
+  it('keeps the last error as the cause when creation keeps colliding', async () => {
+    const store = new MemoryStore();
+    const collision = Object.assign(new Error('duplicate key organizations_slug_idx'), { code: '23505' });
+    store.create = jest.fn().mockRejectedValue(collision);
+    store.findByUser = jest.fn().mockResolvedValue(null);
+    await expect(new WorkspaceService(store).ensureForUser('user-a')).rejects.toMatchObject({
+      message: 'Could not create a workspace after several attempts.',
+      cause: collision
+    });
+    expect(store.create).toHaveBeenCalledTimes(3);
+  });
 });
 
 describe('helpers', () => {

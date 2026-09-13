@@ -51,12 +51,14 @@ export class WorkspaceService {
     const existing = await this.store.findByUser(authUserId);
     if (existing) return this.remember(authUserId, existing);
 
+    let lastError: unknown = null;
     for (let attempt = 0; attempt < MAX_CREATE_ATTEMPTS; attempt++) {
       const tenantId = randomUUID();
       try {
         await this.store.create({ tenantId, slug: newWorkspaceSlug(), authUserId });
         return this.remember(authUserId, { tenantId, role: 'owner' });
       } catch (err) {
+        lastError = err;
         if (!isUniqueViolation(err)) throw err;
         // Either another instance created this user's workspace first, or the
         // random slug collided. Prefer the existing workspace; otherwise retry.
@@ -64,7 +66,7 @@ export class WorkspaceService {
         if (raced) return this.remember(authUserId, raced);
       }
     }
-    throw new Error('Could not create a workspace after several attempts.');
+    throw new Error('Could not create a workspace after several attempts.', { cause: lastError });
   }
 
   private remember(authUserId: string, ws: Workspace): Workspace {
