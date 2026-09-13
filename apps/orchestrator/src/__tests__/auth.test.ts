@@ -12,11 +12,35 @@ function mockReqRes(authHeader?: string) {
 
 describe('requireApiKey', () => {
   const original = process.env.ORCHESTRATOR_API_KEY;
+  const originalEnv = process.env.NODE_ENV;
   afterEach(() => {
     process.env.ORCHESTRATOR_API_KEY = original;
+    process.env.NODE_ENV = originalEnv;
+  });
+
+  it('fails closed with 503 in production when no key is configured', () => {
+    delete process.env.ORCHESTRATOR_API_KEY;
+    process.env.NODE_ENV = 'production';
+    const { req, res, next, status, json } = mockReqRes();
+    requireApiKey(req, res, next);
+    expect(status).toHaveBeenCalledWith(503);
+    expect(json).toHaveBeenCalledWith({
+      error: 'Owner access is not configured on this server.',
+      code: 'ADMIN_UNCONFIGURED'
+    });
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it('still requires the key in production when one is configured', () => {
+    process.env.ORCHESTRATOR_API_KEY = 'secret123';
+    process.env.NODE_ENV = 'production';
+    const { req, res, next } = mockReqRes('Bearer secret123');
+    requireApiKey(req, res, next);
+    expect(next).toHaveBeenCalled();
   });
 
   it('passes through when no key is configured (local demo mode)', () => {
+    process.env.NODE_ENV = 'test';
     delete process.env.ORCHESTRATOR_API_KEY;
     const { req, res, next, status } = mockReqRes();
     requireApiKey(req, res, next);
