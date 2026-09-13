@@ -52,6 +52,7 @@ import { EvalsDashboard } from './components/EvalsDashboard';
 import { ContentFactoryStudio } from './components/ContentFactoryStudio';
 import { ClientCredentialsModal } from './components/ClientCredentialsModal';
 import { SubscriptionPlansModal } from './components/SubscriptionPlansModal';
+import { parsePlanParam } from './utils/planParam';
 import { EmbedWidgetModal } from './components/EmbedWidgetModal';
 import { GraphViewHUD } from './components/GraphViewHUD';
 import { Spatial3DOdyssey } from './components/Spatial3DOdyssey';
@@ -80,6 +81,16 @@ export const App: React.FC = () => {
   const [isEmbedModalOpen, setIsEmbedModalOpen] = useState(false);
   const [activePlanId, setActivePlanId] = useState<SubscriptionTierId>('pro');
   const [activeSimulationKey, setActiveSimulationKey] = useState<string | null>(null);
+  const [highlightPlanId, setHighlightPlanId] = useState<SubscriptionTierId | undefined>(undefined);
+
+  // /pricing "Get started" links arrive as /?plan=<tier>: open the plans modal on that plan.
+  useEffect(() => {
+    const planId = parsePlanParam(window.location.search);
+    if (planId) {
+      setHighlightPlanId(planId);
+      setIsPlansModalOpen(true);
+    }
+  }, []);
 
   // Voice Pacing & Silence Threshold Tuning
   const [voicePacing, setVoicePacing] = useState<'snappy' | 'natural' | 'patient'>('natural');
@@ -2422,6 +2433,24 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
             <span>💎 Plans & ROI</span>
           </button>
 
+          {/* Crawlable product and pricing pages */}
+          <a
+            href="/product"
+            className={`hidden md:inline-flex px-3 py-1.5 rounded-xl text-xs font-mono font-semibold border transition-all ${
+              isGlass ? 'bg-white/80 border-[#e2ded5] text-slate-700 hover:text-slate-950' : 'bg-slate-900 border-slate-800 text-slate-300 hover:text-white'
+            }`}
+          >
+            Product
+          </a>
+          <a
+            href="/pricing"
+            className={`hidden md:inline-flex px-3 py-1.5 rounded-xl text-xs font-mono font-semibold border transition-all ${
+              isGlass ? 'bg-white/80 border-[#e2ded5] text-slate-700 hover:text-slate-950' : 'bg-slate-900 border-slate-800 text-slate-300 hover:text-white'
+            }`}
+          >
+            Pricing
+          </a>
+
           {/* 🌐 1-Click Embed Snippet Trigger */}
           <button
             onClick={() => setIsEmbedModalOpen(true)}
@@ -3178,6 +3207,7 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
         clientId={prospectCompany || 'DesignAcademy Studio'}
         onOpenEmbedModal={() => setIsEmbedModalOpen(true)}
         isGlass={isGlass}
+        highlightPlanId={highlightPlanId}
       />
 
       {/* 1-Click Embed Snippet Generator Modal */}

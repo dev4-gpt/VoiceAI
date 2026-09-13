@@ -21,6 +21,8 @@ interface SubscriptionPlansModalProps {
   clientId: string;
   onOpenEmbedModal?: () => void;
   isGlass?: boolean;
+  /** Plan to ring, e.g. from a /pricing "Get started" link (/?plan=pro). */
+  highlightPlanId?: SubscriptionTierId;
 }
 
 const usd = (n: number) => `$${Math.round(n).toLocaleString()}`;
@@ -29,7 +31,8 @@ export const SubscriptionPlansModal: React.FC<SubscriptionPlansModalProps> = ({
   isOpen,
   onClose,
   clientId,
-  onOpenEmbedModal
+  onOpenEmbedModal,
+  highlightPlanId
 }) => {
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('annual');
   const [plans, setPlans] = useState<SubscriptionPlan[] | null>(null);
@@ -167,14 +170,16 @@ export const SubscriptionPlansModal: React.FC<SubscriptionPlansModalProps> = ({
             const price = billingCycle === 'annual' ? plan.priceAnnualMonthlyUsd : plan.priceMonthlyUsd;
             const featured = Boolean(plan.recommended);
             const busy = checkoutPlan === plan.id;
+            const highlighted = plan.id === highlightPlanId;
             return (
               <div
                 key={plan.id}
+                data-highlighted={highlighted ? 'true' : undefined}
                 className={`relative rounded-2xl p-6 flex flex-col justify-between ${
                   featured
                     ? 'border-2 border-amber-400/60 bg-gradient-to-b from-amber-500/[0.08] to-amber-500/[0.02] md:-translate-y-2'
                     : 'border border-white/10 bg-white/[0.02]'
-                }`}
+                } ${highlighted ? 'ring-2 ring-cyan-400 ring-offset-2 ring-offset-[#121217]' : ''}`}
               >
                 {featured && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-gradient-to-r from-amber-400 to-amber-200 text-slate-950 font-extrabold text-[10px] font-mono">
