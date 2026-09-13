@@ -89,6 +89,9 @@ export const App: React.FC = () => {
     if (planId) {
       setHighlightPlanId(planId);
       setIsPlansModalOpen(true);
+      const url = new URL(window.location.href);
+      url.searchParams.delete('plan');
+      window.history.replaceState(window.history.state, '', url.pathname + url.search + url.hash);
     }
   }, []);
 
@@ -3203,7 +3206,7 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
       {/* SaaS Subscription Plans & Spoken ROI Recovery Modal */}
       <SubscriptionPlansModal
         isOpen={isPlansModalOpen}
-        onClose={() => setIsPlansModalOpen(false)}
+        onClose={() => { setIsPlansModalOpen(false); setHighlightPlanId(undefined); }}
         clientId={prospectCompany || 'DesignAcademy Studio'}
         onOpenEmbedModal={() => setIsEmbedModalOpen(true)}
         isGlass={isGlass}
