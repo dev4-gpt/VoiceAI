@@ -1,4 +1,5 @@
 import { BillingService, SUBSCRIPTION_PLANS, COST_PER_VOICE_MINUTE_USD } from '../services/billingService';
+import catalog from '@voice-os/shared/plans.json';
 
 describe('BillingService — pricing, usage and ROI', () => {
   let service: BillingService;
@@ -159,6 +160,13 @@ describe('BillingService — pricing, usage and ROI', () => {
       // Must not silently provision a paid tier for a plan that does not exist.
       expect(service.getClientUsage('t_unknown').planId).not.toBe('free-forever');
       expect(service.getClientUsage('t_unknown').subscriptionStatus).toBeUndefined();
+    });
+  });
+
+  describe('plan catalog source', () => {
+    it('reads plans and voice cost from the shared catalog', () => {
+      expect(SUBSCRIPTION_PLANS).toEqual(catalog.plans);
+      expect(COST_PER_VOICE_MINUTE_USD).toBe(catalog.costPerVoiceMinuteUsd);
     });
   });
 });

@@ -11,13 +11,14 @@
 | Where pages live | `/product` and `/pricing`; console stays at `/` | Hackathon links, README and pitch deck point at `/` |
 | How pages are built | React components, prerendered to static HTML at build time | Same Tailwind look as the console; still crawlable |
 | Routing | Vite multi-page build, **no router** | Two static pages do not need one; keeps them out of the console bundle |
-| Price source | `packages/shared/src/plans.json`, imported by orchestrator and web | One source of truth; JSON avoids adding runtime TS exports to an ESM types-only package (ts-jest / Vercel / Docker risk) |
+| Price source | `packages/shared/plans.json`, imported by orchestrator and web | One source of truth; JSON avoids adding runtime TS exports to an ESM types-only package (ts-jest / Vercel / Docker risk) |
 | Pricing CTA | Links to `/?plan=<id>`, which opens the existing Plans & ROI modal with that plan highlighted | Reuses the working Stripe Checkout flow; no second checkout path |
+| Catalog file location | `packages/shared/plans.json` (package root) | The orchestrator compiles with Node10 module resolution, which ignores `exports` and needs the literal path to exist |
 
 ## Architecture
 
 ```
-packages/shared/src/plans.json          ← single source: plans + cost per minute
+packages/shared/plans.json          ← single source: plans + cost per minute
       │                          │
       ▼                          ▼
 apps/orchestrator/…/billingService.ts    apps/web/src/pages/{LandingPage,PricingPage}.tsx
@@ -35,7 +36,7 @@ apps/orchestrator/…/billingService.ts    apps/web/src/pages/{LandingPage,Prici
 
 | Unit | Does | Depends on |
 |---|---|---|
-| `packages/shared/src/plans.json` | `{ costPerVoiceMinuteUsd, plans: SubscriptionPlan[] }` — exact current values from `billingService.ts` | nothing |
+| `packages/shared/plans.json` | `{ costPerVoiceMinuteUsd, plans: SubscriptionPlan[] }` — exact current values from `billingService.ts` | nothing |
 | `packages/shared/package.json` | Adds `"./plans.json"` to `exports` | — |
 | `billingService.ts` | `SUBSCRIPTION_PLANS` and `COST_PER_VOICE_MINUTE_USD` now read from the JSON; exports and behavior unchanged | `plans.json` |
 | `apps/web/src/pages/LandingPage.tsx` | Pure presentational component, no browser APIs at render, no fetches | `plans.json` (lowest price only) |

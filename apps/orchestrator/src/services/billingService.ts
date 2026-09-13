@@ -6,6 +6,7 @@ import type {
   ROIParameters,
   ROICalculationResult
 } from '@voice-os/shared';
+import catalog from '@voice-os/shared/plans.json';
 
 /**
  * Plan catalog — the single source of truth. The pricing page fetches this from
@@ -23,66 +24,13 @@ import type {
  * Features list only what the code does today. Anything not yet built is left out
  * rather than promised.
  */
-export const COST_PER_VOICE_MINUTE_USD = 0.075;
+export const COST_PER_VOICE_MINUTE_USD: number = catalog.costPerVoiceMinuteUsd;
 
-export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
-  {
-    id: 'starter',
-    name: 'Starter',
-    tagline: 'One voice agent answering your website around the clock',
-    priceMonthlyUsd: 149,
-    priceAnnualMonthlyUsd: 119,
-    voiceMinutesMonthly: 500,
-    overageRatePerMinUsd: 0.3,
-    maxAutonomousAgents: 1,
-    features: [
-      '1 voice agent persona',
-      '500 voice minutes / month, then $0.30/min',
-      'Live lead capture and BANT qualification into your CRM',
-      'Consultation requests recorded on each lead',
-      'US AI-disclosure and recording-consent layer',
-      'Embeddable website voice widget'
-    ]
-  },
-  {
-    id: 'pro',
-    name: 'Pro',
-    tagline: 'Voice qualification plus the content pipeline and CRM tooling',
-    priceMonthlyUsd: 449,
-    priceAnnualMonthlyUsd: 359,
-    voiceMinutesMonthly: 1500,
-    overageRatePerMinUsd: 0.25,
-    maxAutonomousAgents: 3,
-    recommended: true,
-    features: [
-      'Everything in Starter',
-      '3 configurable agent personas (e.g. inbound SDR, churn rescue)',
-      '1,500 voice minutes / month, then $0.25/min',
-      'Content pipeline: conversations into X, LinkedIn and Substack drafts',
-      'Publishes live once you connect your accounts',
-      'Encrypted storage for your platform credentials',
-      'Obsidian vault export of leads and dossiers'
-    ]
-  },
-  {
-    id: 'enterprise',
-    name: 'Enterprise',
-    tagline: 'For agencies running voice for several brands',
-    priceMonthlyUsd: 1497,
-    priceAnnualMonthlyUsd: 1197,
-    voiceMinutesMonthly: 5000,
-    overageRatePerMinUsd: 0.2,
-    maxAutonomousAgents: 999,
-    features: [
-      'Everything in Pro',
-      'Unlimited agent personas',
-      '5,000 voice minutes / month, then $0.20/min',
-      'Separate credentials and vault exports per client brand',
-      'Enforced discount ceilings on retention offers',
-      'Priority onboarding'
-    ]
-  }
-];
+/**
+ * The catalog lives in packages/shared/plans.json so the prerendered /pricing
+ * page shows exactly what checkout charges and what the margin tests check.
+ */
+export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = catalog.plans as SubscriptionPlan[];
 
 export class BillingService {
   private clientUsageMap: Map<string, ClientUsageTelemetry> = new Map();
