@@ -5,7 +5,7 @@ export interface FaqItem {
   answer: string;
 }
 
-const focusRing =
+export const focusRing =
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2';
 
 export const SiteHeader: React.FC = () => (
@@ -13,20 +13,20 @@ export const SiteHeader: React.FC = () => (
     <nav aria-label="Main" className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
       <a
         href="/product"
-        className={`rounded font-bold tracking-tight text-slate-900 ${focusRing}`}
+        className={`cursor-pointer rounded font-bold tracking-tight text-slate-900 transition-colors duration-200 ${focusRing}`}
       >
         GrowthVoice OS
       </a>
       <div className="flex items-center gap-5 text-sm">
         <a
           href="/product"
-          className={`rounded text-slate-600 transition-colors duration-200 hover:text-slate-900 ${focusRing}`}
+          className={`cursor-pointer rounded text-slate-600 transition-colors duration-200 hover:text-slate-900 ${focusRing}`}
         >
           Product
         </a>
         <a
           href="/pricing"
-          className={`rounded text-slate-600 transition-colors duration-200 hover:text-slate-900 ${focusRing}`}
+          className={`cursor-pointer rounded text-slate-600 transition-colors duration-200 hover:text-slate-900 ${focusRing}`}
         >
           Pricing
         </a>
@@ -46,21 +46,27 @@ export const SiteFooter: React.FC = () => (
     <div className="mx-auto flex max-w-6xl flex-col gap-4 px-6 py-8 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
       <p>GrowthVoice OS — built on the AssemblyAI Voice Agent API. MIT licensed.</p>
       <nav aria-label="Footer" className="flex flex-wrap gap-5">
-        <a href="/product" className={`rounded transition-colors duration-200 hover:text-slate-900 ${focusRing}`}>
+        <a
+          href="/product"
+          className={`cursor-pointer rounded transition-colors duration-200 hover:text-slate-900 ${focusRing}`}
+        >
           Product
         </a>
-        <a href="/pricing" className={`rounded transition-colors duration-200 hover:text-slate-900 ${focusRing}`}>
+        <a
+          href="/pricing"
+          className={`cursor-pointer rounded transition-colors duration-200 hover:text-slate-900 ${focusRing}`}
+        >
           Pricing
         </a>
         <a
           href="/widget-preview"
-          className={`rounded transition-colors duration-200 hover:text-slate-900 ${focusRing}`}
+          className={`cursor-pointer rounded transition-colors duration-200 hover:text-slate-900 ${focusRing}`}
         >
           Widget demo
         </a>
         <a
           href="https://github.com/dev4-gpt/VoiceAI"
-          className={`rounded transition-colors duration-200 hover:text-slate-900 ${focusRing}`}
+          className={`cursor-pointer rounded transition-colors duration-200 hover:text-slate-900 ${focusRing}`}
         >
           Source code
         </a>

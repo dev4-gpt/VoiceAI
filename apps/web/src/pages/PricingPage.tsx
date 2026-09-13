@@ -1,13 +1,10 @@
 import React, { useRef, useState } from 'react';
 import { Check } from 'lucide-react';
 import { PLANS, COST_PER_VOICE_MINUTE_USD, usd, perMinute } from './plans';
-import { SiteHeader, SiteFooter, FaqList, type FaqItem } from './SiteChrome';
+import { SiteHeader, SiteFooter, FaqList, focusRing, type FaqItem } from './SiteChrome';
 import { useRevealMotion } from './motion';
 
 type Cycle = 'monthly' | 'annual';
-
-const focusRing =
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2';
 
 const recommended = PLANS.find((p) => p.recommended) ?? PLANS[0];
 const annualSavingPct = Math.round((1 - recommended.priceAnnualMonthlyUsd / recommended.priceMonthlyUsd) * 100);
