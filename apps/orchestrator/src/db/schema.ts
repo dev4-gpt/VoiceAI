@@ -9,6 +9,7 @@ import {
   index,
   uniqueIndex
 } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 
 /**
  * Postgres schema for GrowthVoice OS.
@@ -40,6 +41,31 @@ export const organizations = pgTable(
   },
   (t) => ({
     slugIdx: uniqueIndex('organizations_slug_idx').on(t.slug)
+  })
+);
+
+/**
+ * Who belongs to which workspace. A user's first sign-in creates one owned
+ * workspace. The partial unique index allows exactly one owned workspace per
+ * user, so two parallel first requests cannot create two.
+ */
+export const organizationMembers = pgTable(
+  'organization_members',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    authUserId: text('auth_user_id').notNull(),
+    role: text('role').notNull().default('owner'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+  },
+  (t) => ({
+    userTenantIdx: uniqueIndex('organization_members_user_tenant_idx').on(t.authUserId, t.tenantId),
+    oneOwnedWorkspaceIdx: uniqueIndex('organization_members_one_owned_idx')
+      .on(t.authUserId)
+      .where(sql`role = 'owner'`),
+    userIdx: index('organization_members_user_idx').on(t.authUserId)
   })
 );
 
@@ -224,6 +250,7 @@ export const platformCredentials = pgTable(
 );
 
 export type Organization = typeof organizations.$inferSelect;
+export type OrganizationMember = typeof organizationMembers.$inferSelect;
 export type Lead = typeof leads.$inferSelect;
 export type ChurnMember = typeof churnMembers.$inferSelect;
 export type VoiceSession = typeof voiceSessions.$inferSelect;

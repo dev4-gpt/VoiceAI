@@ -5,6 +5,7 @@ import { encryptJson, decryptJson, isEncryptionConfigured } from '../services/cr
 import { getDb, isDatabaseConfigured } from './client';
 import {
   organizations,
+  organizationMembers,
   subscriptions,
   usageRecords,
   consentRecords,
@@ -12,6 +13,7 @@ import {
   churnMembers,
   platformCredentials
 } from './schema';
+import type { Workspace, WorkspaceStore } from '../services/workspaceService';
 
 /**
  * Persistence for the state that must not be lost.
@@ -372,3 +374,27 @@ export async function listAllPlatformCredentials(): Promise<
   }
   return out;
 }
+
+/**
+ * Workspace membership over Postgres. Creation writes the organization and the
+ * owner membership in one atomic batch (the Neon HTTP driver has no interactive
+ * transactions). The organization never stores the user's name or email.
+ */
+export const drizzleWorkspaceStore: WorkspaceStore = {
+  async findByUser(authUserId: string): Promise<Workspace | null> {
+    const rows = await getDb()
+      .select({ tenantId: organizationMembers.tenantId, role: organizationMembers.role })
+      .from(organizationMembers)
+      .where(and(eq(organizationMembers.authUserId, authUserId), eq(organizationMembers.role, 'owner')))
+      .limit(1);
+    return rows[0] ?? null;
+  },
+
+  async create({ tenantId, slug, authUserId }): Promise<void> {
+    const db = getDb();
+    await db.batch([
+      db.insert(organizations).values({ id: tenantId, name: 'Workspace', slug }),
+      db.insert(organizationMembers).values({ tenantId, authUserId, role: 'owner' })
+    ]);
+  }
+};
