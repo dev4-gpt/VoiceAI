@@ -9,8 +9,9 @@ import type {
 import catalog from '@voice-os/shared/plans.json';
 
 /**
- * Plan catalog — the single source of truth. The pricing page fetches this from
- * GET /api/billing/plans rather than hardcoding prices, so the two cannot drift.
+ * Plan catalog — the single source of truth. The console's plans modal fetches this
+ * from GET /api/billing/plans, and the prerendered /pricing page reads the same
+ * packages/shared/plans.json at build time, so neither can drift from checkout.
  *
  * Priced from real cost. AssemblyAI's Voice Agent API is $4.50/hour all-in
  * ($0.075/min: speech recognition, LLM, voice, turn detection, tool calling), plus
