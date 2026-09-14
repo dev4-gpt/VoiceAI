@@ -14,6 +14,7 @@ import {
   platformCredentials
 } from './schema';
 import type { Workspace, WorkspaceStore } from '../services/workspaceService';
+import type { KeyStore, StoredKey } from '../services/workspaceKeysService';
 
 /**
  * Persistence for the state that must not be lost.
@@ -396,5 +397,81 @@ export const drizzleWorkspaceStore: WorkspaceStore = {
       db.insert(organizations).values({ id: tenantId, name: 'Workspace', slug }),
       db.insert(organizationMembers).values({ tenantId, authUserId, role: 'owner' })
     ]);
+  }
+};
+
+/**
+ * Tenant-scoped key storage for signed-in workspaces. Unlike the legacy
+ * company-name functions above, every call takes the tenant id resolved from
+ * the verified session, and nothing is loaded for other tenants.
+ */
+export const drizzleKeyStore: KeyStore = {
+  async list(tenantId: string): Promise<StoredKey[]> {
+    const rows = await getDb()
+      .select({
+        platform: platformCredentials.platform,
+        ciphertext: platformCredentials.ciphertext,
+        iv: platformCredentials.iv,
+        authTag: platformCredentials.authTag,
+        wrappedDek: platformCredentials.wrappedDek,
+        keyVersion: platformCredentials.keyVersion,
+        updatedAt: platformCredentials.updatedAt
+      })
+      .from(platformCredentials)
+      .where(eq(platformCredentials.tenantId, tenantId));
+    const out: StoredKey[] = [];
+    for (const r of rows) {
+      try {
+        out.push({ platform: r.platform, entry: decryptJson<PlatformCredentials>(r), updatedAt: r.updatedAt });
+      } catch (err: any) {
+        console.error(`[Keys] Could not decrypt ${r.platform} for a workspace; skipping.`, err?.message);
+      }
+    }
+    return out;
+  },
+
+  async get(tenantId: string, platform: string): Promise<PlatformCredentials | null> {
+    const rows = await getDb()
+      .select({
+        ciphertext: platformCredentials.ciphertext,
+        iv: platformCredentials.iv,
+        authTag: platformCredentials.authTag,
+        wrappedDek: platformCredentials.wrappedDek,
+        keyVersion: platformCredentials.keyVersion
+      })
+      .from(platformCredentials)
+      .where(and(eq(platformCredentials.tenantId, tenantId), eq(platformCredentials.platform, platform)))
+      .limit(1);
+    if (!rows.length) return null;
+    return decryptJson<PlatformCredentials>(rows[0]);
+  },
+
+  async upsert(tenantId: string, platform: string, entry: PlatformCredentials): Promise<void> {
+    if (!isEncryptionConfigured()) {
+      throw new Error('MASTER_KEY is not set; refusing to store credentials unencrypted.');
+    }
+    const sealed = encryptJson(entry);
+    const row = {
+      accountHandle: entry.accountHandle || null,
+      autoPublishEnabled: Boolean(entry.autoPublishEnabled),
+      ciphertext: sealed.ciphertext,
+      iv: sealed.iv,
+      authTag: sealed.authTag,
+      wrappedDek: sealed.wrappedDek,
+      keyVersion: sealed.keyVersion,
+      updatedAt: new Date()
+    };
+    await getDb()
+      .insert(platformCredentials)
+      .values({ tenantId, platform, ...row })
+      .onConflictDoUpdate({ target: [platformCredentials.tenantId, platformCredentials.platform], set: row });
+  },
+
+  async remove(tenantId: string, platform: string): Promise<boolean> {
+    const deleted = await getDb()
+      .delete(platformCredentials)
+      .where(and(eq(platformCredentials.tenantId, tenantId), eq(platformCredentials.platform, platform)))
+      .returning({ id: platformCredentials.id });
+    return deleted.length > 0;
   }
 };
