@@ -50,9 +50,12 @@ import { LiveTranscriptHUD, MessageItem, ActiveToolItem } from './components/Liv
 import { CrmKanban } from './components/CrmKanban';
 import { EvalsDashboard } from './components/EvalsDashboard';
 import { ContentFactoryStudio } from './components/ContentFactoryStudio';
-import { ClientCredentialsModal } from './components/ClientCredentialsModal';
+import { KeysPanel } from './components/KeysPanel';
+import { AccountMenu } from './components/AccountMenu';
+import { useSession } from './auth/useSession';
 import { SubscriptionPlansModal } from './components/SubscriptionPlansModal';
 import { parsePlanParam } from './utils/planParam';
+import { ownerRequestError } from './utils/ownerRequestError';
 import { EmbedWidgetModal } from './components/EmbedWidgetModal';
 import { GraphViewHUD } from './components/GraphViewHUD';
 import { Spatial3DOdyssey } from './components/Spatial3DOdyssey';
@@ -77,6 +80,7 @@ export const App: React.FC = () => {
   const [is3DSpatialMode, setIs3DSpatialMode] = useState(false);
   const [audioVisualizerType, setAudioVisualizerType] = useState<VisualizerMode | 'waveform'>('cymatic');
   const [isCredentialsModalOpen, setIsCredentialsModalOpen] = useState(false);
+  const session = useSession();
   const [isPlansModalOpen, setIsPlansModalOpen] = useState(false);
   const [isEmbedModalOpen, setIsEmbedModalOpen] = useState(false);
   const [activePlanId, setActivePlanId] = useState<SubscriptionTierId>('pro');
@@ -1653,7 +1657,19 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ topic, speaker: 'creator' })
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `err_content_trigger_${Date.now()}`,
+            speaker: 'system',
+            text: ownerRequestError(res.status, data),
+            timestamp: new Date().toLocaleTimeString()
+          }
+        ]);
+        return;
+      }
       console.log('[Content Factory Triggered]', data);
     } catch (e: any) {
       console.error(e.message);
@@ -1673,7 +1689,19 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...params, speaker: 'sdr_outbound' })
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `err_content_audit_${Date.now()}`,
+            speaker: 'system',
+            text: ownerRequestError(res.status, data),
+            timestamp: new Date().toLocaleTimeString()
+          }
+        ]);
+        return;
+      }
       console.log('[SOP Audit Queued]', data);
     } catch (err: any) {
       console.error('[SOP Audit Error]', err.message);
@@ -1682,7 +1710,19 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
 
   const handleApproveContentJob = async (id: string) => {
     try {
-      await fetch(apiUrl(`/api/content/jobs/${id}/approve`), { method: 'POST' });
+      const res = await fetch(apiUrl(`/api/content/jobs/${id}/approve`), { method: 'POST' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `err_content_approve_${Date.now()}`,
+            speaker: 'system',
+            text: ownerRequestError(res.status, data),
+            timestamp: new Date().toLocaleTimeString()
+          }
+        ]);
+      }
     } catch (e: any) {
       console.error(e.message);
     }
@@ -2422,6 +2462,9 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
 
         {/* View Engine Switcher & Tab Navigation */}
         <div className="flex items-center space-x-2.5">
+          {/* Account: Google sign-in, own keys, sign out */}
+          <AccountMenu session={session} onOpenKeys={() => setIsCredentialsModalOpen(true)} isGlass={isGlass} />
+
           {/* 💎 Plans & Spoken ROI Calculator Trigger */}
           <button
             onClick={() => setIsPlansModalOpen(true)}
@@ -3195,12 +3238,12 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
         </div>
       )}
 
-      {/* Client Connected Platforms & Cloud Credentials Modal */}
-      <ClientCredentialsModal
+      {/* Your keys (BYOK), private to the signed-in workspace */}
+      <KeysPanel
         isOpen={isCredentialsModalOpen}
         onClose={() => setIsCredentialsModalOpen(false)}
-        companyName={prospectCompany || 'DesignAcademy Studio'}
-        theme={theme}
+        signedIn={session.state.status === 'signed-in'}
+        isGlass={isGlass}
       />
 
       {/* SaaS Subscription Plans & Spoken ROI Recovery Modal */}

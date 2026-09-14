@@ -33,7 +33,6 @@ import {
   Zap,
   Globe
 } from 'lucide-react';
-import { ClientCredentialsModal } from './ClientCredentialsModal';
 import { InstaticVisualEditor } from './InstaticVisualEditor';
 
 interface ContentFactoryStudioProps {
@@ -61,7 +60,6 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
   activeCompanyName = 'DesignAcademy Studio',
   onOpenCredentialsModal
 }) => {
-  const [isCredentialsModalOpen, setIsCredentialsModalOpen] = useState(false);
   const [isPublishingSocial, setIsPublishingSocial] = useState(false);
   const [publishReceipts, setPublishReceipts] = useState<any[] | null>(null);
   const [isAutoPipelineRunning, setIsAutoPipelineRunning] = useState(false);
@@ -239,7 +237,7 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
         {/* Action Controls: New SOP Audit or Spoken Content Trigger */}
         <div className="flex flex-wrap items-center gap-2">
           <button
-            onClick={() => onOpenCredentialsModal ? onOpenCredentialsModal() : setIsCredentialsModalOpen(true)}
+            onClick={() => onOpenCredentialsModal?.()}
             className={`flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-bold transition-all border shadow-sm ${
               isGlass
                 ? 'bg-amber-50 text-amber-900 border-amber-300 hover:bg-amber-100'
@@ -1565,13 +1563,6 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
           </div>
         </div>
       )}
-      {/* Client Credentials Modal */}
-      <ClientCredentialsModal
-        isOpen={isCredentialsModalOpen}
-        onClose={() => setIsCredentialsModalOpen(false)}
-        companyName={activeCompanyName}
-        theme={theme}
-      />
     </div>
   );
 };

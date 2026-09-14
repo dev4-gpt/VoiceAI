@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { complianceService } from '../services/complianceService';
-import { requireApiKey } from '../middleware/auth';
+import { requireOwnerKey } from '../middleware/auth';
 
 export const complianceRouter = Router();
 
@@ -63,7 +63,7 @@ complianceRouter.post('/consent', async (req: Request, res: Response) => {
 });
 
 /** GET /api/compliance/log — tenant evidence, so this one is gated. */
-complianceRouter.get('/log', requireApiKey, (req: Request, res: Response) => {
+complianceRouter.get('/log', requireOwnerKey, (req: Request, res: Response) => {
   try {
     const company = (req.query.company as string) || undefined;
     const records = complianceService.getConsentLog(company);

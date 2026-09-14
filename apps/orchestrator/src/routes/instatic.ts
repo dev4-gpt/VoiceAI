@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { instaticService } from '../services/instaticService';
-import { requireApiKey } from '../middleware/auth';
+import { requireOwnerKey } from '../middleware/auth';
 
 export const instaticRouter = Router();
 
@@ -46,7 +46,7 @@ function validateNodeProps(input: unknown): { props: Record<string, unknown> } |
 }
 
 // GET /api/instatic/pages
-instaticRouter.get('/pages', requireApiKey, (req: Request, res: Response) => {
+instaticRouter.get('/pages', requireOwnerKey, (req: Request, res: Response) => {
   try {
     const company = (req.query.company as string) || undefined;
     const pages = instaticService.getPages(company);
@@ -61,7 +61,7 @@ instaticRouter.get('/pages', requireApiKey, (req: Request, res: Response) => {
 });
 
 // GET /api/instatic/pages/:pageId
-instaticRouter.get('/pages/:pageId', requireApiKey, (req: Request, res: Response) => {
+instaticRouter.get('/pages/:pageId', requireOwnerKey, (req: Request, res: Response) => {
   try {
     const page = instaticService.getPage(req.params.pageId);
     if (!page) {
@@ -74,7 +74,7 @@ instaticRouter.get('/pages/:pageId', requireApiKey, (req: Request, res: Response
 });
 
 // POST /api/instatic/generate
-instaticRouter.post('/generate', requireApiKey, (req: Request, res: Response) => {
+instaticRouter.post('/generate', requireOwnerKey, (req: Request, res: Response) => {
   try {
     const { companyName, title, topic, thesis, hook, coreProblem, tacticalFramework } = req.body;
     const pageTitle = title || topic;
@@ -99,7 +99,7 @@ instaticRouter.post('/generate', requireApiKey, (req: Request, res: Response) =>
 });
 
 // POST /api/instatic/patch-node
-instaticRouter.post('/patch-node', requireApiKey, (req: Request, res: Response) => {
+instaticRouter.post('/patch-node', requireOwnerKey, (req: Request, res: Response) => {
   try {
     const { pageId, nodeId, newProps } = req.body;
     if (!pageId || !nodeId || !newProps) {
@@ -123,7 +123,7 @@ instaticRouter.post('/patch-node', requireApiKey, (req: Request, res: Response) 
 });
 
 // POST /api/instatic/ai-assist
-instaticRouter.post('/ai-assist', requireApiKey, async (req: Request, res: Response) => {
+instaticRouter.post('/ai-assist', requireOwnerKey, async (req: Request, res: Response) => {
   try {
     const { pageId, nodeId, prompt } = req.body;
     if (!pageId || !nodeId || !prompt) {

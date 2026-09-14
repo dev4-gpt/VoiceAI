@@ -5,7 +5,7 @@ import { Router, Request, Response } from 'express';
 import { contentFactoryEngine } from '../services/contentFactoryEngine';
 import { outreachDispatcherService } from '../services/outreachDispatcherService';
 import { antiSlopGuardrail } from '../services/antiSlopGuardrail';
-import { requireApiKey } from '../middleware/auth';
+import { requireOwnerKey } from '../middleware/auth';
 
 export const contentRouter = Router();
 
@@ -19,7 +19,7 @@ contentRouter.get('/jobs/:id', (req: Request, res: Response) => {
   res.json({ job });
 });
 
-contentRouter.post('/trigger', async (req: Request, res: Response) => {
+contentRouter.post('/trigger', requireOwnerKey, async (req: Request, res: Response) => {
   const { topic, speaker } = req.body;
   if (!topic) {
     return res.status(400).json({ error: 'Topic is required to trigger Content Factory' });
@@ -33,7 +33,7 @@ contentRouter.post('/trigger', async (req: Request, res: Response) => {
   });
 });
 
-contentRouter.post('/audit', async (req: Request, res: Response) => {
+contentRouter.post('/audit', requireOwnerKey, async (req: Request, res: Response) => {
   const { companyOrCreator, website, triggerEvent, socialLinks, socialBioText, speaker } = req.body;
   if (!companyOrCreator) {
     return res.status(400).json({ error: 'Company or Creator name is required to run conversion audit' });
@@ -55,7 +55,7 @@ contentRouter.post('/audit', async (req: Request, res: Response) => {
   });
 });
 
-contentRouter.post('/dispatch', requireApiKey, async (req: Request, res: Response) => {
+contentRouter.post('/dispatch', requireOwnerKey, async (req: Request, res: Response) => {
   const {
     companyName,
     recipientName,
@@ -95,20 +95,20 @@ contentRouter.post('/anti-slop/evaluate', (req: Request, res: Response) => {
   res.json({ evalResult });
 });
 
-contentRouter.post('/jobs/:id/approve', (req: Request, res: Response) => {
+contentRouter.post('/jobs/:id/approve', requireOwnerKey, (req: Request, res: Response) => {
   const job = contentFactoryEngine.approveJob(req.params.id);
   if (!job) return res.status(404).json({ error: 'Job not found' });
   res.json({ status: 'approved', job });
 });
 
-contentRouter.post('/jobs/:id/reject', (req: Request, res: Response) => {
+contentRouter.post('/jobs/:id/reject', requireOwnerKey, (req: Request, res: Response) => {
   const job = contentFactoryEngine.rejectJob(req.params.id);
   if (!job) return res.status(404).json({ error: 'Job not found' });
   res.json({ status: 'rejected', job });
 });
 
 // Automated Social Publishing Across Connected Platforms
-contentRouter.post('/publish', requireApiKey, async (req: Request, res: Response) => {
+contentRouter.post('/publish', requireOwnerKey, async (req: Request, res: Response) => {
   const { companyName, platforms, content, source } = req.body;
   if (!companyName || !platforms || !Array.isArray(platforms) || platforms.length === 0) {
     return res.status(400).json({ error: 'Company name and target platforms array are required' });
@@ -128,7 +128,7 @@ contentRouter.post('/publish', requireApiKey, async (req: Request, res: Response
 });
 
 // Autonomous End-to-End Social Pipeline: Research -> Anna Voice -> Create -> Publish
-contentRouter.post('/auto-pipeline', requireApiKey, async (req: Request, res: Response) => {
+contentRouter.post('/auto-pipeline', requireOwnerKey, async (req: Request, res: Response) => {
   const { companyName, transcriptExcerpt, coreInsight, platforms } = req.body;
   if (!companyName) {
     return res.status(400).json({ error: 'Company name is required' });

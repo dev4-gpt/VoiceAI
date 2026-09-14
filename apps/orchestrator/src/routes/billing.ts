@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { billingService } from '../services/billingService';
-import { requireApiKey } from '../middleware/auth';
+import { requireApiKey, requireOwnerKey } from '../middleware/auth';
 import { stripeService } from '../services/stripeService';
 import type { SubscriptionTierId, ROIParameters } from '@voice-os/shared';
 
@@ -29,7 +29,7 @@ billingRouter.get('/plans', (_req: Request, res: Response) => {
 });
 
 // GET /api/billing/usage/:clientId
-billingRouter.get('/usage/:clientId', requireApiKey, (req: Request, res: Response) => {
+billingRouter.get('/usage/:clientId', requireOwnerKey, (req: Request, res: Response) => {
   try {
     const { clientId } = req.params;
     const companyName = (req.query.company as string) || undefined;
@@ -149,7 +149,7 @@ billingRouter.post('/subscribe', requireApiKey, async (req: Request, res: Respon
 });
 
 // POST /api/billing/record-call
-billingRouter.post('/record-call', requireApiKey, (req: Request, res: Response) => {
+billingRouter.post('/record-call', requireOwnerKey, (req: Request, res: Response) => {
   try {
     const { clientId, durationSeconds, isAfterHours, leadCaptured, estimatedDealValueUsd } = req.body;
     if (!clientId || durationSeconds === undefined) {
