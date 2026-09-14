@@ -29,10 +29,17 @@ export const AccountMenu: React.FC<AccountMenuProps> = ({ session, onOpenKeys, i
 
   if (state.status === 'signed-out') {
     return (
-      <button type="button" className={chip} onClick={() => void session.signInWithGoogle()}>
-        <LogIn className="w-3.5 h-3.5" aria-hidden="true" />
-        <span>Sign in with Google</span>
-      </button>
+      <div className="flex items-center gap-2">
+        <button type="button" className={chip} onClick={() => void session.signInWithGoogle()}>
+          <LogIn className="w-3.5 h-3.5" aria-hidden="true" />
+          <span>{session.error ? 'Try again' : 'Sign in with Google'}</span>
+        </button>
+        {session.error ? (
+          <span role="alert" className={`text-xs ${isGlass ? 'text-rose-600' : 'text-rose-400'}`}>
+            {session.error}
+          </span>
+        ) : null}
+      </div>
     );
   }
 

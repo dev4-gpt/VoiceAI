@@ -6,7 +6,8 @@ import { AccountMenu } from './AccountMenu';
 const base = {
   signInWithGoogle: vi.fn(async () => undefined),
   signOut: vi.fn(async () => undefined),
-  refresh: vi.fn(async () => undefined)
+  refresh: vi.fn(async () => undefined),
+  error: null
 };
 
 describe('AccountMenu', () => {
@@ -20,6 +21,18 @@ describe('AccountMenu', () => {
     render(<AccountMenu session={{ ...base, signInWithGoogle, state: { status: 'signed-out' } }} onOpenKeys={vi.fn()} isGlass={false} />);
     fireEvent.click(screen.getByRole('button', { name: 'Sign in with Google' }));
     expect(signInWithGoogle).toHaveBeenCalled();
+  });
+
+  it('shows the error and a Try again button when sign-in failed', () => {
+    render(
+      <AccountMenu
+        session={{ ...base, state: { status: 'signed-out' }, error: 'Access blocked' }}
+        onOpenKeys={vi.fn()}
+        isGlass={false}
+      />
+    );
+    expect(screen.getByRole('alert').textContent).toBe('Access blocked');
+    expect(screen.getByRole('button', { name: 'Try again' })).toBeInTheDocument();
   });
 
   it("shows only the signed-in user's own name, Keys and Sign out", () => {

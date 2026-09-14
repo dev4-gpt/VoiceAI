@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { X, KeyRound } from 'lucide-react';
-import { authorizedFetch } from '../auth/authorizedFetch';
+import { authorizedFetch, SignedOutError } from '../auth/authorizedFetch';
 
 type Platform = 'deepseek' | 'assemblyai' | 'devto' | 'linkedin' | 'twitter';
 
@@ -48,13 +48,20 @@ export const KeysPanel: React.FC<KeysPanelProps> = ({ isOpen, onClose, signedIn,
 
   const load = useCallback(async () => {
     const res = await fetcher('/api/me/credentials', undefined);
-    const body = await res.json();
+    const body = await res.json().catch(() => ({}));
     if (res.ok) setKeys(body.credentials);
-    else setMessage({ ok: false, text: body.error || 'Could not load your keys.' });
+    else setMessage({ ok: false, text: body.error || body.message || `Could not load your keys. (HTTP ${res.status})` });
   }, [fetcher]);
 
   useEffect(() => {
-    if (isOpen && signedIn) void load().catch(() => setMessage({ ok: false, text: 'Could not load your keys.' }));
+    if (isOpen && signedIn) {
+      void load().catch((err) =>
+        setMessage({
+          ok: false,
+          text: err instanceof SignedOutError ? 'Your session ended. Sign in again.' : 'Could not load your keys.'
+        })
+      );
+    }
   }, [isOpen, signedIn, load]);
 
   if (!isOpen) return null;
@@ -67,8 +74,11 @@ export const KeysPanel: React.FC<KeysPanelProps> = ({ isOpen, onClose, signedIn,
     setMessage(null);
     try {
       await fn();
-    } catch {
-      setMessage({ ok: false, text: 'Request failed. Check your connection and try again.' });
+    } catch (err) {
+      setMessage({
+        ok: false,
+        text: err instanceof SignedOutError ? 'Your session ended. Sign in again.' : 'Request failed. Check your connection and try again.'
+      });
     } finally {
       setBusy(false);
     }
@@ -83,9 +93,9 @@ export const KeysPanel: React.FC<KeysPanelProps> = ({ isOpen, onClose, signedIn,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
       });
-      const out = await res.json();
+      const out = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setMessage({ ok: false, text: out.error || 'Could not save this key.' });
+        setMessage({ ok: false, text: out.error || out.message || `Could not save this key. (HTTP ${res.status})` });
         return;
       }
       setValues({});
@@ -96,16 +106,22 @@ export const KeysPanel: React.FC<KeysPanelProps> = ({ isOpen, onClose, signedIn,
   const test = () =>
     run(async () => {
       const res = await fetcher(`/api/me/credentials/${active}/test`, { method: 'POST' });
-      const out = await res.json();
-      setMessage({ ok: Boolean(res.ok && out.ok), text: out.message || out.error || 'Test failed.' });
+      const out = await res.json().catch(() => ({}));
+      setMessage({
+        ok: Boolean(res.ok && out.ok),
+        text: out.message || out.error || (res.ok ? 'Test failed.' : `Test failed. (HTTP ${res.status})`)
+      });
       await load();
     });
 
   const remove = () =>
     run(async () => {
       const res = await fetcher(`/api/me/credentials/${active}`, { method: 'DELETE' });
-      const out = await res.json();
-      setMessage({ ok: res.ok, text: res.ok ? `${platform.label} key removed.` : out.error || 'Could not remove this key.' });
+      const out = await res.json().catch(() => ({}));
+      setMessage({
+        ok: res.ok,
+        text: res.ok ? `${platform.label} key removed.` : out.error || out.message || `Could not remove this key. (HTTP ${res.status})`
+      });
       await load();
     });
 

@@ -2,9 +2,12 @@ import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { KeysPanel } from './KeysPanel';
+import { SignedOutError } from '../auth/authorizedFetch';
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
+
+const html = (status = 500) => new Response('<html><body>Internal Server Error</body></html>', { status, headers: { 'Content-Type': 'text/html' } });
 
 describe('KeysPanel', () => {
   it('prompts to sign in when signed out', () => {
@@ -37,5 +40,19 @@ describe('KeysPanel', () => {
         expect.objectContaining({ method: 'PUT', body: JSON.stringify({ accessToken: 'li-token-abcd' }) })
       )
     );
+  });
+
+  it('shows the HTTP status when a 500 returns a non-JSON (HTML) body', async () => {
+    const fetcher = vi.fn(async () => html(500));
+    render(<KeysPanel isOpen onClose={vi.fn()} signedIn isGlass={false} fetcher={fetcher} />);
+    await waitFor(() => expect(screen.getByRole('status').textContent).toContain('HTTP 500'));
+  });
+
+  it('shows a session-ended message when the fetcher throws SignedOutError', async () => {
+    const fetcher = vi.fn(async () => {
+      throw new SignedOutError();
+    });
+    render(<KeysPanel isOpen onClose={vi.fn()} signedIn isGlass={false} fetcher={fetcher} />);
+    await waitFor(() => expect(screen.getByRole('status').textContent).toBe('Your session ended. Sign in again.'));
   });
 });

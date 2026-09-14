@@ -6,7 +6,7 @@ import type { AuthLike } from './authClient';
 function client(user: { id: string; email: string; name?: string | null; image?: string | null } | null) {
   return {
     getSession: vi.fn(async () => ({ data: user ? { user, session: {} } : null, error: null })),
-    signIn: { social: vi.fn(async () => undefined) },
+    signIn: { social: vi.fn(async (): Promise<unknown> => undefined) },
     signOut: vi.fn(async () => undefined),
     token: vi.fn()
   };
@@ -36,6 +36,34 @@ describe('useSession', () => {
     const { result } = renderHook(() => useSession(c as unknown as AuthLike));
     await act(() => result.current.signInWithGoogle());
     expect(c.signIn.social).toHaveBeenCalledWith({ provider: 'google', callbackURL: window.location.href });
+  });
+
+  it('sets an error message when sign-in resolves with an error', async () => {
+    const c = client(null);
+    c.signIn.social.mockResolvedValue({ data: null, error: { message: 'Access blocked' } });
+    const { result } = renderHook(() => useSession(c as unknown as AuthLike));
+    expect(result.current.error).toBeNull();
+    await act(() => result.current.signInWithGoogle());
+    expect(result.current.error).toBe('Access blocked');
+  });
+
+  it('sets a generic error message when sign-in throws', async () => {
+    const c = client(null);
+    c.signIn.social.mockRejectedValue(new Error());
+    const { result } = renderHook(() => useSession(c as unknown as AuthLike));
+    await act(() => result.current.signInWithGoogle());
+    expect(result.current.error).toBe('Sign-in failed.');
+  });
+
+  it('clears a previous error at the start of a new sign-in attempt', async () => {
+    const c = client(null);
+    c.signIn.social.mockResolvedValueOnce({ data: null, error: { message: 'Access blocked' } });
+    const { result } = renderHook(() => useSession(c as unknown as AuthLike));
+    await act(() => result.current.signInWithGoogle());
+    expect(result.current.error).toBe('Access blocked');
+    c.signIn.social.mockResolvedValueOnce(undefined);
+    await act(() => result.current.signInWithGoogle());
+    expect(result.current.error).toBeNull();
   });
 
   it('signs out and returns to signed-out', async () => {
