@@ -1,4 +1,4 @@
-import { eq, and, gte, desc, sql } from 'drizzle-orm';
+import { eq, and, gte, desc, sql, notExists } from 'drizzle-orm';
 import type { CRMLead, ChurnRiskMember } from '@voice-os/shared';
 import type { PlatformCredentials } from '../services/clientCredentialsService';
 import { encryptJson, decryptJson, isEncryptionConfigured } from '../services/cryptoService';
@@ -36,6 +36,21 @@ function slugify(name: string): string {
 const tenantCache = new Map<string, string>();
 
 /**
+ * True when the given organizations.id has no row in organization_members —
+ * i.e. it is not a signed-in workspace. Signed-in workspaces are private:
+ * the legacy, unauthenticated company-name path (below) must never read,
+ * resolve to, or write into one, no matter what name or slug a caller sends.
+ */
+function isNotSignedInWorkspace() {
+  return notExists(
+    getDb()
+      .select({ one: sql`1` })
+      .from(organizationMembers)
+      .where(eq(organizationMembers.tenantId, organizations.id))
+  );
+}
+
+/**
  * Resolves a company name to a tenant id, creating the organization on first
  * sight. Real multi-tenant auth is deferred; until it lands this is how a
  * caller-supplied name becomes a row. Cached because it sits on the hot path of
@@ -49,10 +64,13 @@ export async function resolveTenantId(companyName: string): Promise<string | nul
   if (cached) return cached;
 
   const db = getDb();
+  // Excludes signed-in workspace orgs: a legacy caller who happens to submit a
+  // company name that slugifies to a workspace's opaque slug (e.g. "ws-...")
+  // must not be handed that workspace's tenant id.
   const existing = await db
     .select({ id: organizations.id })
     .from(organizations)
-    .where(eq(organizations.slug, slug))
+    .where(and(eq(organizations.slug, slug), isNotSignedInWorkspace()))
     .limit(1);
 
   if (existing.length) {
@@ -64,8 +82,22 @@ export async function resolveTenantId(companyName: string): Promise<string | nul
     .insert(organizations)
     .values({ name: companyName || 'Default', slug })
     // Concurrent requests for a new company would otherwise race to insert.
-    .onConflictDoUpdate({ target: organizations.slug, set: { updatedAt: new Date() } })
+    // setWhere keeps this from ever renaming or "claiming" a signed-in
+    // workspace org whose slug happens to collide with the computed slug.
+    .onConflictDoUpdate({
+      target: organizations.slug,
+      set: { updatedAt: new Date() },
+      setWhere: isNotSignedInWorkspace()
+    })
     .returning({ id: organizations.id });
+
+  if (!inserted.length) {
+    // The slug collided with an existing signed-in workspace, so the update
+    // above was skipped and nothing was returned. This should be practically
+    // unreachable (workspace slugs are 10 random base36 characters), but fail
+    // loudly rather than silently handing back someone else's tenant id.
+    throw new Error(`resolveTenantId: slug "${slug}" collides with a signed-in workspace; refusing to use it.`);
+  }
 
   tenantCache.set(slug, inserted[0].id);
   return inserted[0].id;
@@ -344,6 +376,14 @@ export async function deletePlatformCredential(companyName: string, platform: st
  * Every stored credential, decrypted, with the owning company's name. A row that
  * fails to decrypt (wrong MASTER_KEY, tampered ciphertext) is skipped and logged
  * rather than crashing boot or being returned as garbage.
+ *
+ * Excludes signed-in workspaces (any tenant with an organization_members row).
+ * The legacy in-memory store this feeds (clientCredentialsService.hydrate) keys
+ * records by organizations.name, and every signed-in workspace org is named
+ * literally 'Workspace' — without this filter, every workspace's BYOK keys
+ * would be decrypted and merged into one shared record keyed 'workspace'.
+ * Signed-in workspaces read their own keys exclusively through drizzleKeyStore
+ * below, which is scoped by the tenant id resolved from a verified session.
  */
 export async function listAllPlatformCredentials(): Promise<
   Array<{ tenantId: string; companyName: string; platform: string; entry: PlatformCredentials }>
@@ -362,7 +402,8 @@ export async function listAllPlatformCredentials(): Promise<
       companyName: organizations.name
     })
     .from(platformCredentials)
-    .innerJoin(organizations, eq(platformCredentials.tenantId, organizations.id));
+    .innerJoin(organizations, eq(platformCredentials.tenantId, organizations.id))
+    .where(isNotSignedInWorkspace());
 
   const out: Array<{ tenantId: string; companyName: string; platform: string; entry: PlatformCredentials }> = [];
   for (const r of rows) {
