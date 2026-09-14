@@ -28,6 +28,19 @@ export interface KeyStore {
   get(tenantId: string, platform: string): Promise<PlatformCredentials | null>;
   upsert(tenantId: string, platform: string, entry: PlatformCredentials): Promise<void>;
   remove(tenantId: string, platform: string): Promise<boolean>;
+  /**
+   * Compare-and-set: writes `entry` only if the row's current `updatedAt` still
+   * equals `expectedUpdatedAt` (i.e. nothing has written to it since the caller
+   * last read it). Returns false, without writing, when the row changed or is
+   * gone — the caller decides what "changed" means (recordTest treats it as "a
+   * newer key is in place, leave it alone").
+   */
+  replaceIfUnchanged(
+    tenantId: string,
+    platform: string,
+    entry: PlatformCredentials,
+    expectedUpdatedAt: Date
+  ): Promise<boolean>;
 }
 
 export interface MaskedKey {
@@ -140,9 +153,19 @@ export class WorkspaceKeysService {
   public async recordTest(tenantId: string, platform: ByokPlatform, ok: boolean): Promise<{ ok: boolean; testedAt: string }> {
     this.assertReady();
     const testedAt = new Date().toISOString();
-    const entry = await this.store.get(tenantId, platform);
-    if (entry) {
-      await this.store.upsert(tenantId, platform, { ...entry, status: ok ? 'connected' : 'error', lastVerifiedAt: testedAt });
+    // Read with the row's updatedAt (same pattern save() uses) so the write
+    // below can be a compare-and-set: if a save() lands between this read and
+    // that write, replaceIfUnchanged fails and we must not retry — a newer key
+    // is in place, and blindly overwriting it would revert the user's own
+    // just-saved key back to what this recordTest call started with.
+    const row = (await this.store.list(tenantId)).find((r) => r.platform === platform);
+    if (row) {
+      const updated: PlatformCredentials = {
+        ...row.entry,
+        status: ok ? 'connected' : 'error',
+        lastVerifiedAt: testedAt
+      };
+      await this.store.replaceIfUnchanged(tenantId, platform, updated, row.updatedAt);
     }
     return { ok, testedAt };
   }

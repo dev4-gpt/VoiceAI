@@ -514,5 +514,55 @@ export const drizzleKeyStore: KeyStore = {
       .where(and(eq(platformCredentials.tenantId, tenantId), eq(platformCredentials.platform, platform)))
       .returning({ id: platformCredentials.id });
     return deleted.length > 0;
+  },
+
+  /**
+   * Compare-and-set write: only applies when the row's stored `updatedAt`
+   * still equals `expectedUpdatedAt`, so a concurrent save() that lands
+   * between a caller's read and this write wins — this write silently no-ops
+   * instead of reverting the newer key (see WorkspaceKeysService.recordTest).
+   *
+   * `updated_at` is `timestamptz` (schema.ts), which Postgres stores with
+   * microsecond precision. The equality check below only ever holds because
+   * every write to this table sets `updatedAt` explicitly from a JS `Date`
+   * (millisecond precision) rather than letting the column's `defaultNow()`
+   * fill it in — see the `row.updatedAt = new Date()` in `upsert()` above,
+   * which is always included in both the INSERT and the conflict UPDATE. If a
+   * row's timestamp were ever set by the DB default instead, it could carry
+   * sub-millisecond precision that a JS `Date` can never equal, and this
+   * compare-and-set would always fail.
+   */
+  async replaceIfUnchanged(
+    tenantId: string,
+    platform: string,
+    entry: PlatformCredentials,
+    expectedUpdatedAt: Date
+  ): Promise<boolean> {
+    if (!isEncryptionConfigured()) {
+      throw new Error('MASTER_KEY is not set; refusing to store credentials unencrypted.');
+    }
+    const sealed = encryptJson(entry);
+    const row = {
+      accountHandle: entry.accountHandle || null,
+      autoPublishEnabled: Boolean(entry.autoPublishEnabled),
+      ciphertext: sealed.ciphertext,
+      iv: sealed.iv,
+      authTag: sealed.authTag,
+      wrappedDek: sealed.wrappedDek,
+      keyVersion: sealed.keyVersion,
+      updatedAt: new Date()
+    };
+    const updated = await getDb()
+      .update(platformCredentials)
+      .set(row)
+      .where(
+        and(
+          eq(platformCredentials.tenantId, tenantId),
+          eq(platformCredentials.platform, platform),
+          eq(platformCredentials.updatedAt, expectedUpdatedAt)
+        )
+      )
+      .returning({ id: platformCredentials.id });
+    return updated.length > 0;
   }
 };

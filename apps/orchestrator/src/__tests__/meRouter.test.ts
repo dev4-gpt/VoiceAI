@@ -20,6 +20,13 @@ class MemoryKeyStore implements KeyStore {
   async remove(t: string, p: string) {
     return this.rows.delete(`${t}::${p}`);
   }
+  async replaceIfUnchanged(t: string, p: string, entry: PlatformCredentials, expectedUpdatedAt: Date) {
+    const key = `${t}::${p}`;
+    const current = this.rows.get(key);
+    if (!current || current.updatedAt.getTime() !== expectedUpdatedAt.getTime()) return false;
+    await this.upsert(t, p, entry);
+    return true;
+  }
 }
 
 // Stand-in for requireUser: the header names which test user is calling.
