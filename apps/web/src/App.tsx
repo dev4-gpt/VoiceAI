@@ -55,6 +55,7 @@ import { AccountMenu } from './components/AccountMenu';
 import { useSession } from './auth/useSession';
 import { SubscriptionPlansModal } from './components/SubscriptionPlansModal';
 import { parsePlanParam } from './utils/planParam';
+import { ownerRequestError } from './utils/ownerRequestError';
 import { EmbedWidgetModal } from './components/EmbedWidgetModal';
 import { GraphViewHUD } from './components/GraphViewHUD';
 import { Spatial3DOdyssey } from './components/Spatial3DOdyssey';
@@ -1656,7 +1657,19 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ topic, speaker: 'creator' })
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `err_content_trigger_${Date.now()}`,
+            speaker: 'system',
+            text: ownerRequestError(res.status, data),
+            timestamp: new Date().toLocaleTimeString()
+          }
+        ]);
+        return;
+      }
       console.log('[Content Factory Triggered]', data);
     } catch (e: any) {
       console.error(e.message);
@@ -1676,7 +1689,19 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...params, speaker: 'sdr_outbound' })
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `err_content_audit_${Date.now()}`,
+            speaker: 'system',
+            text: ownerRequestError(res.status, data),
+            timestamp: new Date().toLocaleTimeString()
+          }
+        ]);
+        return;
+      }
       console.log('[SOP Audit Queued]', data);
     } catch (err: any) {
       console.error('[SOP Audit Error]', err.message);
@@ -1685,7 +1710,19 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
 
   const handleApproveContentJob = async (id: string) => {
     try {
-      await fetch(apiUrl(`/api/content/jobs/${id}/approve`), { method: 'POST' });
+      const res = await fetch(apiUrl(`/api/content/jobs/${id}/approve`), { method: 'POST' });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: `err_content_approve_${Date.now()}`,
+            speaker: 'system',
+            text: ownerRequestError(res.status, data),
+            timestamp: new Date().toLocaleTimeString()
+          }
+        ]);
+      }
     } catch (e: any) {
       console.error(e.message);
     }
