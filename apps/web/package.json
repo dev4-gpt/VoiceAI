@@ -10,6 +10,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@neondatabase/neon-js": "^0.7.0-beta",
     "@voice-os/shared": "file:../../packages/shared",
     "clsx": "^2.1.1",
     "gsap": "^3.15.0",

@@ -13,6 +13,8 @@ interface ImportMetaEnv {
   readonly VITE_ORCHESTRATOR_URL?: string;
   /** Bearer key for gated orchestrator routes, when ORCHESTRATOR_API_KEY is set. */
   readonly VITE_ORCHESTRATOR_API_KEY?: string;
+  /** Neon Auth (managed Better Auth) base URL; sign-in is hidden when unset. */
+  readonly VITE_NEON_AUTH_URL?: string;
 }
 
 interface ImportMeta {
