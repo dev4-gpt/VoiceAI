@@ -50,7 +50,9 @@ import { LiveTranscriptHUD, MessageItem, ActiveToolItem } from './components/Liv
 import { CrmKanban } from './components/CrmKanban';
 import { EvalsDashboard } from './components/EvalsDashboard';
 import { ContentFactoryStudio } from './components/ContentFactoryStudio';
-import { ClientCredentialsModal } from './components/ClientCredentialsModal';
+import { KeysPanel } from './components/KeysPanel';
+import { AccountMenu } from './components/AccountMenu';
+import { useSession } from './auth/useSession';
 import { SubscriptionPlansModal } from './components/SubscriptionPlansModal';
 import { parsePlanParam } from './utils/planParam';
 import { EmbedWidgetModal } from './components/EmbedWidgetModal';
@@ -77,6 +79,7 @@ export const App: React.FC = () => {
   const [is3DSpatialMode, setIs3DSpatialMode] = useState(false);
   const [audioVisualizerType, setAudioVisualizerType] = useState<VisualizerMode | 'waveform'>('cymatic');
   const [isCredentialsModalOpen, setIsCredentialsModalOpen] = useState(false);
+  const session = useSession();
   const [isPlansModalOpen, setIsPlansModalOpen] = useState(false);
   const [isEmbedModalOpen, setIsEmbedModalOpen] = useState(false);
   const [activePlanId, setActivePlanId] = useState<SubscriptionTierId>('pro');
@@ -2422,6 +2425,9 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
 
         {/* View Engine Switcher & Tab Navigation */}
         <div className="flex items-center space-x-2.5">
+          {/* Account: Google sign-in, own keys, sign out */}
+          <AccountMenu session={session} onOpenKeys={() => setIsCredentialsModalOpen(true)} isGlass={isGlass} />
+
           {/* 💎 Plans & Spoken ROI Calculator Trigger */}
           <button
             onClick={() => setIsPlansModalOpen(true)}
@@ -3195,12 +3201,12 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
         </div>
       )}
 
-      {/* Client Connected Platforms & Cloud Credentials Modal */}
-      <ClientCredentialsModal
+      {/* Your keys (BYOK), private to the signed-in workspace */}
+      <KeysPanel
         isOpen={isCredentialsModalOpen}
         onClose={() => setIsCredentialsModalOpen(false)}
-        companyName={prospectCompany || 'DesignAcademy Studio'}
-        theme={theme}
+        signedIn={session.state.status === 'signed-in'}
+        isGlass={isGlass}
       />
 
       {/* SaaS Subscription Plans & Spoken ROI Recovery Modal */}
