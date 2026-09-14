@@ -138,4 +138,45 @@ describe('requireUser', () => {
     expect(status).toHaveBeenCalledWith(503);
     expect(json).toHaveBeenCalledWith(expect.objectContaining({ code: 'WORKSPACE_UNAVAILABLE' }));
   });
+
+  it('does not log the raw error message when workspace resolution fails', async () => {
+    const spy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    const sensitive = new Error('duplicate key value violates unique constraint "x" params=[user-a, ciphertext-abc]');
+    const broken = { ensureForUser: jest.fn().mockRejectedValue(sensitive) };
+    const mw = createRequireUser({ authBaseUrl: AUTH_BASE, workspaces: broken, getKey });
+    const { req, res, next } = mockReqRes(`Bearer ${await token()}`);
+    await mw(req, res, next);
+    const logged = spy.mock.calls.map((c) => c.join(' ')).join('\n');
+    expect(logged).not.toContain('ciphertext-abc');
+    expect(logged).not.toContain('duplicate key value');
+    spy.mockRestore();
+  });
+
+  it('503 AUTH_UNCONFIGURED when NEON_AUTH_BASE_URL is malformed', async () => {
+    const mw = createRequireUser({ authBaseUrl: 'not a url', workspaces, getKey });
+    const { req, res, next, status, json } = mockReqRes(`Bearer ${await token()}`);
+    await mw(req, res, next);
+    expect(status).toHaveBeenCalledWith(503);
+    expect(json).toHaveBeenCalledWith(expect.objectContaining({ code: 'AUTH_UNCONFIGURED' }));
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it('503 KEY_STORAGE_UNCONFIGURED when storageReady() returns false', async () => {
+    const mw = createRequireUser({ authBaseUrl: AUTH_BASE, workspaces, getKey, storageReady: () => false });
+    const { req, res, next, status, json } = mockReqRes(`Bearer ${await token()}`);
+    await mw(req, res, next);
+    expect(status).toHaveBeenCalledWith(503);
+    expect(json).toHaveBeenCalledWith(
+      expect.objectContaining({ code: 'KEY_STORAGE_UNCONFIGURED', error: 'Account storage is not configured on this server.' })
+    );
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it('passes through storageReady() when it returns true', async () => {
+    const mw = createRequireUser({ authBaseUrl: AUTH_BASE, workspaces, getKey, storageReady: () => true });
+    const { req, res, next, status } = mockReqRes(`Bearer ${await token()}`);
+    await mw(req, res, next);
+    expect(status).not.toHaveBeenCalled();
+    expect(next).toHaveBeenCalled();
+  });
 });

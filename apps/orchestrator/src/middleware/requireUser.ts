@@ -19,6 +19,15 @@ export interface RequireUserDeps {
   workspaces: { ensureForUser(authUserId: string): Promise<Workspace> };
   /** Injected in tests; defaults to Neon Auth's remote JWKS. */
   getKey?: JWTVerifyGetKey;
+  /**
+   * Optional check for whether account storage (the database) is configured.
+   * When provided and it returns false, requests fail fast with 503
+   * `KEY_STORAGE_UNCONFIGURED` instead of reaching workspace resolution,
+   * which would otherwise throw and surface as a misleading
+   * `WORKSPACE_UNAVAILABLE` "temporarily unavailable" for what is really a
+   * configuration gap, not an outage.
+   */
+  storageReady?: () => boolean;
 }
 
 function fail(res: Response, status: number, code: string, error: string) {
@@ -53,9 +62,36 @@ function isTokenError(err: unknown): boolean {
 export function createRequireUser(deps: RequireUserDeps): RequestHandler {
   let remoteKeySet: JWTVerifyGetKey | null = null;
 
+  // Parse the configured base URL once, at setup time, rather than inside the
+  // async handler. `new URL()` throws on a malformed value; Express 4 does
+  // not catch a throw from an async handler, so doing this per-request would
+  // hang the request instead of failing. If the value is missing or
+  // malformed, every request is answered with 503 AUTH_UNCONFIGURED.
+  let base: string | null = null;
+  let origin: string | null = null;
+  if (deps.authBaseUrl) {
+    try {
+      const trimmed = deps.authBaseUrl.replace(/\/+$/, '');
+      origin = new URL(trimmed).origin;
+      base = trimmed;
+    } catch {
+      base = null;
+      origin = null;
+    }
+  }
+
   return async function requireUser(req: Request, res: Response, next: NextFunction) {
-    if (!deps.authBaseUrl) {
+    if (!base || !origin) {
       return fail(res, 503, 'AUTH_UNCONFIGURED', 'Sign-in is not configured on this server.');
+    }
+
+    if (deps.storageReady && !deps.storageReady()) {
+      return fail(
+        res,
+        503,
+        'KEY_STORAGE_UNCONFIGURED',
+        'Account storage is not configured on this server.'
+      );
     }
 
     const header = req.header('authorization') || '';
@@ -64,8 +100,6 @@ export function createRequireUser(deps: RequireUserDeps): RequestHandler {
       return fail(res, 401, 'SIGNED_OUT', 'Sign in required.');
     }
 
-    const base = deps.authBaseUrl.replace(/\/+$/, '');
-    const origin = new URL(base).origin;
     const getKey = deps.getKey ?? (remoteKeySet ??= createRemoteJWKSet(new URL(`${base}/.well-known/jwks.json`)));
 
     let payload: Record<string, unknown>;
@@ -94,7 +128,10 @@ export function createRequireUser(deps: RequireUserDeps): RequestHandler {
     try {
       workspace = await deps.workspaces.ensureForUser(userId);
     } catch (err: any) {
-      console.error('[requireUser] Workspace resolution failed:', err?.message || err);
+      // Log only a safe summary — never err.message. Drizzle's DrizzleQueryError
+      // message includes query params (the Google user id; ciphertext/wrappedDek
+      // on writes), which must never reach logs.
+      console.error('[requireUser] Workspace resolution failed:', err?.name, err?.cause?.code ?? '');
       return fail(res, 503, 'WORKSPACE_UNAVAILABLE', 'Your workspace is temporarily unavailable.');
     }
 

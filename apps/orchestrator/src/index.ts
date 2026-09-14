@@ -15,6 +15,7 @@ import { instaticRouter } from './routes/instatic';
 import { complianceRouter } from './routes/compliance';
 import { createMeRouter } from './routes/me';
 import { createRequireUser } from './middleware/requireUser';
+import { isDatabaseConfigured } from './db/client';
 import { workspaceService } from './services/workspaceService';
 import { workspaceKeysService } from './services/workspaceKeysService';
 import { testKey, PerUserRateLimiter } from './services/keyTesters';
@@ -182,7 +183,11 @@ app.use('/api/graph', graphRouter);
 app.use(
   '/api/me',
   createMeRouter({
-    requireUser: createRequireUser({ authBaseUrl: process.env.NEON_AUTH_BASE_URL, workspaces: workspaceService }),
+    requireUser: createRequireUser({
+      authBaseUrl: process.env.NEON_AUTH_BASE_URL,
+      workspaces: workspaceService,
+      storageReady: isDatabaseConfigured
+    }),
     keys: workspaceKeysService,
     testKey,
     limiter: new PerUserRateLimiter()

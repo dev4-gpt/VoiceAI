@@ -31,7 +31,11 @@ export function createMeRouter(deps: MeRouterDeps): Router {
     if (err instanceof KeyStorageUnconfiguredError) {
       return res.status(503).json({ error: err.message, code: 'KEY_STORAGE_UNCONFIGURED' });
     }
-    console.error('[/api/me] Unexpected error:', (err as Error)?.message || err);
+    // Log only a safe summary — never err.message. Drizzle's DrizzleQueryError
+    // message includes query params (the Google user id; ciphertext/wrappedDek
+    // on writes), which must never reach logs.
+    const e = err as { name?: string; cause?: { code?: string } };
+    console.error('[/api/me] Unexpected error:', e?.name, e?.cause?.code ?? '');
     return res.status(500).json({ error: 'Something went wrong.' });
   };
 
