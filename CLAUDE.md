@@ -37,7 +37,10 @@ Some capabilities are real only when the relevant API key/flag is configured; wi
 | YouTube publish | Not supported — needs OAuth2 consent + refresh tokens | Always an honestly-labeled `stub_unsupported` receipt |
 | Substack publish | `webhookUrl` configured | Real webhook `fetch()`; failure reported as `status: 'failed'` |
 | Usage metering | **Not wired to live calls** | Live AssemblyAI sessions do not yet write `usage_records`. Dashboard usage figures come from `seedDefaultUsage()`. |
-| Multi-tenant auth | **Not built** | No login or sessions. A caller-supplied company name maps to an `organizations` row via `resolveTenantId`. One shared `ORCHESTRATOR_API_KEY` gates dashboard routes. |
+| Sign-in and private workspaces | `NEON_AUTH_BASE_URL` (orchestrator) and `VITE_NEON_AUTH_URL` (web build) set | Sign-in button hidden; `/api/me/*` returns 503 `AUTH_UNCONFIGURED`. Any Google account gets its own workspace; users never see each other. |
+| BYOK keys (DeepSeek, AssemblyAI, LinkedIn, X, dev.to) | Signed in, and `DATABASE_URL` + `MASTER_KEY` set | 503 `KEY_STORAGE_UNCONFIGURED`. Stored encrypted per workspace, shown as last-4 only. **Stored keys are not yet used** for voice or drafts (sub-project 2). Signed-in workspaces are excluded from the legacy company-name credential store. |
+| Key "Test" button | DeepSeek, AssemblyAI, dev.to, LinkedIn: free read-only call | X is never called (paid API reads) and says so. |
+| Owner-only demo routes (content trigger/audit/approve/reject/publish/dispatch/auto-pipeline, compliance log, Instatic, billing usage/record-call) | `ORCHESTRATOR_API_KEY` set | Local dev: open. **Production: 503 `ADMIN_UNCONFIGURED`.** |
 | RAG engine | **Never** | 4 hardcoded documents with substring keyword scoring. No embeddings. |
 | Calendar booking | **Never** | Writes a confirmation code into the lead record. No calendar integration. |
 | Latency / eval metrics | **Never** | Every TTFA, p50/p95 and eval score in the UI is a hardcoded constant (`/api/evals/*` is flagged `mode: 'static_demo'`). |
@@ -52,17 +55,16 @@ Every publish receipt includes `isSimulated: boolean` — check it at runtime; d
 * `apps/web/`: React 18, Vite, Tailwind CSS, Lucide icons.
   * Entry: `apps/web/src/App.tsx`
   * 3D Shader Visualizer: `apps/web/src/components/NeuralAudioOrb.tsx` (6 SDF styles: Cymatic Plane default, Frosted Prism, Glass Gyroscope, Monolith Lightbox, Neural Ribbon, Liquid Droplet)
-  * Client Credentials Modal: `apps/web/src/components/ClientCredentialsModal.tsx`
+  * Keys panel (BYOK) and account menu: `apps/web/src/components/KeysPanel.tsx`, `apps/web/src/components/AccountMenu.tsx`
   * Content Studio & Pipeline: `apps/web/src/components/ContentFactoryStudio.tsx`
   * Transcript HUD: `apps/web/src/components/LiveTranscriptHUD.tsx`
 * `apps/orchestrator/`: Node.js, Express, WebSocket (`ws`), Redis 7, DeepSeek LLM.
   * Entry: `apps/orchestrator/src/index.ts`
   * Voice Token & Anna Persona: `apps/orchestrator/src/routes/token.ts`
   * Brand Voice Service: `apps/orchestrator/src/services/brandVoiceService.ts`
-  * Client Credentials Service: `apps/orchestrator/src/services/clientCredentialsService.ts`
+  * Per-user routes (profile, BYOK keys): `apps/orchestrator/src/routes/me.ts`
   * Social Publishing Service: `apps/orchestrator/src/services/socialPublishingService.ts`
   * Content & Pipeline Routes: `apps/orchestrator/src/routes/content.ts`
-  * Credentials Routes: `apps/orchestrator/src/routes/credentials.ts`
 * `packages/shared/`: TypeScript interfaces and data contracts.
   * `packages/shared/src/types.ts`
 * `vault/`: Obsidian vault containing markdown dossiers, brand voices, credentials, and social feeds:
@@ -108,17 +110,7 @@ Create or edit `vault/Clients/<Company_Name>/BrandVoice.md`:
 * Set `Core Value Proposition`, `Target Audience`, and `Signature Lexicon`.
 
 ### 2. Configure Cloud Social Credentials
-Send a POST request or guide the user to the `[Keys]` modal in the UI:
-```bash
-curl -X POST http://localhost:4000/api/credentials/<Company_Name> \
-  -H "Content-Type: application/json" \
-  -d '{
-    "platform": "twitter",
-    "accountHandle": "@Handle",
-    "secrets": { "apiKey": "...", "apiSecret": "...", "bearerToken": "..." },
-    "autoPublishEnabled": true
-  }'
-```
+Sign in to the console with Google and open **Keys**. Keys are saved to your private workspace through `PUT /api/me/credentials/:platform` with a signed-in session token; there is no company-name credentials route any more.
 
 ### 3. Run Autonomous Research-Talk-Publish Loop
 ```bash

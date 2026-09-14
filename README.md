@@ -94,13 +94,14 @@ Because the agent transcribes visitors on third-party websites, it is built arou
 
 | Real | Not built yet |
 | :--- | :--- |
-| Browser voice calls on the AssemblyAI Voice Agent API | Multi-tenant login and accounts |
+| Browser voice calls on the AssemblyAI Voice Agent API | Using each user's own keys for voice and drafts |
 | Tool calls that create and qualify CRM leads | Usage metering from live calls |
 | Embeddable widget running real voice sessions | Per-platform credential verification |
 | AI disclosure and consent gating, with persisted records | Calendar integration (bookings are recorded on the lead) |
 | Postgres persistence and encrypted credentials | Measured latency (no latency figures are claimed) |
-| Stripe Checkout with webhook-driven activation (test mode) | Embedding-based retrieval (knowledge lookup is keyword-based) |
+| Google sign-in with a private workspace and encrypted BYOK keys | Embedding-based retrieval (knowledge lookup is keyword-based) |
 | X and LinkedIn publishing when enabled and connected; Substack via webhook | YouTube publishing |
+| Stripe Checkout with webhook-driven activation (test mode) | |
 
 Every publish receipt carries `isSimulated`, which is true unless a real API call succeeded. The full capability matrix, including what each feature falls back to, is in [CLAUDE.md](CLAUDE.md).
 
@@ -122,11 +123,12 @@ npm run dev:web             # console on http://localhost:3000
 | `ASSEMBLYAI_API_KEY` | Voice. Without it, calls are refused with `503 VOICE_UNCONFIGURED`. |
 | `DEEPSEEK_API_KEY` | Typed chat and the content pipeline. Without it, replies are clearly flagged placeholders. |
 | `DATABASE_URL` | Persistence. Without it, the app runs in memory and says so. |
-| `MASTER_KEY` | Encrypting stored credentials. Without it, credentials are never persisted. |
+| `NEON_AUTH_BASE_URL`, `VITE_NEON_AUTH_URL` | Google sign-in and private workspaces. Without them the sign-in button is hidden and `/api/me` returns 503. |
+| `MASTER_KEY` | Encrypting stored credentials, including each user's own keys. Without it, keys are never persisted. |
 | `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` | Checkout and plan activation. |
 | `WIDGET_ALLOWED_ORIGINS` | Sites allowed to embed the widget. Unset allows any site (fine for a demo). |
 
-Create the tables with `npx drizzle-kit push` from `apps/orchestrator`, with `DATABASE_URL` exported. Docker also works: `docker compose up --build`.
+Create the tables with `npx drizzle-kit push` from `apps/orchestrator`, with `DATABASE_URL` exported. This also creates the `organization_members` table used for workspaces. Docker also works: `docker compose up --build`.
 
 ## Tests
 
