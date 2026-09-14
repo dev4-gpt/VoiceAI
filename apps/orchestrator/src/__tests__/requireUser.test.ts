@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { SignJWT, generateKeyPair, exportJWK, createLocalJWKSet, JWTVerifyGetKey, KeyLike } from 'jose';
+import { SignJWT, generateKeyPair, exportJWK, createLocalJWKSet, JWTVerifyGetKey, KeyLike, errors } from 'jose';
 import { createRequireUser, AuthedRequest } from '../middleware/requireUser';
 
 const AUTH_BASE = 'https://ep-test.neonauth.example.neon.tech/neondb/auth';
@@ -111,6 +111,17 @@ describe('requireUser', () => {
   it('503 AUTH_UNAVAILABLE when the key set cannot be fetched', async () => {
     const failingGetKey = (async () => {
       throw new TypeError('fetch failed');
+    }) as unknown as JWTVerifyGetKey;
+    const mw = createRequireUser({ authBaseUrl: AUTH_BASE, workspaces, getKey: failingGetKey });
+    const { req, res, next, status, json } = mockReqRes(`Bearer ${await token()}`);
+    await mw(req, res, next);
+    expect(status).toHaveBeenCalledWith(503);
+    expect(json).toHaveBeenCalledWith(expect.objectContaining({ code: 'AUTH_UNAVAILABLE' }));
+  });
+
+  it('503 AUTH_UNAVAILABLE when the key set endpoint errors (bare JOSEError)', async () => {
+    const failingGetKey = (async () => {
+      throw new errors.JOSEError('Expected 200 OK from the JSON Web Key Set HTTP response');
     }) as unknown as JWTVerifyGetKey;
     const mw = createRequireUser({ authBaseUrl: AUTH_BASE, workspaces, getKey: failingGetKey });
     const { req, res, next, status, json } = mockReqRes(`Bearer ${await token()}`);

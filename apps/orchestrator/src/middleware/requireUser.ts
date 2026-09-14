@@ -26,6 +26,26 @@ function fail(res: Response, status: number, code: string, error: string) {
 }
 
 /**
+ * True only for errors that mean the *token itself* is malformed, unsigned by a
+ * trusted key, or fails claim validation — i.e. the caller's fault, not ours.
+ * Everything else (bare JOSEError from a JWKS fetch failure, JWKSTimeout,
+ * JWKSInvalid, plain network/TypeErrors) is an outage on our side and must map
+ * to 503 AUTH_UNAVAILABLE, never 401.
+ */
+function isTokenError(err: unknown): boolean {
+  return (
+    err instanceof errors.JWSSignatureVerificationFailed ||
+    err instanceof errors.JWSInvalid ||
+    err instanceof errors.JWTInvalid ||
+    err instanceof errors.JWTClaimValidationFailed ||
+    err instanceof errors.JWKSNoMatchingKey ||
+    err instanceof errors.JWKSMultipleMatchingKeys ||
+    err instanceof errors.JOSEAlgNotAllowed ||
+    err instanceof errors.JOSENotSupported
+  );
+}
+
+/**
  * Verifies a Neon Auth (managed Better Auth) JWT and resolves the caller's private
  * workspace. The workspace comes only from the verified `sub` — never from the
  * request — so one user can never address another user's data.
@@ -55,10 +75,12 @@ export function createRequireUser(deps: RequireUserDeps): RequestHandler {
       if (err instanceof errors.JWTExpired) {
         return fail(res, 401, 'TOKEN_EXPIRED', 'Your session expired. Sign in again.');
       }
-      if (err instanceof errors.JOSEError && !(err instanceof errors.JWKSTimeout)) {
+      if (isTokenError(err)) {
         return fail(res, 401, 'INVALID_TOKEN', 'Invalid session token.');
       }
-      // Network or key-set failures are our outage, not the user's signed-out state.
+      // Everything else — a bare JOSEError from a failed JWKS fetch, JWKSTimeout,
+      // JWKSInvalid, or a plain network error — is our outage, not the user's
+      // signed-out state.
       return fail(res, 503, 'AUTH_UNAVAILABLE', 'Sign-in is temporarily unavailable.');
     }
 
