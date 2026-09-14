@@ -1,0 +1,89 @@
+import { Request, Response, NextFunction, RequestHandler } from 'express';
+import { createRemoteJWKSet, jwtVerify, errors, JWTVerifyGetKey } from 'jose';
+import type { Workspace } from '../services/workspaceService';
+
+export interface AuthedUser {
+  userId: string;
+  email: string;
+  name: string | null;
+  image: string | null;
+}
+
+export interface AuthedRequest extends Request {
+  user: AuthedUser;
+  workspace: Workspace;
+}
+
+export interface RequireUserDeps {
+  authBaseUrl: string | undefined;
+  workspaces: { ensureForUser(authUserId: string): Promise<Workspace> };
+  /** Injected in tests; defaults to Neon Auth's remote JWKS. */
+  getKey?: JWTVerifyGetKey;
+}
+
+function fail(res: Response, status: number, code: string, error: string) {
+  return res.status(status).json({ error, code });
+}
+
+/**
+ * Verifies a Neon Auth (managed Better Auth) JWT and resolves the caller's private
+ * workspace. The workspace comes only from the verified `sub` — never from the
+ * request — so one user can never address another user's data.
+ */
+export function createRequireUser(deps: RequireUserDeps): RequestHandler {
+  let remoteKeySet: JWTVerifyGetKey | null = null;
+
+  return async function requireUser(req: Request, res: Response, next: NextFunction) {
+    if (!deps.authBaseUrl) {
+      return fail(res, 503, 'AUTH_UNCONFIGURED', 'Sign-in is not configured on this server.');
+    }
+
+    const header = req.header('authorization') || '';
+    const token = header.replace(/^Bearer\s+/i, '').trim();
+    if (!token) {
+      return fail(res, 401, 'SIGNED_OUT', 'Sign in required.');
+    }
+
+    const base = deps.authBaseUrl.replace(/\/+$/, '');
+    const origin = new URL(base).origin;
+    const getKey = deps.getKey ?? (remoteKeySet ??= createRemoteJWKSet(new URL(`${base}/.well-known/jwks.json`)));
+
+    let payload: Record<string, unknown>;
+    try {
+      ({ payload } = await jwtVerify(token, getKey, { issuer: origin, audience: origin }));
+    } catch (err) {
+      if (err instanceof errors.JWTExpired) {
+        return fail(res, 401, 'TOKEN_EXPIRED', 'Your session expired. Sign in again.');
+      }
+      if (err instanceof errors.JOSEError && !(err instanceof errors.JWKSTimeout)) {
+        return fail(res, 401, 'INVALID_TOKEN', 'Invalid session token.');
+      }
+      // Network or key-set failures are our outage, not the user's signed-out state.
+      return fail(res, 503, 'AUTH_UNAVAILABLE', 'Sign-in is temporarily unavailable.');
+    }
+
+    const userId = typeof payload.sub === 'string' ? payload.sub : '';
+    const email = typeof payload.email === 'string' ? payload.email : '';
+    if (!userId || !email) {
+      return fail(res, 401, 'INVALID_TOKEN', 'Invalid session token.');
+    }
+
+    let workspace: Workspace;
+    try {
+      workspace = await deps.workspaces.ensureForUser(userId);
+    } catch (err: any) {
+      console.error('[requireUser] Workspace resolution failed:', err?.message || err);
+      return fail(res, 503, 'WORKSPACE_UNAVAILABLE', 'Your workspace is temporarily unavailable.');
+    }
+
+    const authed = req as AuthedRequest;
+    authed.user = {
+      userId,
+      email,
+      name: typeof payload.name === 'string' ? payload.name : null,
+      image: typeof payload.image === 'string' ? payload.image : null
+    };
+    authed.workspace = workspace;
+    next();
+  };
+}
