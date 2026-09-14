@@ -31,17 +31,13 @@ describe('requireOwnerKey', () => {
     expect(next).not.toHaveBeenCalled();
   });
 
-  it('fails closed with 503 outside production when no key is configured', () => {
+  it('stays open outside production when no key is configured (local demo mode)', () => {
     delete process.env.ORCHESTRATOR_API_KEY;
     process.env.NODE_ENV = 'test';
-    const { req, res, next, status, json } = mockReqRes();
+    const { req, res, next, status } = mockReqRes();
     requireOwnerKey(req, res, next);
-    expect(status).toHaveBeenCalledWith(503);
-    expect(json).toHaveBeenCalledWith({
-      error: 'Owner access is not configured on this server.',
-      code: 'ADMIN_UNCONFIGURED'
-    });
-    expect(next).not.toHaveBeenCalled();
+    expect(next).toHaveBeenCalled();
+    expect(status).not.toHaveBeenCalled();
   });
 
   it('rejects with 401 when a key is configured and missing/wrong', () => {

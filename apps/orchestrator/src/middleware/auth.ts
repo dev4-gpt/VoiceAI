@@ -27,13 +27,15 @@ function checkBearer(req: Request, res: Response, next: NextFunction, expected: 
  * whole deployment — the content pipeline triggers/audit/dispatch/approve/
  * reject/publish, compliance log, the Instatic site editor, and billing
  * usage/record-call. These are not part of the public voice-agent demo, so
- * failing closed is safe: if ORCHESTRATOR_API_KEY is unset the routes are
- * disabled everywhere (503 `ADMIN_UNCONFIGURED`) rather than left open. Once
- * a key is set, callers must present it via `Authorization: Bearer <key>`.
+ * failing closed is safe. If ORCHESTRATOR_API_KEY is unset they stay open for
+ * local demos, and in production they are disabled (503 `ADMIN_UNCONFIGURED`)
+ * rather than left open to anyone who finds the URL. Once a key is set,
+ * callers must present it via `Authorization: Bearer <key>`.
  */
 export function requireOwnerKey(req: Request, res: Response, next: NextFunction) {
   const expected = process.env.ORCHESTRATOR_API_KEY;
   if (!expected) {
+    if (process.env.NODE_ENV !== 'production') return next();
     return res.status(503).json({
       error: 'Owner access is not configured on this server.',
       code: 'ADMIN_UNCONFIGURED'
