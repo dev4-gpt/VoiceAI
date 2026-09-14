@@ -10,10 +10,14 @@ import { tokenRouter } from './routes/token';
 import { crmRouter } from './routes/crm';
 import { contentRouter } from './routes/content';
 import { graphRouter } from './routes/graph';
-import { credentialsRouter } from './routes/credentials';
 import { billingRouter } from './routes/billing';
 import { instaticRouter } from './routes/instatic';
 import { complianceRouter } from './routes/compliance';
+import { createMeRouter } from './routes/me';
+import { createRequireUser } from './middleware/requireUser';
+import { workspaceService } from './services/workspaceService';
+import { workspaceKeysService } from './services/workspaceKeysService';
+import { testKey, PerUserRateLimiter } from './services/keyTesters';
 import { VOICE_AGENT_TOOLS } from './tools/registry';
 import { toolDispatcher } from './tools/dispatcher';
 import { crmStore } from './services/crmStore';
@@ -175,7 +179,15 @@ app.use('/api/voice', tokenRouter);
 app.use('/api/crm', crmRouter);
 app.use('/api/content', contentRouter);
 app.use('/api/graph', graphRouter);
-app.use('/api/credentials', credentialsRouter);
+app.use(
+  '/api/me',
+  createMeRouter({
+    requireUser: createRequireUser({ authBaseUrl: process.env.NEON_AUTH_BASE_URL, workspaces: workspaceService }),
+    keys: workspaceKeysService,
+    testKey,
+    limiter: new PerUserRateLimiter()
+  })
+);
 app.use('/api/billing', billingRouter);
 app.use('/api/instatic', instaticRouter);
 app.use('/api/compliance', complianceRouter);
@@ -196,7 +208,8 @@ app.get('/', (_req, res) => {
       graphStats: '/api/graph/stats',
       graphNodes: '/api/graph/nodes',
       graphEdges: '/api/graph/edges',
-      credentials: '/api/credentials/:clientId',
+      me: '/api/me',
+      meCredentials: '/api/me/credentials/:platform',
       billingPlans: '/api/billing/plans',
       billingUsage: '/api/billing/usage/:clientId',
       instaticPages: '/api/instatic/pages',
