@@ -32,11 +32,13 @@ const vendorClient = baseUrl
   : null;
 
 /**
- * The vendor client's own `.token()` does not reliably hit Better Auth's
- * `/token` endpoint (observed in production: it resolves with no token and
- * issues no network request at all, even with a valid session cookie
- * present). Call the endpoint directly instead — verified working with the
- * same session cookie via `credentials: 'include'`.
+ * The vendor client's own `.token()` and `.getSession()` do not reliably hit
+ * Better Auth's `/token` and `/get-session` endpoints (observed in
+ * production: both resolve as signed-out and issue no network request at
+ * all, even with a valid session cookie present — confirmed by comparing
+ * against a direct fetch of the same endpoints, which succeeds). Call the
+ * endpoints directly instead, with `credentials: 'include'` so the same
+ * session cookie rides along.
  */
 async function fetchToken(): Promise<{ data: { token?: string } | null; error: unknown }> {
   try {
@@ -48,4 +50,17 @@ async function fetchToken(): Promise<{ data: { token?: string } | null; error: u
   }
 }
 
-export const authClient: AuthLike | null = vendorClient ? { ...vendorClient, token: fetchToken } : null;
+async function fetchSession(): ReturnType<AuthLike['getSession']> {
+  try {
+    const res = await fetch(`${baseUrl}/get-session`, { credentials: 'include' });
+    if (!res.ok) return { data: null, error: { status: res.status } };
+    const body = await res.json();
+    return { data: body && (body.user || body.session) ? body : null, error: null };
+  } catch (error) {
+    return { data: null, error };
+  }
+}
+
+export const authClient: AuthLike | null = vendorClient
+  ? { ...vendorClient, token: fetchToken, getSession: fetchSession }
+  : null;
