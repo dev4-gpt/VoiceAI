@@ -61,6 +61,27 @@ async function fetchSession(): ReturnType<AuthLike['getSession']> {
   }
 }
 
+/**
+ * Same vendor bug again: `.signOut()` does not actually clear the session
+ * (confirmed: the UI still shows "Sign out" after clicking it, and a direct
+ * `/sign-out` POST without the right headers 415s silently). Better Auth's
+ * `/sign-out` requires `Content-Type: application/json` even with an empty
+ * body — call it directly with that header set.
+ */
+async function fetchSignOut(): Promise<unknown> {
+  try {
+    const res = await fetch(`${baseUrl}/sign-out`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}'
+    });
+    return { data: res.ok, error: res.ok ? null : { status: res.status } };
+  } catch (error) {
+    return { data: null, error };
+  }
+}
+
 export const authClient: AuthLike | null = vendorClient
-  ? { ...vendorClient, token: fetchToken, getSession: fetchSession }
+  ? { ...vendorClient, token: fetchToken, getSession: fetchSession, signOut: fetchSignOut }
   : null;
