@@ -5,11 +5,13 @@ if (typeof (process as any).loadEnvFile === 'function') {
 }
 
 export interface DeepSeekCompletionOptions {
-  model?: 'deepseek-chat' | 'deepseek-reasoner' | string;
+  model?: 'deepseek-chat' | 'deepseek-reasoner' | 'deepseek-flash' | string;
   messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>;
   temperature?: number;
   max_tokens?: number;
   response_format?: { type: 'json_object' };
+  /** Per-call key override — a signed-in caller's own saved key, when they have one. Never written onto the instance; the server key remains this.apiKey for every other call. */
+  apiKey?: string;
 }
 
 export class DeepSeekService {
@@ -37,9 +39,11 @@ export class DeepSeekService {
      */
     isFallback: boolean;
   }> {
-    const model = options.model || (process.env.DEEPSEEK_MODEL || 'deepseek-chat');
+    const model = options.model || (process.env.DEEPSEEK_MODEL || 'deepseek-flash');
+    const apiKey = options.apiKey || this.apiKey;
+    const configured = !!apiKey && apiKey !== 'your_deepseek_api_key_here';
 
-    if (!this.isConfigured()) {
+    if (!configured) {
       console.log(`[DeepSeek Service] No active API key found, generating high-fidelity fallback response using ${model}.`);
       return this.generateFallback(options);
     }
@@ -49,7 +53,7 @@ export class DeepSeekService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${this.apiKey}`
+          Authorization: `Bearer ${apiKey}`
         },
         body: JSON.stringify({
           model,
