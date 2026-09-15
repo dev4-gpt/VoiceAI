@@ -3,11 +3,36 @@ import { crmStore } from '../services/crmStore';
 import { brandVoiceService } from '../services/brandVoiceService';
 import { deepseekService } from '../services/deepseekService';
 import { complianceService } from '../services/complianceService';
+import { createOptionalUser, OptionalAuthedRequest } from '../middleware/optionalUser';
+import { workspaceService } from '../services/workspaceService';
+import { workspaceKeysService } from '../services/workspaceKeysService';
+import { isDatabaseConfigured } from '../db/client';
 
 export const tokenRouter = Router();
 
-tokenRouter.post('/token', async (req: Request, res: Response) => {
-  const apiKey = process.env.ASSEMBLYAI_API_KEY;
+// Anonymous callers keep working exactly as before; a signed-in caller gets
+// their own saved key used instead of the server's.
+const optionalUser = createOptionalUser({
+  authBaseUrl: process.env.NEON_AUTH_BASE_URL,
+  workspaces: workspaceService,
+  storageReady: isDatabaseConfigured
+});
+
+tokenRouter.post('/token', optionalUser, async (req: Request, res: Response) => {
+  const authed = req as OptionalAuthedRequest;
+  let apiKey = process.env.ASSEMBLYAI_API_KEY;
+
+  if (authed.workspace) {
+    // Fail open, like optionalUser itself: the key store throws when storage or
+    // MASTER_KEY is unavailable, and a signed-in caller must not lose voice
+    // (or hang on an unhandled rejection) because of it.
+    try {
+      const secrets = await workspaceKeysService.getSecrets(authed.workspace.tenantId, 'assemblyai');
+      if (secrets?.apiKey) apiKey = secrets.apiKey;
+    } catch (err: any) {
+      console.warn('[Token Route] Could not read the caller BYOK key, using the server key:', err?.message);
+    }
+  }
 
   if (!apiKey) {
     // Fail loudly. This used to return 200 with a fake `demo_token_...`, and the
@@ -82,7 +107,7 @@ tokenRouter.post('/token', async (req: Request, res: Response) => {
 });
 
 // Interactive Text & Keyboard Conversation Route
-tokenRouter.post('/chat', async (req: Request, res: Response) => {
+tokenRouter.post('/chat', optionalUser, async (req: Request, res: Response) => {
   const { text, persona, prospect, history } = req.body;
   if (!text || typeof text !== 'string') {
     return res.status(400).json({ error: 'Text input is required' });
@@ -192,11 +217,22 @@ Rules for Spoken Voice Dialogue:
 
   let reply = '';
 
+  const authed = req as OptionalAuthedRequest;
+  let deepseekApiKey: string | undefined;
+  if (authed.workspace) {
+    try {
+      const secrets = await workspaceKeysService.getSecrets(authed.workspace.tenantId, 'deepseek');
+      if (secrets?.apiKey) deepseekApiKey = secrets.apiKey;
+    } catch (err: any) {
+      console.warn('[Chat Route] Could not read the caller BYOK key, using the server key:', err?.message);
+    }
+  }
+
   try {
     const completion = await deepseekService.createCompletion({
-      model: 'deepseek-chat',
       temperature: 0.4,
       max_tokens: 120,
+      apiKey: deepseekApiKey,
       messages: [
         { role: 'system', content: systemPrompt },
         ...recentTurns
