@@ -1,6 +1,3 @@
-import { createAuthClient } from '@neondatabase/neon-js/auth';
-import { BetterAuthVanillaAdapter } from '@neondatabase/neon-js/auth/vanilla/adapters';
-
 export interface AuthLike {
   getSession(): Promise<{
     data: { user?: { id: string; email: string; name?: string | null; image?: string | null } | null; session?: unknown } | null;
@@ -14,31 +11,17 @@ export interface AuthLike {
 const baseUrl = (import.meta.env.VITE_NEON_AUTH_URL || '').trim();
 
 /**
- * Neon Auth client. `credentials: 'include'` lets the cross-origin auth domain's
- * session cookie ride along so `token()` can mint the JWT our API verifies.
- * Null when the URL is unset: the console then hides sign-in instead of failing.
- *
- * Note: the neon-js `createAuthClient(url, config)` config only accepts
- * `adapter` and `allowAnonymous` (no top-level `fetchOptions`), so the fetch
- * options — including `credentials` — are passed through the
- * `BetterAuthVanillaAdapter({ fetchOptions })` builder instead. That builder
- * is exported from the `@neondatabase/neon-js/auth/vanilla/adapters` subpath,
- * not the top-level `@neondatabase/neon-js/auth` entry.
- */
-const vendorClient = baseUrl
-  ? (createAuthClient(baseUrl, {
-      adapter: BetterAuthVanillaAdapter({ fetchOptions: { credentials: 'include' } })
-    }) as unknown as AuthLike)
-  : null;
-
-/**
- * The vendor client's own `.token()` and `.getSession()` do not reliably hit
- * Better Auth's `/token` and `/get-session` endpoints (observed in
- * production: both resolve as signed-out and issue no network request at
- * all, even with a valid session cookie present — confirmed by comparing
- * against a direct fetch of the same endpoints, which succeeds). Call the
- * endpoints directly instead, with `credentials: 'include'` so the same
- * session cookie rides along.
+ * Hand-rolled Neon Auth (Better Auth) client, calling the auth endpoints
+ * directly instead of going through `@neondatabase/neon-js`'s
+ * `createAuthClient` + `BetterAuthVanillaAdapter`. That vendor wrapper does
+ * not reliably work in this deployment: every method we tried —
+ * `getSession()`, `token()`, `signOut()`, `signIn.social()` — silently
+ * resolved as a no-op (no network request at all, not even an attempt) even
+ * with a valid session cookie present, confirmed by comparing each against a
+ * direct fetch of the same endpoint, which succeeds every time. `credentials:
+ * 'include'` on every call lets the cross-origin auth domain's session
+ * cookie ride along. Null when the URL is unset: the console then hides
+ * sign-in instead of failing.
  */
 async function fetchToken(): Promise<{ data: { token?: string } | null; error: unknown }> {
   try {
@@ -61,13 +44,7 @@ async function fetchSession(): ReturnType<AuthLike['getSession']> {
   }
 }
 
-/**
- * Same vendor bug again: `.signOut()` does not actually clear the session
- * (confirmed: the UI still shows "Sign out" after clicking it, and a direct
- * `/sign-out` POST without the right headers 415s silently). Better Auth's
- * `/sign-out` requires `Content-Type: application/json` even with an empty
- * body — call it directly with that header set.
- */
+/** Better Auth's `/sign-out` requires `Content-Type: application/json` even with an empty body. */
 async function fetchSignOut(): Promise<unknown> {
   try {
     const res = await fetch(`${baseUrl}/sign-out`, {
@@ -82,6 +59,35 @@ async function fetchSignOut(): Promise<unknown> {
   }
 }
 
-export const authClient: AuthLike | null = vendorClient
-  ? { ...vendorClient, token: fetchToken, getSession: fetchSession, signOut: fetchSignOut }
+/**
+ * `/sign-in/social` responds `{ url, redirect: true }` rather than doing the
+ * redirect itself — the caller is expected to navigate to `url`.
+ */
+async function fetchSignInSocial(opts: { provider: 'google'; callbackURL: string }): Promise<unknown> {
+  try {
+    const res = await fetch(`${baseUrl}/sign-in/social`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(opts)
+    });
+    const body = await res.json().catch(() => null);
+    if (!res.ok) return { error: body ?? { message: `Sign-in failed (${res.status}).` } };
+    if (body?.url) {
+      window.location.href = body.url;
+      return { data: body };
+    }
+    return { error: { message: 'Sign-in did not return a redirect URL.' } };
+  } catch (error) {
+    return { error };
+  }
+}
+
+export const authClient: AuthLike | null = baseUrl
+  ? {
+      getSession: fetchSession,
+      signIn: { social: fetchSignInSocial },
+      signOut: fetchSignOut,
+      token: fetchToken
+    }
   : null;
