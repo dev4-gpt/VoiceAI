@@ -104,7 +104,7 @@ export async function listAllPlatformCredentials(): Promise<
       const entry = decryptJson<PlatformCredentials>(r);
       out.push({ tenantId: r.tenantId, companyName: r.companyName, platform: r.platform, entry });
     } catch (err: any) {
-      console.error(`[Credentials] Could not decrypt ${r.platform} for tenant ${r.tenantId}; skipping.`, err?.message);
+      console.error(`[Credentials] Could not decrypt ${r.platform} for tenant ${r.tenantId}; skipping.`, err?.name, err?.cause?.code ?? '');
     }
   }
   return out;
@@ -138,7 +138,7 @@ export const drizzleKeyStore: KeyStore = {
       try {
         out.push({ platform: r.platform, entry: decryptJson<PlatformCredentials>(r), updatedAt: r.updatedAt });
       } catch (err: any) {
-        console.error(`[Keys] Could not decrypt ${r.platform} for a workspace; skipping.`, err?.message);
+        console.error(`[Keys] Could not decrypt ${r.platform} for a workspace; skipping.`, err?.name, err?.cause?.code ?? '');
       }
     }
     return out;

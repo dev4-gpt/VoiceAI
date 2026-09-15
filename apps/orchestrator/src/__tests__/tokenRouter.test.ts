@@ -2,7 +2,13 @@ import express from 'express';
 import request from 'supertest';
 
 jest.mock('../services/crmStore', () => ({
-  crmStore: { ready: Promise.resolve(), getLeads: () => [], commitLead: jest.fn(), flush: jest.fn() }
+  crmStore: {
+    ready: Promise.resolve(),
+    getLeads: () => [],
+    commitLead: jest.fn(),
+    flush: jest.fn(),
+    createOrUpdateLead: (lead: any) => ({ id: 'lead-1', notes: [], ...lead })
+  }
 }));
 jest.mock('../services/brandVoiceService', () => ({
   brandVoiceService: { getProfileByCompany: () => null }
@@ -14,6 +20,11 @@ jest.mock('../services/complianceService', () => ({
 const getSecrets = jest.fn();
 jest.mock('../services/workspaceKeysService', () => ({
   workspaceKeysService: { getSecrets: (...args: any[]) => getSecrets(...args) }
+}));
+
+const createCompletion = jest.fn();
+jest.mock('../services/deepseekService', () => ({
+  deepseekService: { createCompletion: (...args: any[]) => createCompletion(...args) }
 }));
 
 const ensureForUser = jest.fn();
@@ -149,5 +160,66 @@ describe('POST /api/voice/token BYOK', () => {
     expect(res.status).toBe(200);
     const [, init] = fetchSpy.mock.calls[0];
     expect(init.headers.Authorization).toBe('Bearer server-assemblyai-key');
+  });
+});
+
+describe('POST /api/voice/chat BYOK', () => {
+  const originalAuthBase = process.env.NEON_AUTH_BASE_URL;
+
+  beforeEach(() => {
+    jest.resetModules();
+    process.env.NEON_AUTH_BASE_URL = 'https://ep-test.neonauth.example.neon.tech/neondb/auth';
+    getSecrets.mockReset();
+    ensureForUser.mockReset();
+    verifyMock.mockReset();
+    createCompletion.mockReset();
+    createCompletion.mockResolvedValue({ content: 'Understood.', isFallback: false });
+  });
+
+  afterEach(() => {
+    process.env.NEON_AUTH_BASE_URL = originalAuthBase;
+  });
+
+  const buildApp = () => {
+    const { tokenRouter } = require('../routes/token');
+    const app = express();
+    app.use(express.json());
+    app.use('/api/voice', tokenRouter);
+    return app;
+  };
+
+  it('uses the signed-in caller\'s saved DeepSeek key when present', async () => {
+    verifyMock.mockResolvedValue({ payload: { sub: 'user-a', email: 'a@example.com' } });
+    ensureForUser.mockResolvedValue({ tenantId: 'tenant-a', role: 'owner' });
+    getSecrets.mockImplementation(async (_tenantId: string, platform: string) =>
+      platform === 'deepseek' ? { apiKey: 'users-own-deepseek-key' } : null
+    );
+
+    await request(buildApp())
+      .post('/api/voice/chat')
+      .set('Authorization', 'Bearer fake')
+      .send({ text: 'What does GrowthOS cost?' })
+      .expect(200);
+
+    expect(getSecrets).toHaveBeenCalledWith('tenant-a', 'deepseek');
+    expect(createCompletion).toHaveBeenCalledWith(
+      expect.objectContaining({ apiKey: 'users-own-deepseek-key' })
+    );
+  });
+
+  it('falls back to the server key when the caller has no saved DeepSeek key', async () => {
+    verifyMock.mockResolvedValue({ payload: { sub: 'user-a', email: 'a@example.com' } });
+    ensureForUser.mockResolvedValue({ tenantId: 'tenant-a', role: 'owner' });
+    getSecrets.mockResolvedValue(null);
+
+    await request(buildApp())
+      .post('/api/voice/chat')
+      .set('Authorization', 'Bearer fake')
+      .send({ text: 'What does GrowthOS cost?' })
+      .expect(200);
+
+    expect(createCompletion).toHaveBeenCalledWith(
+      expect.objectContaining({ apiKey: undefined })
+    );
   });
 });

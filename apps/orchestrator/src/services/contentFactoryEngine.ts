@@ -451,7 +451,6 @@ When high-ticket prospects visit https://designacademy.io from Europe or Asia, t
         .join('\n\n');
 
       const deepseekResult = await deepseekService.createCompletion({
-        model: 'deepseek-chat',
         response_format: { type: 'json_object' },
         messages: [
           {
