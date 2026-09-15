@@ -33,11 +33,31 @@ async function fetchToken(): Promise<{ data: { token?: string } | null; error: u
   }
 }
 
+const SESSION_VERIFIER_PARAM = 'neon_auth_session_verifier';
+
+/**
+ * After the OAuth redirect back from Google, Better Auth appends a one-time
+ * `neon_auth_session_verifier` query param to the page URL — it must be
+ * forwarded onto this exact `get-session` request (not just present on the
+ * page) to actually complete the cross-domain session handshake and set the
+ * session cookie. Once used, strip it from the page URL so it isn't reused.
+ */
 async function fetchSession(): ReturnType<AuthLike['getSession']> {
   try {
-    const res = await fetch(`${baseUrl}/get-session`, { credentials: 'include' });
+    const url = new URL(`${baseUrl}/get-session`);
+    const pageUrl = new URL(window.location.href);
+    const verifier = pageUrl.searchParams.get(SESSION_VERIFIER_PARAM);
+    if (verifier) url.searchParams.set(SESSION_VERIFIER_PARAM, verifier);
+
+    const res = await fetch(url.toString(), { credentials: 'include' });
     if (!res.ok) return { data: null, error: { status: res.status } };
     const body = await res.json();
+
+    if (verifier && body?.user) {
+      pageUrl.searchParams.delete(SESSION_VERIFIER_PARAM);
+      history.replaceState(history.state, '', pageUrl.href);
+    }
+
     return { data: body && (body.user || body.session) ? body : null, error: null };
   } catch (error) {
     return { data: null, error };
