@@ -53,6 +53,7 @@ import { ContentFactoryStudio } from './components/ContentFactoryStudio';
 import { KeysPanel } from './components/KeysPanel';
 import { AccountMenu } from './components/AccountMenu';
 import { useSession } from './auth/useSession';
+import { bestEffortAuthFetch } from './auth/authorizedFetch';
 import { SubscriptionPlansModal } from './components/SubscriptionPlansModal';
 import { parsePlanParam } from './utils/planParam';
 import { ownerRequestError } from './utils/ownerRequestError';
@@ -855,7 +856,7 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
       ]);
 
       // 1. Fetch ephemeral token from backend
-      const tokenRes = await fetch(apiUrl('/api/voice/token'), {
+      const tokenRes = await bestEffortAuthFetch('/api/voice/token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -1350,7 +1351,7 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
         }));
 
       // 3. Call backend endpoint POST /api/voice/chat
-      const res = await fetch(apiUrl('/api/voice/chat'), {
+      const res = await bestEffortAuthFetch('/api/voice/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
