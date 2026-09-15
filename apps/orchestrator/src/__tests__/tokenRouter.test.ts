@@ -111,7 +111,10 @@ describe('POST /api/voice/token BYOK', () => {
     // must not hang or 500 for a signed-in caller because of that.
     verifyMock.mockResolvedValue({ payload: { sub: 'user-a', email: 'a@example.com' } });
     ensureForUser.mockResolvedValue({ tenantId: 'tenant-a', role: 'owner' });
-    getSecrets.mockRejectedValue(new Error('Key storage is not configured'));
+    // A bad decrypt surfaces as a JSON.parse SyntaxError whose message quotes the
+    // garbled plaintext, so the message must never reach the log.
+    const leaky = new SyntaxError('Unexpected token in JSON at position 3: {"apiKey":"sk-live-SECRET"}');
+    getSecrets.mockRejectedValue(leaky);
     const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
     const fetchSpy = jest.fn().mockResolvedValue({ ok: true, json: async () => ({ token: 't1' }) });
     global.fetch = fetchSpy as any;
@@ -126,6 +129,9 @@ describe('POST /api/voice/token BYOK', () => {
     const [, init] = fetchSpy.mock.calls[0];
     expect(init.headers.Authorization).toBe('Bearer server-assemblyai-key');
     expect(warn).toHaveBeenCalled();
+    const logged = warn.mock.calls.flat().map(String).join(' ');
+    expect(logged).toContain('SyntaxError');
+    expect(logged).not.toContain('sk-live-SECRET');
     warn.mockRestore();
   });
 

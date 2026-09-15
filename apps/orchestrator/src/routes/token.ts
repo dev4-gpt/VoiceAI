@@ -30,7 +30,9 @@ tokenRouter.post('/token', optionalUser, async (req: Request, res: Response) => 
       const secrets = await workspaceKeysService.getSecrets(authed.workspace.tenantId, 'assemblyai');
       if (secrets?.apiKey) apiKey = secrets.apiKey;
     } catch (err: any) {
-      console.warn('[Token Route] Could not read the caller BYOK key, using the server key:', err?.message);
+      // Name and cause code only, never err.message: a JSON.parse failure after a
+      // bad decrypt embeds decrypted plaintext in the message (see requireUser).
+      console.warn('[Token Route] Could not read the caller BYOK key, using the server key:', err?.name, err?.cause?.code ?? '');
     }
   }
 
@@ -224,7 +226,7 @@ Rules for Spoken Voice Dialogue:
       const secrets = await workspaceKeysService.getSecrets(authed.workspace.tenantId, 'deepseek');
       if (secrets?.apiKey) deepseekApiKey = secrets.apiKey;
     } catch (err: any) {
-      console.warn('[Chat Route] Could not read the caller BYOK key, using the server key:', err?.message);
+      console.warn('[Chat Route] Could not read the caller BYOK key, using the server key:', err?.name, err?.cause?.code ?? '');
     }
   }
 
