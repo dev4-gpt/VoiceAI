@@ -225,11 +225,15 @@ graph TD
 ### 3.5 Pillar 5: Cloud-Native Container Substrate & Elite Operator UX
 
 * **Microservices Topology ([`docker-compose.yml`](docker-compose.yml)):**
-  * `web-console`: React 18 + Vite frontend container serving the operator dashboard, AudioWorklet streaming, and Content Studio.
-  * `orchestrator-gateway`: Node.js / TypeScript service managing AssemblyAI WebSocket bridges, auth token minting, and tool dispatching.
-  * `agent-runtime`: Python / FastAPI service providing sandboxed tool implementations (Lead Gen, SDR, RAG search, Retention engine).
-  * `redis-cache`: High-throughput in-memory store for exact caching, semantic cache embeddings, and session state.
-  * `crm-db`: Relational store (SQLite / PostgreSQL) holding contacts, leads, booking appointments, and call logs.
+  * `web`: React 18 + Vite frontend container serving the operator dashboard, AudioWorklet streaming, and Content Studio.
+  * `orchestrator`: Node.js / TypeScript service managing auth token minting, tool dispatching, and the `/ws/telemetry` socket. Tool implementations live here, in-process — there is no separate runtime service.
+  * `redis`: In-memory store used for caching and session state.
+  * `instatic`: Headless CMS container used by the Instatic visual editor routes.
+
+  Persistence is **Neon Postgres over the network** (via Drizzle), not a database
+  container, so there is no `crm-db` service in the compose file. In production the
+  whole stack instead deploys as a single Vercel project (`api/index.ts` wraps the same
+  Express app), where the telemetry socket does not open.
 * **Zero-Trust Security & Sandboxed Tooling:**
   * Tools execute in unprivileged containers with isolated network bridges.
   * External API keys are kept strictly within server-side environment variables (`.env`).
@@ -248,7 +252,7 @@ graph TD
 * **Tool Dispatcher & Spoken Fast-Response:** [`apps/orchestrator/src/tools/dispatcher.ts`](apps/orchestrator/src/tools/dispatcher.ts)
 * **Hermes Content Factory Engine:** [`apps/orchestrator/src/services/contentFactoryEngine.ts`](apps/orchestrator/src/services/contentFactoryEngine.ts)
 * **DeepSeek Connector:** [`apps/orchestrator/src/services/deepseekService.ts`](apps/orchestrator/src/services/deepseekService.ts)
-* **Anthropic Evals Runner & DeepSeek Judge:** [`packages/evals/src/runner.ts`](packages/evals/src/runner.ts) and [`packages/evals/src/deepseekJudge.ts`](packages/evals/src/deepseekJudge.ts)
+* **Evals Runner & DeepSeek Judge:** [`packages/evals/src/runner.ts`](packages/evals/src/runner.ts) and [`packages/evals/src/deepseekJudge.ts`](packages/evals/src/deepseekJudge.ts) — **status:** the graders and the pass@k / pass^k math are real, but `executeTrial()` currently replays hardcoded tool results instead of running the agent, and the package is not yet wired to the orchestrator. The `/api/evals/*` endpoints and the evals tab therefore serve static demo data, labelled as such in the UI. Wiring the runner to the real tool dispatcher is tracked as the next piece of work.
 * **Web Command Console:** [`apps/web/src/App.tsx`](apps/web/src/App.tsx)
 * **Hermes Content Studio Component:** [`apps/web/src/components/ContentFactoryStudio.tsx`](apps/web/src/components/ContentFactoryStudio.tsx)
 * **Full Shared Data Contracts:** [`packages/shared/src/types.ts`](packages/shared/src/types.ts)

@@ -94,13 +94,14 @@ Because the agent transcribes visitors on third-party websites, it is built arou
 
 | Real | Not built yet |
 | :--- | :--- |
-| Browser voice calls on the AssemblyAI Voice Agent API | Using each user's own keys for voice and drafts |
-| Tool calls that create and qualify CRM leads | Usage metering from live calls |
-| Embeddable widget running real voice sessions | Per-platform credential verification |
-| AI disclosure and consent gating, with persisted records | Calendar integration (bookings are recorded on the lead) |
-| Postgres persistence and encrypted credentials | Measured latency (no latency figures are claimed) |
-| Google sign-in with a private workspace and encrypted BYOK keys | Embedding-based retrieval (knowledge lookup is keyword-based) |
-| X and LinkedIn publishing when enabled and connected; Substack via webhook | YouTube publishing |
+| Browser voice calls on the AssemblyAI Voice Agent API | Usage metering from live calls |
+| Tool calls that create and qualify CRM leads | Per-platform credential verification |
+| Embeddable widget running real voice sessions, with the same tool set as the console | Calendar integration (bookings are recorded on the lead) |
+| AI disclosure and consent gating, with persisted records | Measured latency (no latency figures are claimed) |
+| Postgres persistence and encrypted credentials | Embedding-based retrieval (knowledge lookup is keyword-based) |
+| Google sign-in with a private workspace and encrypted BYOK keys | Computed eval results (the evals tab shows static demo data) |
+| A signed-in user's own AssemblyAI and DeepSeek keys used for voice and drafts | YouTube publishing |
+| X and LinkedIn publishing when enabled and connected; Substack via webhook | |
 | Stripe Checkout with webhook-driven activation (test mode) | |
 
 Every publish receipt carries `isSimulated`, which is true unless a real API call succeeded. The full capability matrix, including what each feature falls back to, is in [CLAUDE.md](CLAUDE.md).
