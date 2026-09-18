@@ -11,7 +11,17 @@ export class AudioPipeline {
   private scheduledTime: number = 0;
   private playbackSources: AudioBufferSourceNode[] = [];
 
-  constructor(private onAudioChunk: (base64Pcm16: string) => void) {}
+  /**
+   * @param onAudioChunk receives base64 PCM16 for the socket.
+   * @param onLevel receives the measured RMS amplitude (0..1) of the same
+   *   buffer. This is a real measurement of the microphone signal, taken from
+   *   the samples that are actually sent — the visualiser was previously driven
+   *   by Math.random(), which animated convincingly while showing nothing.
+   */
+  constructor(
+    private onAudioChunk: (base64Pcm16: string) => void,
+    private onLevel?: (rms: number) => void
+  ) {}
 
   public async startRecording(): Promise<void> {
     if (this.isRecording) return;
@@ -43,11 +53,20 @@ export class AudioPipeline {
       if (!this.isRecording) return;
       const inputData = e.inputBuffer.getChannelData(0);
 
-      // Convert Float32 to Int16 PCM
+      // Convert Float32 to Int16 PCM, and accumulate the sum of squares in the
+      // same pass. Measuring amplitude costs one multiply-add per sample here;
+      // a second loop, or an AnalyserNode, would cost a second traversal of
+      // every 2048-frame buffer for the same number.
       const pcm16 = new Int16Array(inputData.length);
+      let sumSquares = 0;
       for (let i = 0; i < inputData.length; i++) {
         const s = Math.max(-1, Math.min(1, inputData[i]));
+        sumSquares += s * s;
         pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7fff;
+      }
+
+      if (this.onLevel && inputData.length > 0) {
+        this.onLevel(Math.sqrt(sumSquares / inputData.length));
       }
 
       // Convert Int16Array to binary string, then base64

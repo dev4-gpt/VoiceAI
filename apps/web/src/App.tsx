@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { apiUrl, wsUrl } from './config/api';
+import { CallTelemetry, createCallId } from './utils/callTelemetry';
+import { TelemetryTransport, TELEMETRY_INGEST_PATH } from './utils/callTelemetryTransport';
 import {
   Compass,
   Sliders,
@@ -68,6 +70,13 @@ import { BUILT_IN_PRESETS, PACING_OPTIONS } from './constants/dossierPresets';
 export type { OperatingPersona, CustomLinkItem, DossierPreset };
 export { BUILT_IN_PRESETS, PACING_OPTIONS };
 
+/**
+ * Orb level used while the browser's speech synthesis is talking. The Web
+ * Speech API gives no access to its output, so there is no amplitude to read —
+ * this is a declared placeholder, not a measurement.
+ */
+const SYNTH_NOMINAL_LEVEL = 0.55;
+
 export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'console' | 'crm' | 'evals' | 'content' | 'graph'>('console');
   const [viewMode, setViewMode] = useState<'odyssey' | 'tactical'>('odyssey');
@@ -119,6 +128,13 @@ export const App: React.FC = () => {
   const [judgeTourSeconds, setJudgeTourSeconds] = useState<number>(0);
   const [judgeTourStep, setJudgeTourStep] = useState<number>(0);
   const [judgeTourBanner, setJudgeTourBanner] = useState<string>('');
+  /**
+   * Orb amplitude, 0..1.
+   *
+   * During a live call this is a real RMS measurement of the microphone buffer
+   * (see AudioPipeline). During browser-speech simulation there is nothing to
+   * measure, so it holds the nominal value below rather than a random one.
+   */
   const [audioLevel, setAudioLevel] = useState<number>(0);
 
 
@@ -126,7 +142,10 @@ export const App: React.FC = () => {
   const speakTurnIfEnabled = (text: string, onDone?: () => void) => {
     if (spokenAudioEnabled && !isCalling && speechSynth.isEnabled()) {
       speechSynth.speak(text, onDone, () => {
-        setAudioLevel(0.35 + Math.random() * 0.45);
+        // Browser speech synthesis exposes no output buffer, so there is no
+        // amplitude to measure here. A fixed nominal level, not a random one:
+        // randomness looked like a signal and was not.
+        setAudioLevel(SYNTH_NOMINAL_LEVEL);
       });
     } else {
       speechSynth.cancel();
@@ -168,7 +187,8 @@ export const App: React.FC = () => {
         setIsAgentSpeaking(true);
       },
       onBoundary: () => {
-        setAudioLevel(0.35 + Math.random() * 0.45);
+        // Same story as above: simulated speech, so no measured amplitude.
+        setAudioLevel(SYNTH_NOMINAL_LEVEL);
       },
       onEnd: () => {
         setIsAudibleSpeaking(false);
@@ -602,6 +622,35 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
   // voice call creates no lead and books nothing.
   const voiceToolsRef = useRef<any[]>([]);
 
+  // Measured call latency. Kept in refs, never in state: recording a timestamp
+  // must not schedule a render, or the render lands between the audio frame
+  // arriving and the clock being read and is billed to the model as latency.
+  const callTelemetryRef = useRef<CallTelemetry | null>(null);
+  const telemetryTransportRef = useRef<TelemetryTransport | null>(null);
+  const telemetryFlushTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const finalizeCallTelemetry = (reason: string, viaBeacon = false) => {
+    const telemetry = callTelemetryRef.current;
+    if (!telemetry || telemetry.isFinalized) return;
+    if (telemetryFlushTimerRef.current) {
+      clearInterval(telemetryFlushTimerRef.current);
+      telemetryFlushTimerRef.current = null;
+    }
+    const batch = telemetry.finalize(reason);
+    const transport = telemetryTransportRef.current;
+    if (!transport) return;
+    if (viaBeacon) transport.sendFinal(batch);
+    else transport.send(batch);
+  };
+
+  // A tab closed mid-call is the common case, not the edge case: without this
+  // every abandoned call would be measured as if it never ended.
+  useEffect(() => {
+    const onPageHide = () => finalizeCallTelemetry('pagehide', true);
+    window.addEventListener('pagehide', onPageHide);
+    return () => window.removeEventListener('pagehide', onPageHide);
+  }, []);
+
   // Fetch initial CRM leads and connect to telemetry WS
   useEffect(() => {
     // Check if local private profile exists on disk
@@ -892,18 +941,48 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
         }
       ]);
 
-      // Initialize Audio Pipeline
-      const pipeline = new AudioPipeline((base64PcmChunk) => {
-        setIsUserSpeaking(true);
-        if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-          wsRef.current.send(
-            JSON.stringify({
-              type: 'input.audio',
-              audio: base64PcmChunk
-            })
-          );
-        }
+      // Telemetry for this call. performance.now() rather than Date.now():
+      // it is monotonic, so an NTP correction mid-call cannot produce a
+      // negative latency.
+      const telemetry = new CallTelemetry({
+        callId: createCallId(),
+        clock: () => performance.now(),
+        persona: selectedScenario,
+        companyName: prospectCompany || null,
+        onFlush: (batch) => telemetryTransportRef.current?.send(batch)
       });
+      callTelemetryRef.current = telemetry;
+      telemetryTransportRef.current = new TelemetryTransport({
+        url: apiUrl(TELEMETRY_INGEST_PATH)
+      });
+      if (telemetryFlushTimerRef.current) clearInterval(telemetryFlushTimerRef.current);
+      telemetryFlushTimerRef.current = setInterval(() => {
+        const batch = telemetry.drain();
+        if (batch) telemetryTransportRef.current?.send(batch);
+      }, 15_000);
+
+      // Initialize Audio Pipeline
+      const pipeline = new AudioPipeline(
+        (base64PcmChunk) => {
+          setIsUserSpeaking(true);
+          if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+            wsRef.current.send(
+              JSON.stringify({
+                type: 'input.audio',
+                audio: base64PcmChunk
+              })
+            );
+          }
+        },
+        (rms) => {
+          // Real measured amplitude. Speech RMS sits around 0.02-0.25, so it is
+          // scaled for display here — the scaling is presentation, the input is
+          // a measurement. Quantised so a ~12 Hz level stream does not re-render
+          // this component on every buffer.
+          const level = Math.round(Math.min(1, rms * 4) * 20) / 20;
+          setAudioLevel((prev) => (Math.abs(prev - level) < 0.05 ? prev : level));
+        }
+      );
       audioPipelineRef.current = pipeline;
 
       // Only ever the real endpoint. The demo branch that pointed this at our own
@@ -970,6 +1049,10 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
           }
         };
 
+        // Marked immediately before the send, because the greeting text travels
+        // in this frame: nothing the agent says can precede it, which makes
+        // this the only honest zero point for greeting time-to-first-audio.
+        telemetry.markSessionUpdateSent();
         ws.send(JSON.stringify(sessionUpdate));
 
         // Start local mic capture
@@ -1052,8 +1135,12 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
       };
 
       ws.onmessage = (evt) => {
+        // Taken before JSON.parse and before any decode, so parsing cost is not
+        // charged to the model's response time.
+        const receivedAt = performance.now();
         try {
           const msg = JSON.parse(evt.data);
+          telemetry.handleAgentMessage(msg, receivedAt);
 
           if (msg.type === 'transcript.user') {
             setIsUserSpeaking(false);
@@ -1210,6 +1297,8 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
                 console.error('[Tool execution failed]', toolErr);
               }
 
+              telemetry.markToolResult(msg.call_id);
+
               const agentWs = wsRef.current;
               if (agentWs && agentWs.readyState === WebSocket.OPEN) {
                 agentWs.send(
@@ -1239,9 +1328,11 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
       };
 
       ws.onclose = () => {
+        finalizeCallTelemetry('ws_close');
         setIsCalling(false);
         setIsAgentSpeaking(false);
         setIsUserSpeaking(false);
+        setAudioLevel(0);
         if (audioPipelineRef.current) audioPipelineRef.current.stopRecording();
       };
     } catch (err: any) {
@@ -1260,6 +1351,9 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
   };
 
   const handleEndCall = () => {
+    // Before the socket closes, so the end reason reflects the operator hanging
+    // up rather than the close that follows it.
+    finalizeCallTelemetry('user_ended');
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
       wsRef.current.send(JSON.stringify({ type: 'Terminate' }));
       wsRef.current.close();
@@ -1270,6 +1364,7 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
     setIsCalling(false);
     setIsAgentSpeaking(false);
     setIsUserSpeaking(false);
+    setAudioLevel(0);
   };
 
   // CRM Lead Detail Drawer -> "Trigger AI Strategy Call": load the lead into the
@@ -2130,6 +2225,7 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
                   modelName="AssemblyAI Voice Agent"
                   theme={theme}
                   visualMode={audioVisualizerType as VisualizerMode}
+                  level={audioLevel}
                   onSelectVisualMode={(mode) => setAudioVisualizerType(mode)}
                 />
               ) : (
@@ -2480,9 +2576,11 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
             <span>💎 Plans & ROI</span>
           </button>
 
-          {/* Crawlable product and pricing pages */}
+          {/* Crawlable marketing and pricing pages. The marketing page moved from
+              /product to / when the console moved to /console; /product still 308s
+              here, but linking straight to / avoids the redirect hop. */}
           <a
-            href="/product"
+            href="/"
             className={`hidden md:inline-flex px-3 py-1.5 rounded-xl text-xs font-mono font-semibold border transition-all ${
               isGlass ? 'bg-white/80 border-[#e2ded5] text-slate-700 hover:text-slate-950' : 'bg-slate-900 border-slate-800 text-slate-300 hover:text-white'
             }`}

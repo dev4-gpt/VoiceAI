@@ -249,6 +249,73 @@ export const platformCredentials = pgTable(
   })
 );
 
+/**
+ * Measured voice-call telemetry, one row per call.
+ *
+ * `call_id` is minted by the browser and is UNIQUE, because the same call is
+ * reported several times: a periodic flush, an end-call flush, and a pagehide
+ * beacon that may arrive after the socket already closed. Upserting on that key
+ * is what makes those retries idempotent instead of triple-counting a call.
+ *
+ * `greeting_ttfa_ms` is stored on the call, not on a turn, on purpose: the
+ * greeting is not a turn and must never enter the per-turn distribution.
+ */
+export const callRecords = pgTable(
+  'call_records',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    callId: text('call_id').notNull(),
+    persona: text('persona'),
+    companyName: text('company_name'),
+    startedAt: timestamp('started_at', { withTimezone: true }).notNull(),
+    endedAt: timestamp('ended_at', { withTimezone: true }),
+    durationMs: integer('duration_ms'),
+    endReason: text('end_reason'),
+    greetingTtfaMs: integer('greeting_ttfa_ms'),
+    greetingBargeInOffsetMs: integer('greeting_barge_in_offset_ms'),
+    turnCount: integer('turn_count').notNull().default(0),
+    interruptionCount: integer('interruption_count').notNull().default(0),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
+  },
+  (t) => ({
+    callIdIdx: uniqueIndex('call_records_call_id_idx').on(t.callId),
+    tenantStartedIdx: index('call_records_tenant_started_idx').on(t.tenantId, t.startedAt)
+  })
+);
+
+/**
+ * One row per measured conversational turn. Latencies are nullable because a
+ * turn where the agent never produced audio has nothing to measure, and a null
+ * is the honest record of that — summarisation skips it rather than treating a
+ * zero as a fast reply.
+ */
+export const callTurns = pgTable(
+  'call_turns',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    callId: text('call_id').notNull(),
+    turnIndex: integer('turn_index').notNull(),
+    responseLatencyMs: integer('response_latency_ms'),
+    generationLatencyMs: integer('generation_latency_ms'),
+    interrupted: boolean('interrupted').notNull().default(false),
+    bargeInOffsetMs: integer('barge_in_offset_ms'),
+    toolCalls: integer('tool_calls').notNull().default(0),
+    toolLatencyMs: integer('tool_latency_ms'),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+  },
+  (t) => ({
+    callTurnIdx: uniqueIndex('call_turns_call_turn_idx').on(t.callId, t.turnIndex),
+    tenantCreatedIdx: index('call_turns_tenant_created_idx').on(t.tenantId, t.createdAt)
+  })
+);
+
 export type Organization = typeof organizations.$inferSelect;
 export type OrganizationMember = typeof organizationMembers.$inferSelect;
 export type Lead = typeof leads.$inferSelect;
@@ -258,3 +325,5 @@ export type UsageRecord = typeof usageRecords.$inferSelect;
 export type Subscription = typeof subscriptions.$inferSelect;
 export type ConsentRecordRow = typeof consentRecords.$inferSelect;
 export type PlatformCredentialRow = typeof platformCredentials.$inferSelect;
+export type CallRecordRow = typeof callRecords.$inferSelect;
+export type CallTurnRow = typeof callTurns.$inferSelect;

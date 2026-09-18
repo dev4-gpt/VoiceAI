@@ -66,6 +66,13 @@ interface NeuralAudioOrbProps {
   theme?: 'glass' | 'cyber';
   visualMode?: VisualizerMode;
   onSelectVisualMode?: (mode: VisualizerMode) => void;
+  /**
+   * Measured amplitude, 0..1. When supplied and non-zero it drives the orb
+   * directly; otherwise the synthetic idle oscillation is used. Nothing here
+   * invents a level — the absence of a measurement falls back to an obviously
+   * decorative animation instead of pretending to be one.
+   */
+  level?: number;
 }
 
 export const NeuralAudioOrb: React.FC<NeuralAudioOrbProps> = ({
@@ -77,9 +84,14 @@ export const NeuralAudioOrb: React.FC<NeuralAudioOrbProps> = ({
   modelName = 'AssemblyAI Voice Agent',
   theme = 'glass',
   visualMode = 'cymatic',
-  onSelectVisualMode
+  onSelectVisualMode,
+  level = 0
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  // Read inside the render loop via a ref so a new level does not tear down and
+  // rebuild the WebGL program 12 times a second.
+  const levelRef = useRef(level);
+  levelRef.current = level;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -390,7 +402,11 @@ export const NeuralAudioOrb: React.FC<NeuralAudioOrbProps> = ({
       let stateVal = 0.0;
       let intensityVal = 0.16;
 
-      if (isAgentSpeaking) {
+      const measured = levelRef.current;
+      if (measured > 0 && (isUserSpeaking || isAgentSpeaking)) {
+        stateVal = isAgentSpeaking ? 2.0 : 1.0;
+        intensityVal = 0.18 + Math.min(1, measured) * 0.72;
+      } else if (isAgentSpeaking) {
         stateVal = 2.0;
         intensityVal = 0.58 + Math.sin(time * 12.0) * 0.36;
       } else if (isUserSpeaking) {

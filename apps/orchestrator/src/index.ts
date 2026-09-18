@@ -13,6 +13,7 @@ import { graphRouter } from './routes/graph';
 import { billingRouter } from './routes/billing';
 import { instaticRouter } from './routes/instatic';
 import { complianceRouter } from './routes/compliance';
+import { telemetryRouter } from './routes/telemetry';
 import { createMeRouter } from './routes/me';
 import { createRequireUser } from './middleware/requireUser';
 import { isDatabaseConfigured } from './db/client';
@@ -70,7 +71,11 @@ const WIDGET_ROUTES = [
   '/api/voice/config',
   '/api/crm/tools/execute',
   '/api/compliance/policy',
-  '/api/compliance/consent'
+  '/api/compliance/consent',
+  // The widget measures its own call latency and flushes it here, including a
+  // pagehide beacon. Without the wider policy the preflight fails on customer
+  // origins and every embedded call is silently unmeasured.
+  '/api/telemetry/calls'
 ];
 const widgetOrigins = (process.env.WIDGET_ALLOWED_ORIGINS || '')
   .split(',')
@@ -140,28 +145,53 @@ app.use(express.json({ limit: '1mb' }));
 // reachable by anyone who embeds the script. Cap it per client so a hostile or
 // looping page cannot drain the account. In-memory is enough for a single
 // instance; this moves to the datastore when the app scales horizontally.
+//
+// Extracted into a factory because telemetry ingest needs exactly the same
+// treatment — it is public for the same reason and writes to the datastore —
+// and two copies of this logic would drift.
+function perIpRateLimit(limit: number, windowMs: number, message: string) {
+  const hits = new Map<string, { count: number; resetAt: number }>();
+  return (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    const key = req.ip || 'unknown';
+    const now = Date.now();
+    const entry = hits.get(key);
+
+    if (!entry || now > entry.resetAt) {
+      hits.set(key, { count: 1, resetAt: now + windowMs });
+      return next();
+    }
+    if (entry.count >= limit) {
+      return res.status(429).json({ error: message, code: 'RATE_LIMITED' });
+    }
+    entry.count += 1;
+    next();
+  };
+}
+
 const TOKEN_RATE_LIMIT = Number(process.env.VOICE_TOKEN_RATE_LIMIT || 20);
 const TOKEN_RATE_WINDOW_MS = 60_000;
-const tokenHits = new Map<string, { count: number; resetAt: number }>();
 
-app.use('/api/voice/token', (req, res, next) => {
-  const key = req.ip || 'unknown';
-  const now = Date.now();
-  const entry = tokenHits.get(key);
+app.use(
+  '/api/voice/token',
+  perIpRateLimit(
+    TOKEN_RATE_LIMIT,
+    TOKEN_RATE_WINDOW_MS,
+    'Too many voice sessions from this address. Try again shortly.'
+  )
+);
 
-  if (!entry || now > entry.resetAt) {
-    tokenHits.set(key, { count: 1, resetAt: now + TOKEN_RATE_WINDOW_MS });
-    return next();
-  }
-  if (entry.count >= TOKEN_RATE_LIMIT) {
-    return res.status(429).json({
-      error: 'Too many voice sessions from this address. Try again shortly.',
-      code: 'RATE_LIMITED'
-    });
-  }
-  entry.count += 1;
-  next();
-});
+// Telemetry flushes several times per call (periodic, end-of-call, pagehide),
+// so the ceiling is higher than for token minting, but it still has one.
+const TELEMETRY_RATE_LIMIT = Number(process.env.TELEMETRY_RATE_LIMIT || 120);
+
+app.use(
+  '/api/telemetry',
+  perIpRateLimit(
+    TELEMETRY_RATE_LIMIT,
+    TOKEN_RATE_WINDOW_MS,
+    'Too many telemetry submissions from this address.'
+  )
+);
 
 // Static assets & embeddable widget
 // __dirname differs between ts-node (src/), the Docker build (dist/), and a
@@ -205,6 +235,7 @@ app.use(
 app.use('/api/billing', billingRouter);
 app.use('/api/instatic', instaticRouter);
 app.use('/api/compliance', complianceRouter);
+app.use('/api/telemetry', telemetryRouter);
 
 // Root landing info
 app.get('/', (_req, res) => {
@@ -226,6 +257,8 @@ app.get('/', (_req, res) => {
       meCredentials: '/api/me/credentials/:platform',
       billingPlans: '/api/billing/plans',
       billingUsage: '/api/billing/usage/:clientId',
+      telemetryIngest: 'POST /api/telemetry/calls',
+      telemetrySummary: '/api/telemetry/summary',
       instaticPages: '/api/instatic/pages',
       instaticPreview: '/api/instatic/preview/:pageId',
       embedWidget: '/embed.js',
