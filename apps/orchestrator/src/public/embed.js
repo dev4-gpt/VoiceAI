@@ -492,8 +492,31 @@
       });
   }
 
+  // Tool definitions come from the same /api/voice/config the console uses, so the
+  // widget and the dashboard register an identical tool set. Without these the agent
+  // can talk but cannot create or qualify a lead, which is the point of the widget.
+  var cachedTools = null;
+
+  function fetchVoiceTools() {
+    if (cachedTools) return Promise.resolve(cachedTools);
+    return fetch(config.apiUrl + '/api/voice/config')
+      .then(function(res) { return res.ok ? res.json() : null; })
+      .then(function(cfg) {
+        cachedTools = (cfg && cfg.tools) || [];
+        return cachedTools;
+      })
+      .catch(function(e) {
+        console.error('[GrowthVoice] could not load tool definitions', e);
+        return [];
+      });
+  }
+
   function beginTokenExchange() {
     setStatusLine('Connecting...');
+
+    // Fetched alongside the token mint rather than after it, so registering tools
+    // costs no extra round trip before the microphone prompt.
+    var toolsPromise = fetchVoiceTools();
 
     fetch(config.apiUrl + '/api/voice/token', {
       method: 'POST',
@@ -516,7 +539,9 @@
           render();
           return;
         }
-        return openSocket(r.body.token, (r.body.compliance && r.body.compliance.disclosureText) || '');
+        return toolsPromise.then(function(tools) {
+          return openSocket(r.body.token, (r.body.compliance && r.body.compliance.disclosureText) || '', tools);
+        });
       })
       .catch(function(e) {
         console.error('[GrowthVoice] token error', e);
@@ -526,7 +551,43 @@
       });
   }
 
-  function openSocket(token, disclosureText) {
+  // The agent is blocked on this call_id until it receives a tool.result, so every
+  // path here must send one - including failures. Otherwise the conversation stalls
+  // mid-sentence with no way to recover.
+  function handleToolCall(msg) {
+    function reply(result) {
+      var ws = session.ws;
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({
+          type: 'tool.result',
+          call_id: msg.call_id,
+          result: JSON.stringify(result)
+        }));
+      }
+    }
+
+    fetch(config.apiUrl + '/api/crm/tools/execute', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: msg.name, arguments: msg.arguments })
+    })
+      .then(function(res) {
+        return res.json().then(function(body) { return { ok: res.ok, body: body }; });
+      })
+      .then(function(r) {
+        if (r.ok) {
+          reply(r.body.result !== undefined ? r.body.result : r.body);
+        } else {
+          reply({ error: (r.body && r.body.error) || 'Tool execution failed' });
+        }
+      })
+      .catch(function(e) {
+        console.error('[GrowthVoice] tool execution failed', e);
+        reply({ error: 'Tool execution failed' });
+      });
+  }
+
+  function openSocket(token, disclosureText, tools) {
     return navigator.mediaDevices
       .getUserMedia({
         audio: { channelCount: 1, sampleRate: 24000, echoCancellation: true, noiseSuppression: true, autoGainControl: true }
@@ -544,21 +605,28 @@
           var baseGreeting = 'Hi, this is Anna. What brought you to ' + config.company + ' today?';
           var greeting = disclosureText ? disclosureText + ' ' + baseGreeting : baseGreeting;
 
-          ws.send(
-            JSON.stringify({
-              type: 'session.update',
-              session: {
-                system_prompt:
-                  'You are Anna, a senior growth advisor speaking with a visitor on the ' +
-                  config.company +
-                  ' website. Be concise and consultative. Ask one question at a time. ' +
-                  'If asked whether you are a human or an AI, say plainly that you are an AI.',
-                greeting: greeting,
-                input: { format: { encoding: 'audio/pcm' }, language_code: 'en' },
-                output: { voice: 'anna', format: { encoding: 'audio/pcm' } }
-              }
-            })
-          );
+          var registeredTools = tools || [];
+          if (registeredTools.length === 0) {
+            console.warn('[GrowthVoice] No tools registered - the agent cannot capture a lead this session.');
+          }
+
+          var sessionConfig = {
+            system_prompt:
+              'You are Anna, a senior growth advisor speaking with a visitor on the ' +
+              config.company +
+              ' website. Be concise and consultative. Ask one question at a time. ' +
+              'If asked whether you are a human or an AI, say plainly that you are an AI. ' +
+              'When the visitor gives their name, email, budget or intent, record it with the ' +
+              'tools available to you rather than only acknowledging it.',
+            greeting: greeting,
+            input: { format: { encoding: 'audio/pcm' }, language_code: 'en' },
+            output: { voice: 'anna', format: { encoding: 'audio/pcm' } }
+          };
+          if (registeredTools.length > 0) {
+            sessionConfig.tools = registeredTools;
+          }
+
+          ws.send(JSON.stringify({ type: 'session.update', session: sessionConfig }));
 
             session.source = session.ctx.createMediaStreamSource(session.stream);
           session.processor = session.ctx.createScriptProcessor(2048, 1, 1);
@@ -596,10 +664,14 @@
             transcriptLine('You', msg.text);
           } else if (msg.type === 'transcript.agent' && msg.text) {
             transcriptLine('Anna', msg.text);
-          } else if (msg.type === 'reply.audio' && msg.audio) {
-            playPcmChunk(msg.audio);
+          } else if (msg.type === 'reply.audio' && msg.data) {
+            // The Voice Agent API sends the base64 PCM16 chunk on `data`, not `audio`.
+            // Guarding on `msg.audio` meant this branch never fired: the widget was silent.
+            playPcmChunk(msg.data);
           } else if (msg.type === 'reply.done' && msg.status === 'interrupted') {
             abortPlayback();
+          } else if (msg.type === 'tool.call') {
+            handleToolCall(msg);
           }
         };
 

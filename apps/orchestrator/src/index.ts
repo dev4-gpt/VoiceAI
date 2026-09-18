@@ -62,7 +62,16 @@ const allowedOrigins = (process.env.CORS_ALLOWED_ORIGINS || process.env.CLIENT_U
 // The embeddable widget runs on customer sites, so it cannot share the dashboard's
 // origin allowlist. Only the widget's own endpoint gets the wider policy; every
 // other route stays locked to CORS_ALLOWED_ORIGINS.
-const WIDGET_ROUTES = ['/api/voice/token', '/api/compliance/policy', '/api/compliance/consent'];
+// /api/voice/config and /api/crm/tools/execute are here because the widget registers
+// the same tool set as the console and executes tool.call over HTTP. Without them the
+// embedded agent can hold a conversation but cannot capture a lead.
+const WIDGET_ROUTES = [
+  '/api/voice/token',
+  '/api/voice/config',
+  '/api/crm/tools/execute',
+  '/api/compliance/policy',
+  '/api/compliance/consent'
+];
 const widgetOrigins = (process.env.WIDGET_ALLOWED_ORIGINS || '')
   .split(',')
   .map((origin) => origin.trim())
