@@ -342,6 +342,12 @@ export interface EvalGraderResult {
   passed: boolean;
   score: number; // 0.0 - 1.0
   reason: string;
+  /**
+   * True when the grader could not run at all (e.g. no API key for a model judge).
+   * A skipped grader is excluded from scoring — it must never be reported as a pass,
+   * because "we could not evaluate this" is not evidence that the agent behaved.
+   */
+  skipped?: boolean;
 }
 
 export interface EvalTrialOutcome {

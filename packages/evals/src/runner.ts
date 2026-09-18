@@ -73,7 +73,10 @@ async function executeTrial(taskId: string, trialNumber: number): Promise<EvalTr
   const modelJudgeGrading = await deepSeekJudge.evaluateTranscript(task, mockTurns);
 
   const graderResults = [toolGrading, policyGrading, safetyGrading, modelJudgeGrading];
-  const allPassed = graderResults.every((g) => g.passed);
+  // A grader that could not run is excluded rather than counted either way. Counting
+  // it as a pass inflates the score; counting it as a failure penalises the agent for
+  // our own missing configuration. Both are wrong.
+  const allPassed = graderResults.filter((g) => !g.skipped).every((g) => g.passed);
 
   return {
     taskId,
@@ -87,7 +90,11 @@ async function executeTrial(taskId: string, trialNumber: number): Promise<EvalTr
 
 export async function runEvalSuite(k: number = 5): Promise<EvalSuiteReport> {
   console.log(`=======================================================`);
-  console.log(`🧪 Running Anthropic Evaluation Suite (${k} Trials per Task)`);
+  console.log(`🧪 Running Evaluation Suite (${k} Trials per Task)`);
+  console.log(`⚠️  FIXTURE MODE: executeTrial() replays hardcoded tool results.`);
+  console.log(`   The graders and the pass math are real; the agent is not run.`);
+  console.log(`   Because every trial is identical, pass^k here measures nothing.`);
+  console.log(`   Do not quote these numbers until executeTrial calls the dispatcher.`);
   console.log(`=======================================================`);
 
   const allOutcomes: EvalTrialOutcome[] = [];
@@ -107,7 +114,9 @@ export async function runEvalSuite(k: number = 5): Promise<EvalSuiteReport> {
         taskPassCount++;
       }
       const symbol = outcome.allPassed ? '✅' : '❌';
-      console.log(`   Trial ${trial}/${k}: ${symbol} ${outcome.graderResults.map((g) => g.graderName + ': ' + (g.passed ? 'PASS' : 'FAIL')).join(' | ')}`);
+      const verdict = (g: (typeof outcome.graderResults)[number]) =>
+        g.skipped ? 'SKIP' : g.passed ? 'PASS' : 'FAIL';
+      console.log(`   Trial ${trial}/${k}: ${symbol} ${outcome.graderResults.map((g) => g.graderName + ': ' + verdict(g)).join(' | ')}`);
     }
 
     const taskSingleProb = taskPassCount / k;

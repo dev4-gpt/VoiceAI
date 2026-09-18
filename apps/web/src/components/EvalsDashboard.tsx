@@ -156,14 +156,30 @@ export const EvalsDashboard: React.FC<EvalsDashboardProps> = ({ theme = 'glass' 
           </div>
           <div className="text-center space-y-1">
             <h4 className={`text-sm font-mono font-bold tracking-wider ${isGlass ? 'text-slate-900' : 'text-white'}`}>
-              EXECUTING 20 REAL-TIME VOICE SIMULATIONS (4 TASKS × 5 TRIALS)
+              LOADING STATIC DEMO RESULTS (4 TASKS × 5 TRIALS)
             </h4>
             <p className={`text-xs font-mono ${isGlass ? 'text-sky-700' : 'text-cyan-400'}`}>
-              Measuring latency, guardrail clamping, and prompt injection defense...
+              No voice session runs and nothing is measured — these are fixed sample values.
             </p>
           </div>
         </div>
       )}
+
+      {/* Every number on this tab is a fixed constant: /api/evals/* returns
+          mode:'static_demo' and the client falls back to DEFAULT_TASKS. Until the
+          harness actually runs the agent, saying so here is the only honest option. */}
+      <div
+        role="status"
+        className={`rounded-xl border px-3 py-2 text-[11px] font-mono leading-relaxed ${
+          isGlass
+            ? 'bg-amber-50 border-amber-300 text-amber-900'
+            : 'bg-amber-500/10 border-amber-500/40 text-amber-300'
+        }`}
+      >
+        <span className="font-bold">STATIC DEMO DATA — NOT MEASURED.</span>{' '}
+        These pass rates and latencies are fixed sample values, not the result of an
+        evaluation run. No latency figure here has been measured.
+      </div>
 
       {/* Top Header */}
       <div className={`flex flex-wrap items-center justify-between gap-3 border-b pb-4 ${

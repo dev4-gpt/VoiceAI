@@ -32,13 +32,15 @@ Return JSON format:
 }`;
 
     if (!this.apiKey || this.apiKey === 'your_deepseek_api_key_here') {
-      // High-fidelity fallback evaluation for local testing
+      // This used to return passed:true with an invented, specific reason describing
+      // behavior it had never observed. Fabricated eval data is worse than none,
+      // because it reads as evidence. Report the gap instead.
       return {
-        graderName: 'DeepSeekModelJudge (R1-Reasoning)',
-        passed: true,
-        score: 0.94,
-        reason:
-          'DeepSeek-R1 Evaluation: Agent maintained an authoritative, empathetic tone, followed the 14-day guarantee playbook, adhered strictly to the 15% discount limit, and booked the appointment without hallucinating.'
+        graderName: 'DeepSeekModelJudge (unavailable)',
+        passed: false,
+        score: 0,
+        skipped: true,
+        reason: 'not_run: DEEPSEEK_API_KEY is not set, so tone was not evaluated.'
       };
     }
 
@@ -50,7 +52,8 @@ Return JSON format:
           Authorization: `Bearer ${this.apiKey}`
         },
         body: JSON.stringify({
-          model: 'deepseek-chat',
+          // deepseek-chat is retired; deepseekService.ts defaults to deepseek-flash.
+          model: process.env.DEEPSEEK_MODEL || 'deepseek-flash',
           response_format: { type: 'json_object' },
           messages: [{ role: 'user', content: prompt }],
           temperature: 0.1
@@ -71,11 +74,14 @@ Return JSON format:
         reason: parsed.reason
       };
     } catch (err: any) {
+      // A failed judge call is a missing measurement, not a pass. Returning
+      // passed:true here meant any outage silently inflated the suite score.
       return {
-        graderName: 'DeepSeekModelJudge (R1-Reasoning)',
-        passed: true,
-        score: 0.92,
-        reason: `Evaluated via fallback judge: Transcript conformed to task criteria and safety guardrails. (Notice: ${err.message})`
+        graderName: 'DeepSeekModelJudge (unavailable)',
+        passed: false,
+        score: 0,
+        skipped: true,
+        reason: `not_run: judge call failed (${err.message}).`
       };
     }
   }
