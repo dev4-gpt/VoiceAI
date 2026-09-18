@@ -111,7 +111,7 @@ export const PricingPage: React.FC = () => {
                   ))}
                 </ul>
                 <a
-                  href={`/?plan=${plan.id}`}
+                  href={`/console?plan=${plan.id}`}
                   className={`mt-6 block cursor-pointer rounded-xl px-4 py-2.5 text-center text-sm font-bold transition-colors duration-200 ${focusRing} ${
                     plan.recommended
                       ? 'bg-orange-600 text-slate-950 hover:bg-orange-500'

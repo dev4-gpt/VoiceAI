@@ -33,7 +33,7 @@
 
 ## Links
 
-- [Product overview](https://growthvoice-os.vercel.app/product)
+- [Product overview](https://growthvoice-os.vercel.app/)
 - [Pricing](https://growthvoice-os.vercel.app/pricing)
-- [Live demo](https://growthvoice-os.vercel.app/)
+- [Live voice console](https://growthvoice-os.vercel.app/console)
 - [Source code and README](https://github.com/dev4-gpt/VoiceAI)

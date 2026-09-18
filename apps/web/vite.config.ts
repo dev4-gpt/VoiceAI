@@ -26,7 +26,7 @@ export default defineConfig(({ isSsrBuild }) => ({
         rollupOptions: {
           input: {
             main: entry('./index.html'),
-            product: entry('./product/index.html'),
+            console: entry('./console/index.html'),
             pricing: entry('./pricing/index.html')
           }
         }

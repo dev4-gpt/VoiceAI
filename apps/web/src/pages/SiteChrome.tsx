@@ -12,14 +12,14 @@ export const SiteHeader: React.FC = () => (
   <header className="border-b border-slate-200 bg-white/80 backdrop-blur">
     <nav aria-label="Main" className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
       <a
-        href="/product"
+        href="/"
         className={`cursor-pointer rounded font-bold tracking-tight text-slate-900 transition-colors duration-200 ${focusRing}`}
       >
         GrowthVoice OS
       </a>
       <div className="flex items-center gap-5 text-sm">
         <a
-          href="/product"
+          href="/"
           className={`cursor-pointer rounded text-slate-600 transition-colors duration-200 hover:text-slate-900 ${focusRing}`}
         >
           Product
@@ -31,7 +31,7 @@ export const SiteHeader: React.FC = () => (
           Pricing
         </a>
         <a
-          href="/"
+          href="/console"
           className={`cursor-pointer rounded-lg bg-blue-600 px-3 py-1.5 font-semibold text-white transition-colors duration-200 hover:bg-blue-700 ${focusRing}`}
         >
           Try the live demo
@@ -47,7 +47,7 @@ export const SiteFooter: React.FC = () => (
       <p>GrowthVoice OS — built on the AssemblyAI Voice Agent API. MIT licensed.</p>
       <nav aria-label="Footer" className="flex flex-wrap gap-5">
         <a
-          href="/product"
+          href="/"
           className={`cursor-pointer rounded transition-colors duration-200 hover:text-slate-900 ${focusRing}`}
         >
           Product

@@ -16,7 +16,7 @@ describe('PricingPage', () => {
     expect(html).toContain(usd(plan.priceMonthlyUsd));
     expect(html).toContain(usd(plan.priceAnnualMonthlyUsd));
     expect(html).toContain(perMinute(plan.overageRatePerMinUsd));
-    expect(html).toContain(`href="/?plan=${plan.id}"`);
+    expect(html).toContain(`href="/console?plan=${plan.id}"`);
   });
 
   it('renders each pricing FAQ question', () => {

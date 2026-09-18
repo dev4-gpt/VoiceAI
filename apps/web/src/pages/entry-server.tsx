@@ -5,10 +5,11 @@ import { PricingPage, PRICING_FAQ } from './PricingPage';
 import { PLANS, SITE_URL, usd, perMinute } from './plans';
 import type { FaqItem } from './SiteChrome';
 
-export type PageId = 'product' | 'pricing';
+/** 'home' is the site root '/'; 'pricing' is '/pricing'. */
+export type PageId = 'home' | 'pricing';
 
 export function render(page: PageId): string {
-  return renderToString(page === 'product' ? <LandingPage /> : <PricingPage />);
+  return renderToString(page === 'home' ? <LandingPage /> : <PricingPage />);
 }
 
 const faqPage = (items: FaqItem[]) => ({
@@ -21,7 +22,8 @@ const faqPage = (items: FaqItem[]) => ({
 });
 
 export function structuredData(page: PageId): Record<string, unknown> {
-  if (page === 'product') {
+  if (page === 'home') {
+    // The static head of index.html already carries Organization, WebSite and SoftwareApplication.
     return { '@context': 'https://schema.org', '@graph': [faqPage(PRODUCT_FAQ)] };
   }
   return {

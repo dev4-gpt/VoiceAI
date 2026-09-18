@@ -109,7 +109,7 @@ export const LandingPage: React.FC = () => {
           </p>
           <div className="mt-10 flex flex-wrap justify-center gap-4">
             <a
-              href="/"
+              href="/console"
               className={`cursor-pointer rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white transition-colors duration-200 hover:bg-blue-700 ${focusRing}`}
             >
               Try the live demo

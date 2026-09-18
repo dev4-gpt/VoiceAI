@@ -24,8 +24,8 @@ describe('LandingPage', () => {
     }
   });
 
-  it('links to the demo and pricing', () => {
-    expect(html).toContain('href="/"');
+  it('links to the console demo and pricing', () => {
+    expect(html).toContain('href="/console"');
     expect(html).toContain('href="/pricing"');
   });
 });
