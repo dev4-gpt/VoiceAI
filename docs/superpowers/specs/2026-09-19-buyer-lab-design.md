@@ -7,8 +7,10 @@ Status: draft for review, 2026-09-19. Not implemented.
 GrowthVoice OS helps a client with go-to-market, marketing and branding. Buyer Lab lets a client
 test their own project against a panel of simulated buyers **before** spending on it, and get back
 how those buyers feel about the UI and copy, the advice and help they received, and what to change.
-The first target is Veloce AgenticOS (`veloceos.cloud`, `app.veloceos.cloud`); the same flow serves
-any other project in the team (atelieros, researching-os, aetheris) and, later, paying clients.
+The first target is our own project, Veloce AgenticOS (`veloceos.cloud`, `app.veloceos.cloud`).
+Once that works it is run against our other projects (atelieros, researching-os, aetheris) before
+Buyer Lab is published in the hackathon. There are no outside clients yet; the design still treats
+every workspace as a separate tenant so outside clients can be added later without rework.
 
 It ships as a new **Buyer Lab** tab in the console, backed by two interchangeable simulation
 engines behind one provider interface:
@@ -33,7 +35,7 @@ engines behind one provider interface:
 | Seed inputs | Live URL, written brief, uploaded PDF/deck text, and the client's own agent. |
 | Personas | Inferred from the project, editable before running, with forced diversity. |
 | Deliverables | Verdicts/objections/UI-copy feedback, advice-and-help quality, GTM/marketing/branding recommendations, chat with a buyer, before/after re-test. |
-| Who pays | BYOK first (existing encrypted workspace keys), plus a very small metered free allowance on the server key. During testing the server key is the owner's own. |
+| Who pays | **No free credits for anyone.** A workspace uses its own key (existing encrypted BYOK, behind Google sign-in), or the owner grants it the server's keys with `organizations.server_key_access` (already deployed). Our own projects run on the owner's keys through that grant. |
 | Architecture | Provider interface, stepped resumable jobs on the current Vercel + Neon stack (approach A). |
 
 ## 4. Decomposition and build order
@@ -141,7 +143,6 @@ written with the caller's tenant.
 - `buyer_outcomes`: run_id unique, outcome jsonb (NormalizedOutcome), built_at.
 - `buyer_reports`: id, run_id, body jsonb, model, created_at.
 - `buyer_chats`: id, run_id, persona_id, role, text, created_at.
-- `buyer_allowance`: tenant_id unique, calls_used, updated_at (the free allowance ledger).
 
 ## 8. API (all `requireUser`, all tenant-scoped)
 
@@ -149,7 +150,8 @@ written with the caller's tenant.
 - `POST /api/buyerlab/projects/:id/ingest` add a URL/brief/upload; returns coverage.
 - `POST /api/buyerlab/projects/:id/panel` infer a panel; `PUT` to save edits.
 - `POST /api/buyerlab/runs` start `{ projectId, provider, panelId, budget }`; 402
-  `ALLOWANCE_EXHAUSTED` when unfunded, 400 on an unsafe URL.
+  `KEY_REQUIRED` when the workspace has no DeepSeek key and no server-key grant, 400 on an
+  unsafe URL.
 - `GET /api/buyerlab/runs/:id` status and progress; each call also **advances** the run one step
   (the poll drives the job, so no queue is needed).
 - `GET /api/buyerlab/runs/:id/report`, `POST /api/buyerlab/runs/:id/chat`,
@@ -189,12 +191,14 @@ legal advice.** Have counsel confirm it before Buyer Lab is offered commercially
 ## 10. Cost, keys and the free allowance
 
 - Model calls go through `services/deepseekService.ts`. A signed-in user's own DeepSeek key
-  (`workspaceKeysService`, encrypted per workspace) is used when present. This is the default and
-  the only unmetered path.
-- Without a key, the tenant draws on a tiny server-funded allowance held in `buyer_allowance`,
-  counted in **LLM calls** (env `BUYERLAB_FREE_CALLS`). It is deliberately small: the aim is
-  "try it", not "run a study". When it is gone the API returns 402 `ALLOWANCE_EXHAUSTED` with a
-  message pointing to the Keys panel. During testing the server key is the owner's own.
+  (`workspaceKeysService`, encrypted per workspace, Google sign-in required) is used when present.
+- Without an own key, the workspace must have `server_key_access` (granted by the owner, default
+  false, failing closed if the lookup errors). Otherwise the API returns 402 `KEY_REQUIRED` with a
+  message pointing to the Keys panel. There is no free allowance and no per-tenant credit ledger.
+- **MiroFish and BYOK.** MiroFish keeps its LLM and Zep keys in its own server configuration, so a
+  workspace's own key may not be usable there. Until the spike shows per-request key injection
+  works, MiroFish runs are limited to workspaces with `server_key_access`; BYOK applies fully to the
+  Native provider.
 - Every run has a `call_budget`; `advance()` refuses to start a step it cannot finish inside the
   budget and ends the run `budget_exhausted` with whatever completed, clearly marked partial.
 - Estimate shown before a run starts (panel size x pages x steps), so nobody is surprised.
@@ -250,24 +254,24 @@ only the tab registration; the feature lives in `apps/web/src/components/BuyerLa
   `personas.ts`, `normalize.ts`, `report.ts`, `providers/native.ts`, `providers/mirofish.ts`,
   `fixtures/`), `routes/buyerlab.ts`, `db/repository/buyerlab.ts`, tables appended to
   `db/schema.ts`, `apps/web/src/components/BuyerLab/*`.
-- Touched: `App.tsx` (tab only), `index.ts` (mount the router). `usageService.ts` is not touched:
-  the allowance has its own ledger, so voice metering is unaffected.
+- Touched: `App.tsx` (tab only), `index.ts` (mount the router). Buyer Lab reuses
+  `hasServerKeyAccess` from `usageService.ts` for its key check; voice metering is not changed.
 - Sub-project 3 adds `services/mirofish/` (Dockerfile and deploy notes, no MiroFish source).
 
 ## 15. Environment
 
-`BUYERLAB_FREE_CALLS` (default set in code), `MIROFISH_BASE_URL` and `MIROFISH_API_KEY` (host and
-shared secret between our API and the container), `ZEP_API_KEY` and an OpenAI-format LLM key on
-the **MiroFish host only**, never in Vercel.
+`MIROFISH_BASE_URL` and `MIROFISH_API_KEY` (host and shared secret between our API and the
+container), `ZEP_API_KEY` and an OpenAI-format LLM key on the **MiroFish host only**, never in
+Vercel. `FREE_TRIAL_MINUTES` stays unset: nothing is free by default.
 
 ## 16. Open questions
 
-1. What exactly is the free allowance? "About three messages' worth" is not a call count. Default
-   proposed: enough for one 2-persona, single-page preview or a few persona chat messages, set by
-   `BUYERLAB_FREE_CALLS`. Needs a number.
-2. Which host for MiroFish (Fly, Railway, Render)? Needs an account and billing decision.
-3. Whether a Zep account is acceptable, or whether MiroFish's graph memory can be run without it.
+1. Which host for MiroFish (Fly, Railway, Render)? Needs an account and billing decision. Testing
+   on a local Docker install costs nothing.
+2. Whether a Zep account is acceptable, or whether MiroFish's graph memory can be run without it.
    The spike answers this.
+3. Whether MiroFish can take a per-request LLM key, so a workspace's own key can be used there.
+   The spike answers this; until then MiroFish is limited to workspaces with `server_key_access`.
 4. Whether reports may be shared outside the tenant (for example to a client's team). Out of
    scope for v1; would need access controls.
 
