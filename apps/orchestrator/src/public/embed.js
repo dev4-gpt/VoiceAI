@@ -408,7 +408,10 @@
     }
     if (session.ws) {
       try {
-        if (session.ws.readyState === WebSocket.OPEN) session.ws.send(JSON.stringify({ type: 'Terminate' }));
+        // session.end, not `Terminate`: the API rejects the latter as an unknown
+        // message and the socket drop that follows leaves the session billable and
+        // resumable for 30 seconds.
+        if (session.ws.readyState === WebSocket.OPEN) session.ws.send(JSON.stringify({ type: 'session.end' }));
         session.ws.close();
       } catch (e) {}
       session.ws = null;

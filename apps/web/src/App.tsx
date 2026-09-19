@@ -975,6 +975,9 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
           }
         },
         (rms) => {
+          // Feeds the headline latency: the last voiced frame is the zero point
+          // for "how long the user waited". One comparison and one assignment.
+          telemetry.observeMicLevel(rms, performance.now());
           // Real measured amplitude. Speech RMS sits around 0.02-0.25, so it is
           // scaled for display here — the scaling is presentation, the input is
           // a measurement. Quantised so a ~12 Hz level stream does not re-render
@@ -1355,7 +1358,11 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
     // up rather than the close that follows it.
     finalizeCallTelemetry('user_ended');
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      wsRef.current.send(JSON.stringify({ type: 'Terminate' }));
+      // `session.end` is the documented clean end. This used to send
+      // `Terminate`, which the API rejects as an unknown message type, so every
+      // call ended by dropping the socket. That leaves the session resumable for
+      // 30 seconds; session.end stops billing immediately.
+      wsRef.current.send(JSON.stringify({ type: 'session.end' }));
       wsRef.current.close();
     }
     if (audioPipelineRef.current) {
