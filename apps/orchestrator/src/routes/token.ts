@@ -12,7 +12,7 @@ import { workspaceService } from '../services/workspaceService';
 import { workspaceKeysService } from '../services/workspaceKeysService';
 import { isDatabaseConfigured } from '../db/client';
 import { randomUUID } from 'crypto';
-import { resolveCallAttribution, checkEntitlement } from '../services/usageService';
+import { resolveCallAttribution, checkEntitlement, hasServerKeyAccess } from '../services/usageService';
 import { signCallToken, isCallTokenConfigured } from '../services/callTokenService';
 
 export const tokenRouter = Router();
@@ -26,6 +26,16 @@ const optionalUser = createOptionalUser({
 });
 
 const MAX_SESSION_SECONDS = 3600;
+
+/**
+ * Anonymous and unattributed calls run on the server's key with nobody accountable
+ * for the minutes, so their sessions are short. Long enough to try the demo, short
+ * enough that a script minting tokens in a loop cannot run up hour-long sessions.
+ */
+function anonymousSessionSeconds(): number {
+  const configured = Number(process.env.ANON_MAX_SESSION_SECONDS);
+  return Math.min(MAX_SESSION_SECONDS, Math.max(60, Number.isFinite(configured) && configured > 0 ? configured : 300));
+}
 
 interface MeteringDecision {
   /** Set when the caller has no minutes left. The mint must not happen. */
@@ -44,7 +54,11 @@ interface MeteringDecision {
  * The cost of failing open is an unbilled call, which is recoverable; the cost
  * of failing closed is a dead product.
  */
-async function prepareMetering(req: Request, authed: OptionalAuthedRequest): Promise<MeteringDecision> {
+async function prepareMetering(
+  req: Request,
+  authed: OptionalAuthedRequest,
+  usingOwnKey: boolean
+): Promise<MeteringDecision> {
   const open: MeteringDecision = { maxSessionSeconds: MAX_SESSION_SECONDS };
   if (!isDatabaseConfigured()) return open;
 
@@ -63,8 +77,25 @@ async function prepareMetering(req: Request, authed: OptionalAuthedRequest): Pro
     let maxSessionSeconds = MAX_SESSION_SECONDS;
     let warning: 'MINUTES_LOW' | undefined;
     let minutesRemaining: number | undefined;
+    let billable = attribution.billable;
 
-    if (attribution.billable) {
+    if (attribution.source === 'console_anon' || attribution.source === 'widget_unattributed') {
+      maxSessionSeconds = Math.min(maxSessionSeconds, anonymousSessionSeconds());
+    }
+
+    // There are no free credits for clients. A workspace either brings its own key,
+    // in which case they pay AssemblyAI directly and our allowance is not theirs to
+    // draw down, or the owner has granted it the server's key. Everything else runs
+    // against a paid subscription or is refused.
+    let gated = billable;
+    if (billable && usingOwnKey) {
+      billable = false;
+      gated = false;
+    } else if (billable && (await hasServerKeyAccess(attribution.tenantId))) {
+      gated = false;
+    }
+
+    if (gated) {
       const ent = await checkEntitlement(attribution.tenantId);
       if (ent.metered !== false && !ent.allowed) {
         return {
@@ -91,7 +122,7 @@ async function prepareMetering(req: Request, authed: OptionalAuthedRequest): Pro
       callId,
       tenantId: attribution.tenantId,
       source: attribution.source,
-      billable: attribution.billable,
+      billable,
       maxSessionSeconds
     });
     return { maxSessionSeconds, callId, callToken: token, warning, minutesRemaining };
@@ -105,6 +136,8 @@ async function prepareMetering(req: Request, authed: OptionalAuthedRequest): Pro
 tokenRouter.post('/token', optionalUser, async (req: Request, res: Response) => {
   const authed = req as OptionalAuthedRequest;
   let apiKey = process.env.ASSEMBLYAI_API_KEY;
+  // True only when the caller's own saved key is what will be minted with.
+  let usingOwnKey = false;
 
   if (authed.workspace) {
     // Fail open, like optionalUser itself: the key store throws when storage or
@@ -112,7 +145,10 @@ tokenRouter.post('/token', optionalUser, async (req: Request, res: Response) => 
     // (or hang on an unhandled rejection) because of it.
     try {
       const secrets = await workspaceKeysService.getSecrets(authed.workspace.tenantId, 'assemblyai');
-      if (secrets?.apiKey) apiKey = secrets.apiKey;
+      if (secrets?.apiKey) {
+        apiKey = secrets.apiKey;
+        usingOwnKey = true;
+      }
     } catch (err: any) {
       // Name and cause code only, never err.message: a JSON.parse failure after a
       // bad decrypt embeds decrypted plaintext in the message (see requireUser).
@@ -140,7 +176,7 @@ tokenRouter.post('/token', optionalUser, async (req: Request, res: Response) => 
   // to AssemblyAI directly with the token, so there is no mid-call cutoff without
   // proxying audio. What we can do is refuse here and cap the session length so
   // the vendor ends it: max_session_duration_seconds below.
-  const metering = await prepareMetering(req, authed);
+  const metering = await prepareMetering(req, authed, usingOwnKey);
   if (metering.refusal) {
     return res.status(402).json(metering.refusal);
   }

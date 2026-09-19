@@ -36,6 +36,10 @@ export const organizations = pgTable(
     name: text('name').notNull(),
     slug: text('slug').notNull(),
     stripeCustomerId: text('stripe_customer_id'),
+    // Owner-granted: may this workspace spend the SERVER's API keys (voice, models)?
+    // False for everyone by default. There are no free credits for clients: a
+    // workspace brings its own keys, or the owner switches this on for it.
+    serverKeyAccess: boolean('server_key_access').notNull().default(false),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
   },

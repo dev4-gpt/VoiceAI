@@ -3,6 +3,20 @@ import { getDb, isDatabaseConfigured } from '../client';
 import { organizations, organizationMembers } from '../schema';
 import type { Workspace, WorkspaceStore } from '../../services/workspaceService';
 
+/**
+ * Whether the owner has granted this workspace use of the server's API keys.
+ * False for a missing row, so an unknown tenant never gets server-funded usage.
+ */
+export async function getServerKeyAccess(tenantId: string): Promise<boolean> {
+  if (!isDatabaseConfigured()) return false;
+  const rows = await getDb()
+    .select({ access: organizations.serverKeyAccess })
+    .from(organizations)
+    .where(eq(organizations.id, tenantId))
+    .limit(1);
+  return rows[0]?.access === true;
+}
+
 /** Stable slug so the same company name always maps to the same tenant row. */
 function slugify(name: string): string {
   return name

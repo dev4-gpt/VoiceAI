@@ -9,7 +9,8 @@ import {
   listStaleOpenCalls,
   markCallLeadCaptured,
   findSiteKey,
-  insertSiteKey
+  insertSiteKey,
+  getServerKeyAccess
 } from '../db/repository';
 import type { CallLifecycleRow } from '../db/repository/billing';
 import { isDatabaseConfigured } from '../db/client';
@@ -110,11 +111,27 @@ export function evaluateEntitlement(minutesUsed: number, minutesLimit: number): 
 // ---------------------------------------------------------------------------
 
 /**
+ * True when the owner has granted this workspace the server's API keys. Fails
+ * CLOSED (false) on any error: an unknown answer must never hand out
+ * server-funded usage.
+ */
+export async function hasServerKeyAccess(tenantId: string): Promise<boolean> {
+  try {
+    return await getServerKeyAccess(tenantId);
+  } catch (err: any) {
+    console.warn('[Usage] Could not read server-key access, treating as not granted:', err?.name);
+    return false;
+  }
+}
+
+/**
  * Whether `tenantId` may start another billable call. Call only for billable
  * tenants (never for the demo or unattributed tenants).
  *
  * A tenant with no subscription row gets FREE_TRIAL_MINUTES (default 0), so an
  * unpaid workspace is refused unless the operator has explicitly granted a trial.
+ * The intended policy is to leave FREE_TRIAL_MINUTES unset: clients bring their own
+ * keys, and the owner grants server-key access per workspace instead.
  */
 export async function checkEntitlement(tenantId: string): Promise<Entitlement> {
   if (!isDatabaseConfigured()) {

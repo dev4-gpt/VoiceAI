@@ -16,8 +16,9 @@ jest.mock('../services/brandVoiceService', () => ({
 jest.mock('../services/complianceService', () => ({
   complianceService: { getPolicy: () => ({ region: 'unknown' }) }
 }));
+const getSecrets = jest.fn();
 jest.mock('../services/workspaceKeysService', () => ({
-  workspaceKeysService: { getSecrets: jest.fn().mockResolvedValue(null) }
+  workspaceKeysService: { getSecrets: (...args: any[]) => getSecrets(...args) }
 }));
 jest.mock('../services/deepseekService', () => ({ deepseekService: { createCompletion: jest.fn() } }));
 
@@ -31,9 +32,11 @@ jest.mock('../db/client', () => ({ isDatabaseConfigured: () => dbConfigured }));
 
 const resolveCallAttribution = jest.fn();
 const checkEntitlement = jest.fn();
+const hasServerKeyAccess = jest.fn();
 jest.mock('../services/usageService', () => ({
   resolveCallAttribution: (...args: any[]) => resolveCallAttribution(...args),
-  checkEntitlement: (...args: any[]) => checkEntitlement(...args)
+  checkEntitlement: (...args: any[]) => checkEntitlement(...args),
+  hasServerKeyAccess: (...args: any[]) => hasServerKeyAccess(...args)
 }));
 
 let tokenConfigured = true;
@@ -84,6 +87,12 @@ describe('POST /api/voice/token metering', () => {
     tokenConfigured = true;
     resolveCallAttribution.mockReset();
     checkEntitlement.mockReset();
+    hasServerKeyAccess.mockReset();
+    // Default: nobody has been granted the server's keys and nobody has their own.
+    hasServerKeyAccess.mockResolvedValue(false);
+    getSecrets.mockReset();
+    getSecrets.mockResolvedValue(null);
+    delete process.env.ANON_MAX_SESSION_SECONDS;
     signCallToken.mockReset();
     ensureForUser.mockReset();
     verifyMock.mockReset();
@@ -217,5 +226,96 @@ describe('POST /api/voice/token metering', () => {
     checkEntitlement.mockResolvedValue(entitlement({ allowed: false, metered: false }));
 
     await request(build()).post('/api/voice/token').send({}).expect(200);
+  });
+
+  describe('no free credits for clients', () => {
+    const signedIn = () => {
+      verifyMock.mockResolvedValue({ payload: { sub: 'user-a', email: 'a@example.com' } });
+      ensureForUser.mockResolvedValue({ tenantId: 'tenant-a', role: 'owner' });
+    };
+
+    it('caps an anonymous demo session at five minutes by default', async () => {
+      resolveCallAttribution.mockResolvedValue({ tenantId: 'demo', source: 'console_anon', billable: false });
+
+      await request(build()).post('/api/voice/token').send({}).expect(200);
+
+      expect(String(fetchSpy.mock.calls[0][0])).toContain('max_session_duration_seconds=300');
+    });
+
+    it('caps an unattributed widget session the same way', async () => {
+      resolveCallAttribution.mockResolvedValue({ tenantId: 'unattr', source: 'widget_unattributed', billable: false });
+
+      await request(build()).post('/api/voice/token').send({}).expect(200);
+
+      expect(String(fetchSpy.mock.calls[0][0])).toContain('max_session_duration_seconds=300');
+    });
+
+    it('honours ANON_MAX_SESSION_SECONDS, but never below a minute or above an hour', async () => {
+      resolveCallAttribution.mockResolvedValue({ tenantId: 'demo', source: 'console_anon', billable: false });
+
+      process.env.ANON_MAX_SESSION_SECONDS = '120';
+      await request(build()).post('/api/voice/token').send({}).expect(200);
+      expect(String(fetchSpy.mock.calls[0][0])).toContain('max_session_duration_seconds=120');
+
+      process.env.ANON_MAX_SESSION_SECONDS = '5';
+      await request(build()).post('/api/voice/token').send({}).expect(200);
+      expect(String(fetchSpy.mock.calls[1][0])).toContain('max_session_duration_seconds=60');
+
+      process.env.ANON_MAX_SESSION_SECONDS = '999999';
+      await request(build()).post('/api/voice/token').send({}).expect(200);
+      expect(String(fetchSpy.mock.calls[2][0])).toContain('max_session_duration_seconds=3600');
+    });
+
+    it('refuses a signed-in workspace with no subscription, no own key and no grant', async () => {
+      signedIn();
+      resolveCallAttribution.mockResolvedValue({ tenantId: 'tenant-a', source: 'console', billable: true });
+      checkEntitlement.mockResolvedValue(entitlement({ allowed: false, minutesUsed: 0, minutesLimit: 0, minutesRemaining: 0 }));
+
+      const res = await request(build()).post('/api/voice/token').set('Authorization', 'Bearer x').send({}).expect(402);
+
+      expect(res.body.code).toBe('MINUTES_EXHAUSTED');
+      expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it('lets a workspace use its own AssemblyAI key without touching our allowance', async () => {
+      signedIn();
+      getSecrets.mockImplementation(async (_tenant: string, platform: string) =>
+        platform === 'assemblyai' ? { apiKey: 'clients-own-key' } : null
+      );
+      resolveCallAttribution.mockResolvedValue({ tenantId: 'tenant-a', source: 'console', billable: true });
+      // Would refuse if it were consulted.
+      checkEntitlement.mockResolvedValue(entitlement({ allowed: false }));
+
+      await request(build()).post('/api/voice/token').set('Authorization', 'Bearer x').send({}).expect(200);
+
+      expect(checkEntitlement).not.toHaveBeenCalled();
+      expect(fetchSpy.mock.calls[0][1].headers.Authorization).toBe('Bearer clients-own-key');
+      // They pay AssemblyAI directly, so the call is not billable against our minutes.
+      expect(signCallToken.mock.calls[0][0].billable).toBe(false);
+    });
+
+    it('lets an owner-granted workspace use the server key, and still records its usage', async () => {
+      signedIn();
+      hasServerKeyAccess.mockResolvedValue(true);
+      resolveCallAttribution.mockResolvedValue({ tenantId: 'tenant-a', source: 'console', billable: true });
+      checkEntitlement.mockResolvedValue(entitlement({ allowed: false }));
+
+      await request(build()).post('/api/voice/token').set('Authorization', 'Bearer x').send({}).expect(200);
+
+      expect(hasServerKeyAccess).toHaveBeenCalledWith('tenant-a');
+      expect(checkEntitlement).not.toHaveBeenCalled();
+      expect(fetchSpy.mock.calls[0][1].headers.Authorization).toBe('Bearer server-assemblyai-key');
+      expect(signCallToken.mock.calls[0][0].billable).toBe(true);
+    });
+
+    it('still honours a paid subscription for a workspace with neither a key nor a grant', async () => {
+      signedIn();
+      resolveCallAttribution.mockResolvedValue({ tenantId: 'tenant-a', source: 'console', billable: true });
+      checkEntitlement.mockResolvedValue(entitlement({ minutesRemaining: 200, maxSessionSeconds: 3600 }));
+
+      await request(build()).post('/api/voice/token').set('Authorization', 'Bearer x').send({}).expect(200);
+
+      expect(checkEntitlement).toHaveBeenCalledWith('tenant-a');
+    });
   });
 });
