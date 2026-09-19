@@ -1,13 +1,13 @@
 {
   "name": "@voice-os/evals",
   "version": "1.0.0",
-  "description": "Anthropic-standard evaluation suite and test harness for Voice OS",
-  "type": "module",
-  "main": "dist/runner.js",
+  "description": "Eval harness CLI for Voice OS. The engine (tasks, graders, stats, runner) lives in apps/orchestrator/src/evals so the server can run and store evals; this package is the command line entry point.",
+  "main": "src/cli.ts",
   "scripts": {
-    "build": "tsc",
-    "test": "ts-node src/runner.ts",
-    "start": "node dist/runner.js"
+    "typecheck": "tsc --noEmit",
+    "test": "ts-node --transpile-only src/cli.ts --offline",
+    "eval:offline": "ts-node --transpile-only src/cli.ts --offline",
+    "eval": "ts-node --transpile-only src/cli.ts"
   },
   "dependencies": {
     "@voice-os/shared": "^1.0.0"

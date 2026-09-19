@@ -4,9 +4,27 @@ if (typeof (process as any).loadEnvFile === 'function') {
   } catch {}
 }
 
+export interface DeepSeekToolCall {
+  id: string;
+  type: 'function';
+  function: { name: string; arguments: string };
+}
+
+export type DeepSeekMessage =
+  | { role: 'system' | 'user'; content: string }
+  | { role: 'assistant'; content: string | null; tool_calls?: DeepSeekToolCall[] }
+  | { role: 'tool'; content: string; tool_call_id: string };
+
+export interface DeepSeekTool {
+  type: 'function';
+  function: { name: string; description: string; parameters: Record<string, unknown> };
+}
+
 export interface DeepSeekCompletionOptions {
   model?: 'deepseek-chat' | 'deepseek-reasoner' | 'deepseek-flash' | string;
-  messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>;
+  messages: DeepSeekMessage[];
+  /** OpenAI-compatible function tools. When present the model may answer with tool_calls instead of text. */
+  tools?: DeepSeekTool[];
   temperature?: number;
   max_tokens?: number;
   response_format?: { type: 'json_object' };
@@ -28,6 +46,8 @@ export class DeepSeekService {
 
   public async createCompletion(options: DeepSeekCompletionOptions): Promise<{
     content: string;
+    /** Present only when the model chose to call tools; `content` is then usually empty. */
+    tool_calls?: DeepSeekToolCall[];
     reasoning_content?: string;
     tokens: { prompt: number; completion: number; total: number };
     model: string;
@@ -58,6 +78,7 @@ export class DeepSeekService {
         body: JSON.stringify({
           model,
           messages: options.messages,
+          ...(options.tools && options.tools.length > 0 ? { tools: options.tools } : {}),
           max_tokens: options.max_tokens ?? 2000,
           ...(model !== 'deepseek-reasoner' ? { temperature: options.temperature ?? 0.3 } : {}),
           ...(model !== 'deepseek-reasoner' && options.response_format ? { response_format: options.response_format } : {})
@@ -74,7 +95,10 @@ export class DeepSeekService {
       const choice = data.choices[0];
 
       return {
-        content: choice.message.content,
+        content: choice.message.content ?? '',
+        ...(Array.isArray(choice.message.tool_calls) && choice.message.tool_calls.length > 0
+          ? { tool_calls: choice.message.tool_calls as DeepSeekToolCall[] }
+          : {}),
         reasoning_content: choice.message.reasoning_content,
         tokens: {
           prompt: data.usage?.prompt_tokens || 150,
@@ -104,7 +128,7 @@ export class DeepSeekService {
    * every field is unmistakably a placeholder.
    */
   private generateFallback(options: DeepSeekCompletionOptions) {
-    const userPrompt = options.messages[options.messages.length - 1]?.content || '';
+    const userPrompt = String(options.messages[options.messages.length - 1]?.content || '');
     const NOTICE =
       'PLACEHOLDER — generated without a live model call because DEEPSEEK_API_KEY is unset or the API was unreachable. Not for publication.';
 

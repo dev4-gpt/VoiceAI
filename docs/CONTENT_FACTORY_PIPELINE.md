@@ -102,6 +102,6 @@ Following Raja Ashok's principle: **"Route work by fitness, not by model loyalty
 * **Spoken Dispatcher:** [`apps/orchestrator/src/tools/dispatcher.ts`](apps/orchestrator/src/tools/dispatcher.ts)
 * **Engine Implementation:** [`apps/orchestrator/src/services/contentFactoryEngine.ts`](apps/orchestrator/src/services/contentFactoryEngine.ts)
 * **DeepSeek Connector:** [`apps/orchestrator/src/services/deepseekService.ts`](apps/orchestrator/src/services/deepseekService.ts)
-* **Anthropic Model Judge:** [`packages/evals/src/deepseekJudge.ts`](packages/evals/src/deepseekJudge.ts)
+* **Tone Judge (non-gating, evals only):** [`apps/orchestrator/src/evals/judge.ts`](apps/orchestrator/src/evals/judge.ts)
 * **Frontend Studio Console:** [`apps/web/src/components/ContentFactoryStudio.tsx`](apps/web/src/components/ContentFactoryStudio.tsx)
 * **Shared Types:** [`packages/shared/src/types.ts`](packages/shared/src/types.ts)

@@ -190,13 +190,11 @@ graph TD
   * **Dual-Model Specialization:**
     1. `deepseek-chat` (DeepSeek-V3): High-throughput semantic extractions, objection classification, and fast contextual queries.
     2. `deepseek-reasoner` (DeepSeek-R1): Deep Chain-of-Thought (CoT) synthesis, multi-source contradiction resolution, and self-healing code/content verification loops.
-* **Anthropic Model-as-a-Judge (`packages/evals/src/deepseekJudge.ts`):**
-  * Implements multi-dimensional qualitative grading across 4 criteria:
-    * *Empathy & Rapport:* 1–5 score evaluating active listening and emotional attunement.
-    * *Conciseness for Voice:* 1–5 score penalizing verbose walls of text unsuited for real-time speech.
-    * *Business Alignment:* 1–5 score measuring adherence to creator pricing and calendar booking goals.
-    * *Zero Hallucination:* Strict boolean certification that no unverified claims or terms were invented.
-  * DeepSeek-R1 outputs structured rationale explaining exact rubric scoring before issuing final verdict.
+* **Eval harness (`apps/orchestrator/src/evals/`):**
+  * Pass/fail is decided by **deterministic graders** (`graders.ts`) over real tool calls and the real CRM end state: the expected tool was called and succeeded, the discount stayed at or below the policy ceiling, no 12-word slice of the runtime system prompt leaked, no dollar amount outside the knowledge base appeared, no card or SSN digits were echoed, and no tool fired on small talk.
+  * A model-graded **tone check** (`judge.ts`, DeepSeek) is reported beside those verdicts but is **never gating**: an LLM judge is noisy and shares failure modes with the model it grades. Without a `DEEPSEEK_API_KEY`, or if the call fails, it reports `skipped` rather than a verdict.
+  * Results are reported as passes out of trials with a Wilson 95% interval, and suite `pass^k` is the product of per-task `p^k`. Runs are labelled `measured` (a live model) or `offline` (recorded tool-call fixtures replayed through the real dispatcher and graders, which checks the harness and is not a model measurement).
+  * The eval agent uses DeepSeek's text tool-calling as a proxy. The voice agent selects tools with AssemblyAI's own model, so a measured run evaluates the dispatcher, guardrails and the text-mode agent, not the voice model.
 
 ---
 
@@ -252,7 +250,7 @@ graph TD
 * **Tool Dispatcher & Spoken Fast-Response:** [`apps/orchestrator/src/tools/dispatcher.ts`](apps/orchestrator/src/tools/dispatcher.ts)
 * **Hermes Content Factory Engine:** [`apps/orchestrator/src/services/contentFactoryEngine.ts`](apps/orchestrator/src/services/contentFactoryEngine.ts)
 * **DeepSeek Connector:** [`apps/orchestrator/src/services/deepseekService.ts`](apps/orchestrator/src/services/deepseekService.ts)
-* **Evals Runner & DeepSeek Judge:** [`packages/evals/src/runner.ts`](packages/evals/src/runner.ts) and [`packages/evals/src/deepseekJudge.ts`](packages/evals/src/deepseekJudge.ts) — **status:** the graders and the pass@k / pass^k math are real, but `executeTrial()` currently replays hardcoded tool results instead of running the agent, and the package is not yet wired to the orchestrator. The `/api/evals/*` endpoints and the evals tab therefore serve static demo data, labelled as such in the UI. Wiring the runner to the real tool dispatcher is tracked as the next piece of work.
+* **Eval Harness:** [`apps/orchestrator/src/evals/runner.ts`](apps/orchestrator/src/evals/runner.ts) (engine), [`graders.ts`](apps/orchestrator/src/evals/graders.ts), [`stats.ts`](apps/orchestrator/src/evals/stats.ts), [`routes/evals.ts`](apps/orchestrator/src/routes/evals.ts) (`/api/evals/*`), and the CLI in [`packages/evals/src/cli.ts`](packages/evals/src/cli.ts) (`npm run eval:offline --workspace packages/evals`). **Status:** the harness runs the real agent loop and dispatcher. The offline path is tested in CI. A *measured* run needs a `DEEPSEEK_API_KEY`, and no measured run has been recorded yet, so the evals tab shows `no_data` until one is.
 * **Web Command Console:** [`apps/web/src/App.tsx`](apps/web/src/App.tsx)
 * **Hermes Content Studio Component:** [`apps/web/src/components/ContentFactoryStudio.tsx`](apps/web/src/components/ContentFactoryStudio.tsx)
 * **Full Shared Data Contracts:** [`packages/shared/src/types.ts`](packages/shared/src/types.ts)

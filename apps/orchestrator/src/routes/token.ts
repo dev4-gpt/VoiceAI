@@ -2,6 +2,10 @@ import { Router, Request, Response } from 'express';
 import { crmStore } from '../services/crmStore';
 import { brandVoiceService } from '../services/brandVoiceService';
 import { deepseekService } from '../services/deepseekService';
+import { runAgentTurn } from '../services/agentLoop';
+import { buildChatSystemPrompt } from '../services/chatPrompt';
+import { toolDispatcher } from '../tools/dispatcher';
+import { VOICE_AGENT_TOOLS } from '../tools/registry';
 import { complianceService } from '../services/complianceService';
 import { createOptionalUser, OptionalAuthedRequest } from '../middleware/optionalUser';
 import { workspaceService } from '../services/workspaceService';
@@ -158,33 +162,17 @@ tokenRouter.post('/chat', optionalUser, async (req: Request, res: Response) => {
   const vaultPath = updatedLead ? `vault/Clients/${safeName}/Dossier.md` : null;
   const brandVoiceVaultPath = updatedLead ? `vault/Clients/${safeName}/BrandVoice.md` : null;
 
-  // Build rich conversational context with universal GrowthOS Strategic Consultancy positioning
-  const systemPrompt = `You are Anna, Senior Growth Operating Architect at GrowthOS (the universal autonomous growth operating layer for high-leverage enterprises).
-You are conducting an executive growth advisory session and qualification for "${companyName}".
-
-Your Role & Strategic Positioning:
-- You represent GrowthOS, the sovereign operating system partnering with ${companyName}.
-- You are an elite growth consultant and revenue systems architect advising ${companyName}.
-- NEVER say "we built ${companyName}" or "we have done this" regarding their internal product, and never say "at ${companyName} we...".
-- Do NOT use generic startup hype, cheerleader enthusiasm ("I love that mindset!", "That is a bold vision!"), or empty platitudes.
-- Instead, speak with the analytical rigor, directness, and diagnostic authority of a Tier-1 Growth Consultancy (McKinsey/Bain meets autonomous agent ops). Focus on unit economics, CAC, pipeline leakage, model routing costs, and deterministic agent loops.
-- Explain how the GrowthOS operating layer (autonomous inbound voice, persistent Obsidian memory, model routing, and agent loops) automates their acquisition and retention workflows.
-
-Client & Strategic Context:
-- Active Client Account: ${updatedLead?.fullName || prospect?.name || companyName}
-- Target Enterprise: ${companyName}
-- Core Offering & Architecture: ${bv?.coreValueProposition || prospect?.bio || 'Autonomous operating layer with automated agent loops and persistent Obsidian memory'}
-- Commercial Retainer Scope: ${companyName.toLowerCase().includes('veloce') ? 'Base deployment is $2,500 setup + $1,250/month for up to 5 seats, with custom quotes for full-service growth operations.' : 'Flagship high-ticket sprint is $2,997 (or $497/mo) with a 14-day action-based refund guarantee.'}
-- Tone Archetype: ${toneLabel} (${bv?.toneDescription || 'Direct, metrics-driven, practitioner confidence'})
-- Signature Lexicon: ${bv?.signatureLexicon?.join(', ') || 'growth sprint, high-ticket, pipeline velocity, unit economics, model routing'}
-- Strictly Banned Terms (NEVER use): ${bv?.bannedTerms?.join(', ') || 'cheap, guru, magic bullet, hard sell, synergy, hustle'}
-
-Rules for Spoken Voice Dialogue:
-1. Speak in exactly 2 to 3 concise, high-leverage sentences (under 45 words total).
-2. Maintain an executive consultancy tone: direct, analytical, diagnosis-oriented.
-3. Directly answer the user's specific statement or question with acute business comprehension.
-4. Write for natural spoken voice: do NOT output raw URLs, markdown bullets, hashtags, or bracketed text.
-5. Always end your reply with a sharp, natural diagnostic or qualifying question to move the engagement forward.`;
+  // Same builder the eval harness grades against.
+  const systemPrompt = buildChatSystemPrompt({
+    companyName,
+    activeAccount: updatedLead?.fullName || prospect?.name || companyName,
+    coreOffering:
+      bv?.coreValueProposition || prospect?.bio || 'Autonomous operating layer with automated agent loops and persistent Obsidian memory',
+    toneLabel,
+    toneDescription: bv?.toneDescription,
+    signatureLexicon: bv?.signatureLexicon,
+    bannedTerms: bv?.bannedTerms
+  });
 
   // Build multi-turn context from client history or lead interaction history
   const recentTurns: Array<{ role: 'user' | 'assistant'; content: string }> = [];
@@ -231,21 +219,31 @@ Rules for Spoken Voice Dialogue:
   }
 
   try {
-    const completion = await deepseekService.createCompletion({
+    // Real tool-calling turn: the model may call CRM/knowledge tools (dispatched
+    // against the live CRM) before it answers. BYOK key override is unchanged.
+    const turn = await runAgentTurn({
+      systemPrompt,
+      history: recentTurns,
+      tools: VOICE_AGENT_TOOLS,
+      dispatch: (name, args) => toolDispatcher.dispatch(name, args),
       temperature: 0.4,
-      max_tokens: 120,
-      apiKey: deepseekApiKey,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        ...recentTurns
-      ]
+      llm: async (r) => {
+        const c = await deepseekService.createCompletion({
+          temperature: r.temperature,
+          max_tokens: 300,
+          apiKey: deepseekApiKey,
+          messages: r.messages,
+          tools: r.tools
+        });
+        return { content: c?.content ?? '', tool_calls: c?.tool_calls, isFallback: !!c?.isFallback, model: c?.model };
+      }
     });
 
     // Only accept genuine model output. The fallback also returns truthy content,
     // so without this check Anna would speak the service's placeholder string to
     // prospects and the contextual fallback below could never run.
-    if (completion && completion.content && !completion.isFallback) {
-      reply = completion.content
+    if (turn.reply && !turn.isFallback) {
+      reply = turn.reply
         .replace(/^["']|["']$/g, '')
         .replace(/\n+/g, ' ')
         .trim();

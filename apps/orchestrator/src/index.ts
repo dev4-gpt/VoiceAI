@@ -14,6 +14,7 @@ import { billingRouter } from './routes/billing';
 import { instaticRouter } from './routes/instatic';
 import { complianceRouter } from './routes/compliance';
 import { telemetryRouter } from './routes/telemetry';
+import { evalsRouter } from './routes/evals';
 import { createMeRouter } from './routes/me';
 import { createRequireUser } from './middleware/requireUser';
 import { isDatabaseConfigured } from './db/client';
@@ -289,39 +290,8 @@ app.get('/api/voice/config', (_req, res) => {
   });
 });
 
-// Demo Eval Suite Endpoints — these return static illustrative numbers, not a
-// computed evaluation. `mode: 'static_demo'` flags this honestly for callers.
-app.get('/api/evals/report', (_req, res) => {
-  res.json({
-    status: 'success',
-    mode: 'static_demo',
-    suiteName: 'Anthropic Production Eval Suite',
-    totalTasks: 4,
-    kTrials: 5,
-    passAtK: 100,
-    passPowerK: 88.4,
-    latencyP50: 920,
-    latencyP95: 1450,
-    ttfaAvgMs: 410,
-    timestamp: new Date().toISOString()
-  });
-});
-
-app.post('/api/evals/run', async (_req, res) => {
-  res.json({
-    status: 'completed',
-    mode: 'static_demo',
-    suiteName: 'Anthropic Production Eval Suite',
-    totalTasks: 4,
-    kTrials: 5,
-    passAtK: 100,
-    passPowerK: 88.4,
-    latencyP50: 920,
-    latencyP95: 1450,
-    ttfaAvgMs: 410,
-    timestamp: new Date().toISOString()
-  });
-});
+// Eval harness: GET /report, POST /run, POST /runs. See routes/evals.ts.
+app.use('/api/evals', evalsRouter);
 
 const server = http.createServer(app);
 

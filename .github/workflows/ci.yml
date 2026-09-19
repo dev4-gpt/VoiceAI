@@ -35,3 +35,27 @@ jobs:
       - name: Test orchestrator
         run: npm test
         working-directory: apps/orchestrator
+
+  # Runs the eval harness with a scripted stub (no API key, no network). This
+  # proves the dispatcher, graders and stats work and that the graders catch known-bad
+  # behaviour. It does NOT measure any model; results are labelled mode:offline.
+  eval-harness-offline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 20.20.2
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck evals
+        run: npx tsc --noEmit
+        working-directory: packages/evals
+
+      - name: Run offline eval suite
+        run: npm run eval:offline
+        working-directory: packages/evals

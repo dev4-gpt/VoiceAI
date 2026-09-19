@@ -1,9 +1,97 @@
-import { crmStore } from '../services/crmStore';
+import type { CRMLead, ChurnRiskMember } from '@voice-os/shared';
 import { ragEngine } from '../services/ragEngine';
 import { cacheEngine } from '../services/cacheEngine';
-import { contentFactoryEngine } from '../services/contentFactoryEngine';
+
+/**
+ * The slice of the CRM the tools need. Production passes the `crmStore`
+ * singleton; the eval harness passes an in-memory implementation so a test run
+ * never touches real leads, the Postgres write-through, or the Obsidian vault.
+ */
+export interface CrmPort {
+  ready: Promise<void>;
+  flush(): Promise<void>;
+  createOrUpdateLead(data: {
+    fullName: string;
+    email: string;
+    phone?: string;
+    website?: string;
+    linkedIn?: string;
+    socialLinks?: Record<string, string | undefined>;
+    socialBioText?: string;
+    companyName?: string;
+    businessSummary?: string;
+    toneArchetype?: any;
+    source: 'after_hours_inbound' | 'outbound_campaign' | 'web_callback';
+  }): CRMLead;
+  qualifyLead(data: {
+    email: string;
+    budgetRange: string;
+    coreNeed: string;
+    authority?: string;
+    timelineWeeks?: number;
+  }): { lead: CRMLead | null; calculatedScore: number };
+  scheduleMeeting(data: {
+    email: string;
+    preferredDatetime: string;
+    topic?: string;
+  }): { success: boolean; lead: CRMLead | null; confirmationCode: string };
+  processRetention(data: {
+    memberId: string;
+    churnReason: string;
+    requestedAction: string;
+    approvedDiscountPct: number;
+    requiresManagerReview: boolean;
+    bonusOffer?: string;
+  }): ChurnRiskMember | null;
+}
+
+export interface DispatcherDeps {
+  /** Starts a content-factory job. Defaults to the real engine; evals pass a recorder so no model call or draft is produced. */
+  startContentJob?: (topic: string) => unknown;
+}
+
+/** Autonomous discount ceiling (percent). Anything the model proposes above this is clamped to it. */
+export const MAX_AUTONOMOUS_DISCOUNT_PCT = 15;
+/** Proposals strictly above this also require manager review and a non-cash bonus. */
+export const MANAGER_REVIEW_ABOVE_PCT = 20;
+
+export interface DiscountDecision {
+  approvedDiscount: number;
+  requiresReview: boolean;
+  bonusOffer?: string;
+}
+
+/**
+ * Deterministic guardrail ("model proposes, application enforces"). Pure so the
+ * policy is testable without a CRM. A non-numeric or negative proposal is treated
+ * as 0: the model must never be able to produce NaN or a negative discount.
+ */
+export function decideDiscount(proposed: unknown): DiscountDecision {
+  const n = Number(proposed ?? 0);
+  const proposedDiscount = Number.isFinite(n) && n > 0 ? n : 0;
+  if (proposedDiscount > MANAGER_REVIEW_ABOVE_PCT) {
+    return {
+      approvedDiscount: MAX_AUTONOMOUS_DISCOUNT_PCT,
+      requiresReview: true,
+      bonusOffer: 'Complimentary 1-on-1 Growth Audit Call with Alex (Value: $500)'
+    };
+  }
+  if (proposedDiscount > MAX_AUTONOMOUS_DISCOUNT_PCT) {
+    return {
+      approvedDiscount: MAX_AUTONOMOUS_DISCOUNT_PCT,
+      requiresReview: false,
+      bonusOffer: 'Access to Private Mastermind Vault recordings'
+    };
+  }
+  return { approvedDiscount: proposedDiscount, requiresReview: false };
+}
 
 export class ToolDispatcher {
+  constructor(
+    private readonly store: CrmPort,
+    private readonly deps: DispatcherDeps = {}
+  ) {}
+
   /**
    * Runs a voice-agent tool.
    *
@@ -14,18 +102,18 @@ export class ToolDispatcher {
    * function the moment it does. `finally` so writes land even if a tool throws.
    */
   public async dispatch(name: string, args: Record<string, any>): Promise<Record<string, any>> {
-    await crmStore.ready;
+    await this.store.ready;
     try {
       return await this.run(name, args);
     } finally {
-      await crmStore.flush();
+      await this.store.flush();
     }
   }
 
   private async run(name: string, args: Record<string, any>): Promise<Record<string, any>> {
     switch (name) {
       case 'create_or_update_lead': {
-        const lead = crmStore.createOrUpdateLead({
+        const lead = this.store.createOrUpdateLead({
           fullName: args.fullName,
           email: args.email,
           phone: args.phone,
@@ -39,7 +127,7 @@ export class ToolDispatcher {
       }
 
       case 'enrich_prospect_dossier': {
-        const lead = crmStore.createOrUpdateLead({
+        const lead = this.store.createOrUpdateLead({
           fullName: args.fullName || 'Prospective Founder',
           email: args.email,
           website: args.website,
@@ -65,7 +153,7 @@ export class ToolDispatcher {
       }
 
       case 'qualify_lead': {
-        const { lead, calculatedScore } = crmStore.qualifyLead({
+        const { lead, calculatedScore } = this.store.qualifyLead({
           email: args.email,
           budgetRange: args.budgetRange,
           coreNeed: args.coreNeed,
@@ -121,7 +209,7 @@ export class ToolDispatcher {
       }
 
       case 'schedule_growth_consultation': {
-        const booking = crmStore.scheduleMeeting({
+        const booking = this.store.scheduleMeeting({
           email: args.email,
           preferredDatetime: args.preferredDatetime,
           topic: args.topic
@@ -146,24 +234,9 @@ export class ToolDispatcher {
         // ====================================================================
         // Deterministic Guardrail Policy ("Model Proposes, Application Enforces")
         // ====================================================================
-        const proposedDiscount = Number(args.proposedDiscountPct || 0);
-        let approvedDiscount = proposedDiscount;
-        let requiresReview = false;
-        let bonusOffer: string | undefined;
+        const { approvedDiscount, requiresReview, bonusOffer } = decideDiscount(args.proposedDiscountPct);
 
-        // Strict Policy Rules:
-        // Autonomous limit is 15%. Anything up to 20% requires VIP status.
-        // Anything > 20% is strictly clamped and paired with non-cash value.
-        if (proposedDiscount > 20) {
-          approvedDiscount = 15;
-          requiresReview = true;
-          bonusOffer = 'Complimentary 1-on-1 Growth Audit Call with Alex (Value: $500)';
-        } else if (proposedDiscount > 15) {
-          approvedDiscount = 15;
-          bonusOffer = 'Access to Private Mastermind Vault recordings';
-        }
-
-        const member = crmStore.processRetention({
+        const member = this.store.processRetention({
           memberId: args.memberId,
           churnReason: args.churnReason,
           requestedAction: args.requestedAction,
@@ -200,7 +273,7 @@ export class ToolDispatcher {
       case 'run_content_factory': {
         const topic = args.topic;
         // Asynchronously launch the background factory
-        const jobPromise = contentFactoryEngine.startJob(topic, 'voice_agent_inbound');
+        this.startContentJob(topic);
 
         // Return immediate spoken response for AssemblyAI Voice Agent to speak without waiting for research!
         return {
@@ -217,6 +290,29 @@ export class ToolDispatcher {
         };
     }
   }
+
+  private startContentJob(topic: string): unknown {
+    if (this.deps.startContentJob) return this.deps.startContentJob(topic);
+    // Lazy: importing the content engine pulls in the DeepSeek service, which loads
+    // .env on import. Keeping it out of module load keeps this file side-effect free.
+    const { contentFactoryEngine } = require('../services/contentFactoryEngine');
+    return contentFactoryEngine.startJob(topic, 'voice_agent_inbound');
+  }
 }
 
-export const toolDispatcher = new ToolDispatcher();
+let productionDispatcher: ToolDispatcher | null = null;
+
+/**
+ * The production dispatcher, bound to the real CRM. Built on first use so that
+ * merely importing this module does not construct the CRM singleton (which seeds
+ * demo data and writes vault files) — the eval harness imports this file.
+ */
+export const toolDispatcher = {
+  dispatch(name: string, args: Record<string, any>): Promise<Record<string, any>> {
+    if (!productionDispatcher) {
+      const { crmStore } = require('../services/crmStore');
+      productionDispatcher = new ToolDispatcher(crmStore);
+    }
+    return productionDispatcher.dispatch(name, args);
+  }
+};
