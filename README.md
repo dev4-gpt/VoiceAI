@@ -94,15 +94,18 @@ Because the agent transcribes visitors on third-party websites, it is built arou
 
 | Real | Not built yet |
 | :--- | :--- |
-| Browser voice calls on the AssemblyAI Voice Agent API | Usage metering from live calls |
+| Browser voice calls on the AssemblyAI Voice Agent API | Metering and billing for embedded-widget calls (the widget is not instrumented) |
 | Tool calls that create and qualify CRM leads | Per-platform credential verification |
 | Embeddable widget running real voice sessions, with the same tool set as the console | Calendar integration (bookings are recorded on the lead) |
-| AI disclosure and consent gating, with persisted records | Measured latency (no latency figures are claimed) |
+| AI disclosure and consent gating, with persisted records | Any quoted latency figure (it is measured from real calls, but none are recorded yet, so none is claimed) |
 | Postgres persistence and encrypted credentials | Embedding-based retrieval (knowledge lookup is keyword-based) |
-| Google sign-in with a private workspace and encrypted BYOK keys | Computed eval results (the evals tab shows static demo data) |
+| Google sign-in with a private workspace and encrypted BYOK keys | A measured eval run against a live model (only the offline harness check has run) |
 | A signed-in user's own AssemblyAI and DeepSeek keys used for voice and drafts | YouTube publishing |
 | X and LinkedIn publishing when enabled and connected; Substack via webhook | |
 | Stripe Checkout with webhook-driven activation (test mode) | |
+| Usage metering for console voice calls: a used-up allowance is refused when the call starts, and the session length is capped | |
+| Client-side latency measurement (caller's voice ends to the agent's first audio), with no figure shown until 20 turns are measured | |
+| An eval harness that runs the real agent and tools, graded by deterministic checks | |
 
 Every publish receipt carries `isSimulated`, which is true unless a real API call succeeded. The full capability matrix, including what each feature falls back to, is in [CLAUDE.md](CLAUDE.md).
 
