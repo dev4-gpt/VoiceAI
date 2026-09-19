@@ -159,12 +159,46 @@ export const usageRecords = pgTable(
     durationSeconds: integer('duration_seconds').notNull().default(0),
     leadCaptured: boolean('lead_captured').notNull().default(false),
     isAfterHours: boolean('is_after_hours').notNull().default(false),
+    // Measured wall-clock seconds and the whole minutes actually billed
+    // (max(1, ceil(seconds / 60))). Minutes used = SUM(billed_minutes).
+    billedMinutes: integer('billed_minutes').notNull().default(0),
+    // false for the demo tenant, unattributed widget calls and calls without a
+    // valid signed call token. Non-billable rows never count toward a quota.
+    billable: boolean('billable').notNull().default(true),
+    source: text('source').notNull().default('console'),
     dealValueCents: integer('deal_value_cents').notNull().default(0),
+    // Set by writers to the subscription's currentPeriodStart (fallback: start
+    // of the calendar month). Do not rely on the default.
     periodStart: timestamp('period_start', { withTimezone: true }).notNull().defaultNow(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
   },
   (t) => ({
-    tenantPeriodIdx: index('usage_records_tenant_period_idx').on(t.tenantId, t.periodStart)
+    tenantPeriodIdx: index('usage_records_tenant_period_idx').on(t.tenantId, t.periodStart),
+    // One usage row per call per tenant: a retried finalize hits this and is a no-op.
+    tenantSessionIdx: uniqueIndex('usage_records_tenant_session_idx').on(t.tenantId, t.sessionId)
+  })
+);
+
+/**
+ * Public site keys for the embeddable widget. A visitor's page can forge any
+ * `data-company` value, so the widget instead presents a public key; the server
+ * maps key -> tenant and checks the request Origin against allowed_origins.
+ */
+export const siteKeys = pgTable(
+  'site_keys',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    tenantId: uuid('tenant_id')
+      .notNull()
+      .references(() => organizations.id, { onDelete: 'cascade' }),
+    publicKey: text('public_key').notNull(),
+    allowedOrigins: text('allowed_origins').array().notNull().default(sql`'{}'::text[]`),
+    revokedAt: timestamp('revoked_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+  },
+  (t) => ({
+    publicKeyIdx: uniqueIndex('site_keys_public_key_idx').on(t.publicKey),
+    tenantIdx: index('site_keys_tenant_idx').on(t.tenantId)
   })
 );
 
@@ -278,10 +312,24 @@ export const callRecords = pgTable(
     greetingBargeInOffsetMs: integer('greeting_barge_in_offset_ms'),
     turnCount: integer('turn_count').notNull().default(0),
     interruptionCount: integer('interruption_count').notNull().default(0),
+    // --- Metering lifecycle (additive; written by usageService, never by telemetry) ---
+    // 'open' until usage has been written once, then 'finalized'.
+    status: text('status').notNull().default('open'),
+    // Attributed from a verified call token. Null/false when the call carried no
+    // valid token: such calls never bill anyone.
+    billingTenantId: uuid('billing_tenant_id'),
+    billable: boolean('billable').notNull().default(false),
+    billingSource: text('billing_source'),
+    tokenIat: timestamp('token_iat', { withTimezone: true }),
+    maxSessionSeconds: integer('max_session_seconds'),
+    audioSecondsCaptured: integer('audio_seconds_captured'),
+    leadCaptured: boolean('lead_captured').notNull().default(false),
+    finalizedAt: timestamp('finalized_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow()
   },
   (t) => ({
+    statusUpdatedIdx: index('call_records_status_updated_idx').on(t.status, t.updatedAt),
     callIdIdx: uniqueIndex('call_records_call_id_idx').on(t.callId),
     tenantStartedIdx: index('call_records_tenant_started_idx').on(t.tenantId, t.startedAt)
   })
@@ -302,7 +350,23 @@ export const callTurns = pgTable(
       .references(() => organizations.id, { onDelete: 'cascade' }),
     callId: text('call_id').notNull(),
     turnIndex: integer('turn_index').notNull(),
-    responseLatencyMs: integer('response_latency_ms'),
+    /**
+     * HEADLINE: last voiced mic frame -> first agent audio. Measured by the
+     * browser. This, and only this, is what may be quoted as response latency.
+     */
+    userPerceivedLatencyMs: integer('user_perceived_latency_ms'),
+    /** Last voiced mic frame -> the server's input.speech.stopped. */
+    endpointingDelayMs: integer('endpointing_delay_ms'),
+    /**
+     * input.speech.stopped -> first agent audio. The column keeps its original
+     * name `response_latency_ms` and its original meaning (nothing is repurposed
+     * or dropped); only the TS property is renamed, because "response latency"
+     * read as the headline and this interval starts AFTER the server has already
+     * waited out ~1s of silence. Never quote it on its own.
+     */
+    postEndpointLatencyMs: integer('response_latency_ms'),
+    /** Replies the agent produced within this one turn. 0 on rows written before this column existed. */
+    segmentCount: integer('segment_count').notNull().default(0),
     generationLatencyMs: integer('generation_latency_ms'),
     interrupted: boolean('interrupted').notNull().default(false),
     bargeInOffsetMs: integer('barge_in_offset_ms'),
@@ -326,4 +390,64 @@ export type Subscription = typeof subscriptions.$inferSelect;
 export type ConsentRecordRow = typeof consentRecords.$inferSelect;
 export type PlatformCredentialRow = typeof platformCredentials.$inferSelect;
 export type CallRecordRow = typeof callRecords.$inferSelect;
+export type SiteKeyRow = typeof siteKeys.$inferSelect;
 export type CallTurnRow = typeof callTurns.$inferSelect;
+
+// ---------------------------------------------------------------------------
+// Eval harness results. Additive only. Deployment-level, not tenant data: an
+// eval run grades the agent, not a customer, so there is no tenant_id here.
+// ---------------------------------------------------------------------------
+
+/**
+ * One row per eval suite run. `mode` is the honesty column: 'measured' means a
+ * live model produced the agent turns, 'offline' means a scripted stub replayed
+ * recorded tool calls (harness check only). Readers must never present an
+ * offline row as a model measurement. Aggregates (rates, intervals, pass^k) live
+ * in `summary`; trials are in eval_trials.
+ */
+export const evalRuns = pgTable(
+  'eval_runs',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    mode: text('mode').notNull(),
+    suite: text('suite').notNull(),
+    model: text('model'),
+    k: integer('k').notNull(),
+    totalTasks: integer('total_tasks').notNull(),
+    totalTrials: integer('total_trials').notNull(),
+    erroredTrials: integer('errored_trials').notNull().default(0),
+    /** 'server' (POST /api/evals/run) or 'ci' (POST /api/evals/runs). */
+    source: text('source').notNull(),
+    gitSha: text('git_sha'),
+    summary: jsonb('summary').notNull(),
+    startedAt: timestamp('started_at', { withTimezone: true }).notNull(),
+    finishedAt: timestamp('finished_at', { withTimezone: true }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+  },
+  (t) => ({
+    modeCreatedIdx: index('eval_runs_mode_created_idx').on(t.mode, t.createdAt)
+  })
+);
+
+export const evalTrials = pgTable(
+  'eval_trials',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    runId: uuid('run_id')
+      .notNull()
+      .references(() => evalRuns.id, { onDelete: 'cascade' }),
+    taskId: text('task_id').notNull(),
+    trial: integer('trial').notNull(),
+    status: text('status').notNull(),
+    latencyMs: integer('latency_ms').notNull().default(0),
+    /** Verdicts, tool calls, replies and any error for this trial. */
+    payload: jsonb('payload').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow()
+  },
+  (t) => ({
+    runTaskIdx: index('eval_trials_run_task_idx').on(t.runId, t.taskId)
+  })
+);
+
+export type EvalRunRow = typeof evalRuns.$inferSelect;
+export type EvalTrialRow = typeof evalTrials.$inferSelect;

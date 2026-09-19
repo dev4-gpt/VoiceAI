@@ -36,7 +36,9 @@ export interface InsufficientData {
 }
 
 export interface TurnSample {
-  responseLatencyMs?: number | null;
+  userPerceivedLatencyMs?: number | null;
+  endpointingDelayMs?: number | null;
+  postEndpointLatencyMs?: number | null;
   generationLatencyMs?: number | null;
   interrupted?: boolean | null;
 }
@@ -49,24 +51,49 @@ export interface SummaryInput {
   minSampleSize?: number;
 }
 
+/** The one metric that may be quoted as "response latency". */
+export const HEADLINE_METRIC = 'userPerceivedLatencyMs';
+
+export interface InsufficientHeadline extends InsufficientData {
+  /** Which metric is unmeasured, so the reader cannot assume a narrower one exists. */
+  metric: typeof HEADLINE_METRIC;
+}
+
 export interface TelemetrySummarySuccess {
   status: 'success';
+  /** Turns with a measured userPerceivedLatencyMs. */
   sampleSize: number;
   callCount: number;
-  /** input.speech.stopped -> first agent audio frame. */
-  responseLatencyMs: LatencyDistribution;
-  /** reply.started -> first agent audio frame. */
-  generationLatencyMs: LatencyDistribution | InsufficientData;
   /**
-   * Session.update -> first greeting audio. Reported as its own distribution
-   * and never merged into responseLatencyMs: the greeting has no user
-   * utterance in front of it, so pooling them describes neither.
+   * HEADLINE. The interval a person feels: their last voiced mic frame -> the
+   * first agent audio frame. This is the only latency that may be quoted.
+   */
+  userPerceivedLatencyMs: LatencyDistribution;
+  /**
+   * The parts of the headline, computed over the SAME turns. Not headlines:
+   * postEndpointLatencyMs starts only after the server has waited out the
+   * silence (endpointingDelayMs), so quoting it alone understates the wait by
+   * that whole delay. Live measurement: ~8ms post-endpoint vs ~1s perceived.
+   */
+  components: {
+    endpointingDelayMs: LatencyDistribution | InsufficientData;
+    postEndpointLatencyMs: LatencyDistribution | InsufficientData;
+    generationLatencyMs: LatencyDistribution | InsufficientData;
+    note: string;
+  };
+  /**
+   * Session.update -> first greeting audio. Its own distribution, never merged
+   * into the turn figures: the greeting has no user utterance in front of it.
    */
   greetingTtfaMs: LatencyDistribution | InsufficientData;
   interruptionRate: number;
 }
 
-export type TelemetrySummary = TelemetrySummarySuccess | InsufficientData;
+export type TelemetrySummary = TelemetrySummarySuccess | InsufficientHeadline;
+
+export const COMPONENTS_NOTE =
+  'Components decompose userPerceivedLatencyMs (= endpointingDelayMs + postEndpointLatencyMs). ' +
+  'Do not quote postEndpointLatencyMs or generationLatencyMs as response latency.';
 
 function isMeasurement(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value) && value >= 0;
@@ -117,46 +144,48 @@ function distribution(values: number[], minSampleSize: number): LatencyDistribut
 /**
  * Summarise measured turns.
  *
- * "Measured" means the turn has a real response latency — a turn where the user
- * spoke and the agent never produced audio contributes nothing, because there
- * is nothing to measure. That is why the reported sampleSize can be smaller
- * than the number of stored turns.
+ * "Measured" means the turn has a real userPerceivedLatencyMs. A turn without
+ * one — no voiced mic frame was seen, or the agent produced no audio — has
+ * nothing to report and is not counted, and it is NOT back-filled from the
+ * narrower post-endpoint interval, which would quietly turn a ~1s wait into
+ * ~10ms. That is why sampleSize can be smaller than the number of stored turns.
  */
 export function summarizeTurns(input: SummaryInput): TelemetrySummary {
   const minSampleSize = input.minSampleSize ?? MIN_SAMPLE_SIZE;
   const turns = input.turns || [];
 
-  const responseValues: number[] = [];
-  const generationValues: number[] = [];
-  let interrupted = 0;
+  const measured = turns.filter((t) => isMeasurement(t.userPerceivedLatencyMs));
 
-  for (const turn of turns) {
-    if (isMeasurement(turn.responseLatencyMs)) responseValues.push(turn.responseLatencyMs);
-    if (isMeasurement(turn.generationLatencyMs)) generationValues.push(turn.generationLatencyMs);
-    if (turn.interrupted) interrupted += 1;
-  }
-
-  if (responseValues.length < minSampleSize) {
+  if (measured.length < minSampleSize) {
     return {
       status: 'insufficient_data',
-      sampleSize: responseValues.length,
+      metric: HEADLINE_METRIC,
+      sampleSize: measured.length,
       requiredSampleSize: minSampleSize
     };
   }
 
-  const response = distribution(responseValues, minSampleSize) as LatencyDistribution;
+  const pick = (key: keyof TurnSample) =>
+    measured.map((t) => t[key]).filter(isMeasurement) as number[];
+
+  const interrupted = measured.filter((t) => t.interrupted).length;
 
   return {
     status: 'success',
-    sampleSize: responseValues.length,
+    sampleSize: measured.length,
     callCount: input.callCount ?? 0,
-    responseLatencyMs: response,
-    generationLatencyMs: distribution(generationValues, minSampleSize),
+    userPerceivedLatencyMs: distribution(pick('userPerceivedLatencyMs'), minSampleSize) as LatencyDistribution,
+    components: {
+      endpointingDelayMs: distribution(pick('endpointingDelayMs'), minSampleSize),
+      postEndpointLatencyMs: distribution(pick('postEndpointLatencyMs'), minSampleSize),
+      generationLatencyMs: distribution(pick('generationLatencyMs'), minSampleSize),
+      note: COMPONENTS_NOTE
+    },
     greetingTtfaMs: distribution(
       (input.greetingTtfaMs || []).filter(isMeasurement) as number[],
       minSampleSize
     ),
-    interruptionRate: turns.length === 0 ? 0 : Math.round((interrupted / turns.length) * 1000) / 1000
+    interruptionRate: Math.round((interrupted / measured.length) * 1000) / 1000
   };
 }
 
@@ -166,8 +195,11 @@ export function summarizeTurns(input: SummaryInput): TelemetrySummary {
 
 export interface ValidatedTurn {
   turnIndex: number;
-  responseLatencyMs: number | null;
+  userPerceivedLatencyMs: number | null;
+  endpointingDelayMs: number | null;
+  postEndpointLatencyMs: number | null;
   generationLatencyMs: number | null;
+  segmentCount: number;
   interrupted: boolean;
   bargeInOffsetMs: number | null;
   toolCalls: number;
@@ -258,8 +290,11 @@ export function validateCallPayload(body: unknown, rawBytes?: number): Validatio
     seen.add(turnIndex);
     turns.push({
       turnIndex,
-      responseLatencyMs: optionalNumber(turn.responseLatencyMs),
+      userPerceivedLatencyMs: optionalNumber(turn.userPerceivedLatencyMs),
+      endpointingDelayMs: optionalNumber(turn.endpointingDelayMs),
+      postEndpointLatencyMs: optionalNumber(turn.postEndpointLatencyMs),
       generationLatencyMs: optionalNumber(turn.generationLatencyMs),
+      segmentCount: optionalNumber(turn.segmentCount) ?? 0,
       interrupted: Boolean(turn.interrupted),
       bargeInOffsetMs: optionalNumber(turn.bargeInOffsetMs),
       toolCalls: optionalNumber(turn.toolCalls) ?? 0,

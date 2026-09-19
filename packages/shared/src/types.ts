@@ -62,8 +62,9 @@ export interface InputAudioMessage {
   audio: string; // base64 encoded PCM16 24kHz mono
 }
 
-export interface TerminateMessage {
-  type: 'Terminate';
+/** Clean session end. The API has no `Terminate` message; it answers one with session.error. */
+export interface SessionEndMessage {
+  type: 'session.end';
 }
 
 export interface SessionReadyEvent {
@@ -398,10 +399,15 @@ export interface ClientUsageTelemetry {
   minutesUsed: number;
   minutesLimit: number;
   callsCount: number;
-  afterHoursLeadsCaptured: number;
+  /** Calls where qualify_lead succeeded. Measured, not modeled. */
+  leadsCaptured: number;
+  /** Sum of deal values actually recorded on captured leads. 0 until a real value is recorded. */
   pipelineGeneratedUsd: number;
-  cacSavedUsd: number;
-  estimatedRoiMultiplier: number;
+  /** true only when these numbers were read from usage_records (Postgres). */
+  persisted: boolean;
+  /** Where the numbers come from, in plain words. */
+  measuredFrom: string;
+  source: 'usage_records' | 'memory';
   /**
    * Stripe's own subscription status (active, trialing, past_due, canceled...).
    * Mirrored rather than reinterpreted, because Stripe is the authority on

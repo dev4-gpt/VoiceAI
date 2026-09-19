@@ -2,6 +2,10 @@ import { Router, Request, Response } from 'express';
 import { billingService } from '../services/billingService';
 import { requireApiKey, requireOwnerKey } from '../middleware/auth';
 import { stripeService } from '../services/stripeService';
+import { finalizeStaleCalls } from '../services/usageService';
+import { createRequireUser, AuthedRequest } from '../middleware/requireUser';
+import { workspaceService } from '../services/workspaceService';
+import { isDatabaseConfigured } from '../db/client';
 import type { SubscriptionTierId, ROIParameters } from '@voice-os/shared';
 
 export const billingRouter = Router();
@@ -28,15 +32,51 @@ billingRouter.get('/plans', (_req: Request, res: Response) => {
   }
 });
 
-// GET /api/billing/usage/:clientId
-billingRouter.get('/usage/:clientId', requireOwnerKey, (req: Request, res: Response) => {
+/**
+ * Lazy stale-call reconciliation: there is no cron, so each usage read first
+ * closes (bounded to 50) calls whose last heartbeat is over 5 minutes old.
+ * Failure here must never break the read.
+ */
+async function reconcileStaleCalls() {
   try {
+    await finalizeStaleCalls();
+  } catch (err: any) {
+    console.error('[Billing] Stale call reconciliation failed:', err?.message);
+  }
+}
+
+const requireUser = createRequireUser({
+  authBaseUrl: process.env.NEON_AUTH_BASE_URL,
+  workspaces: workspaceService,
+  storageReady: isDatabaseConfigured
+});
+
+// GET /api/billing/usage/me — the signed-in console reads its own workspace usage.
+// Declared before /usage/:clientId so 'me' is never treated as a client id.
+billingRouter.get('/usage/me', requireUser, async (req: Request, res: Response) => {
+  try {
+    await reconcileStaleCalls();
+    const { workspace } = req as AuthedRequest;
+    const usage = await billingService.getTenantUsage(workspace.tenantId);
+    res.json({ status: 'success', usage, persisted: usage.persisted, measuredFrom: usage.measuredFrom, source: usage.source });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/billing/usage/:clientId
+billingRouter.get('/usage/:clientId', requireOwnerKey, async (req: Request, res: Response) => {
+  try {
+    await reconcileStaleCalls();
     const { clientId } = req.params;
     const companyName = (req.query.company as string) || undefined;
-    const usage = billingService.getClientUsage(clientId, companyName);
+    const usage = await billingService.getClientUsage(clientId, companyName);
     res.json({
       status: 'success',
-      usage
+      usage,
+      persisted: usage.persisted,
+      measuredFrom: usage.measuredFrom,
+      source: usage.source
     });
   } catch (err: any) {
     res.status(500).json({ error: err.message });
@@ -149,6 +189,9 @@ billingRouter.post('/subscribe', requireApiKey, async (req: Request, res: Respon
 });
 
 // POST /api/billing/record-call
+// Manual, in-memory only (persisted:false): it does NOT write usage_records. Real
+// calls are metered from telemetry via usageService.finalizeCall. Kept for
+// no-database local use; a missing deal value is 0, never an invented figure.
 billingRouter.post('/record-call', requireOwnerKey, (req: Request, res: Response) => {
   try {
     const { clientId, durationSeconds, isAfterHours, leadCaptured, estimatedDealValueUsd } = req.body;
@@ -164,7 +207,7 @@ billingRouter.post('/record-call', requireOwnerKey, (req: Request, res: Response
     // Deal value is only defaulted when genuinely absent. A caller-supplied 0 is a
     // real value (a disqualified lead) and must not be replaced by the default,
     // which would silently inflate the tenant's reported pipeline.
-    let dealValue = 2997;
+    let dealValue = 0;
     if (estimatedDealValueUsd !== undefined && estimatedDealValueUsd !== null) {
       const parsed = Number(estimatedDealValueUsd);
       if (!Number.isFinite(parsed) || parsed < 0) {
@@ -183,7 +226,8 @@ billingRouter.post('/record-call', requireOwnerKey, (req: Request, res: Response
 
     res.json({
       status: 'success',
-      usage: updated
+      usage: updated,
+      persisted: false
     });
   } catch (err: any) {
     res.status(500).json({ error: err.message });

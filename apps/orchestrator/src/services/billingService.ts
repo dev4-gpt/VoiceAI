@@ -1,4 +1,5 @@
-import { resolveTenantId, upsertSubscription } from '../db/repository';
+import { resolveTenantId, upsertSubscription, getSubscription, getUsageAggregate } from '../db/repository';
+import { billingPeriodStart, computeBilledMinutes } from './usageService';
 import type {
   SubscriptionPlan,
   SubscriptionTierId,
@@ -33,101 +34,112 @@ export const COST_PER_VOICE_MINUTE_USD: number = catalog.costPerVoiceMinuteUsd;
  */
 export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = catalog.plans as SubscriptionPlan[];
 
+const MEMORY_MEASURED_FROM = 'in-memory only (no DATABASE_URL); not persisted and not measured from calls';
+const DB_MEASURED_FROM = 'usage_records: billable, finalized calls in the current billing period';
+
 export class BillingService {
-  private clientUsageMap: Map<string, ClientUsageTelemetry> = new Map();
-
-  constructor() {
-    this.seedDefaultUsage();
-  }
-
   /**
-   * Demo clients so the dashboard renders. Usage starts at zero: live calls do not
-   * meter yet, and the previous seed invented activity ($56,943 pipeline, 18.8x ROI,
-   * 412 minutes) that the header displayed as if it were real.
+   * Only used when there is no DATABASE_URL. Entries are created on demand at
+   * zero and are always reported with persisted:false. There is no demo seed.
    */
-  private seedDefaultUsage() {
-    const now = new Date();
-    const cycleStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-    const cycleEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString();
-
-    const seed = (clientId: string, companyName: string, planId: SubscriptionTierId, cycle: 'monthly' | 'annual') => {
-      const plan = SUBSCRIPTION_PLANS.find((p) => p.id === planId)!;
-      this.clientUsageMap.set(clientId, {
-        clientId,
-        companyName,
-        planId,
-        billingCycle: cycle,
-        billingCycleStart: cycleStart,
-        billingCycleEnd: cycleEnd,
-        minutesUsed: 0,
-        minutesLimit: plan.voiceMinutesMonthly,
-        callsCount: 0,
-        afterHoursLeadsCaptured: 0,
-        pipelineGeneratedUsd: 0,
-        cacSavedUsd: 0,
-        estimatedRoiMultiplier: 0
-      });
-    };
-
-    seed('lead_jm_901', 'DesignAcademy Studio', 'pro', 'annual');
-    seed('acme_growth', 'Acme SaaS', 'starter', 'monthly');
-  }
+  private clientUsageMap: Map<string, ClientUsageTelemetry> = new Map();
 
   public getPlans(): SubscriptionPlan[] {
     return SUBSCRIPTION_PLANS;
   }
 
-  public getClientUsage(clientId: string, companyName?: string): ClientUsageTelemetry {
-    if (!this.clientUsageMap.has(clientId)) {
-      const now = new Date();
-      const cycleStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-      const cycleEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59).toISOString();
+  private monthWindow(now = new Date()) {
+    return {
+      start: new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString(),
+      end: new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1) - 1000).toISOString()
+    };
+  }
 
-      const newUsage: ClientUsageTelemetry = {
+  private memoryUsage(clientId: string, companyName?: string): ClientUsageTelemetry {
+    if (!this.clientUsageMap.has(clientId)) {
+      const { start, end } = this.monthWindow();
+      this.clientUsageMap.set(clientId, {
         clientId,
         companyName: companyName || clientId,
-        // Not entitled to anything until Stripe confirms a subscription. This used
-        // to auto-provision any unknown id as Pro with 2,500 minutes.
+        // Not entitled to anything until Stripe confirms a subscription.
         planId: 'starter',
         billingCycle: 'monthly',
-        billingCycleStart: cycleStart,
-        billingCycleEnd: cycleEnd,
+        billingCycleStart: start,
+        billingCycleEnd: end,
         minutesUsed: 0,
         minutesLimit: 0,
         callsCount: 0,
-        afterHoursLeadsCaptured: 0,
+        leadsCaptured: 0,
         pipelineGeneratedUsd: 0,
-        cacSavedUsd: 0,
-        estimatedRoiMultiplier: 0
-      };
-      this.clientUsageMap.set(clientId, newUsage);
+        persisted: false,
+        measuredFrom: MEMORY_MEASURED_FROM,
+        source: 'memory'
+      });
     }
     return this.clientUsageMap.get(clientId)!;
   }
 
+  /** Usage for an already-resolved tenant, aggregated from usage_records. */
+  public async getTenantUsage(tenantId: string, companyName?: string): Promise<ClientUsageTelemetry> {
+    const sub = await getSubscription(tenantId);
+    const periodStart = billingPeriodStart(sub);
+    const aggregate = await getUsageAggregate(tenantId, periodStart);
+    if (!aggregate) return this.memoryUsage(tenantId, companyName);
+
+    const planId = (sub?.planId as SubscriptionTierId) || 'starter';
+    const periodEnd =
+      sub?.currentPeriodEnd ??
+      new Date(Date.UTC(periodStart.getUTCFullYear(), periodStart.getUTCMonth() + 1, 1) - 1000);
+    return {
+      clientId: tenantId,
+      companyName: companyName || tenantId,
+      planId,
+      billingCycle: sub?.billingCycle === 'annual' ? 'annual' : 'monthly',
+      billingCycleStart: periodStart.toISOString(),
+      billingCycleEnd: periodEnd.toISOString(),
+      minutesUsed: aggregate.minutesUsed,
+      minutesLimit: sub?.minutesLimit ?? 0,
+      callsCount: aggregate.callsCount,
+      leadsCaptured: aggregate.leadsCaptured,
+      pipelineGeneratedUsd: aggregate.pipelineGeneratedUsd,
+      subscriptionStatus: sub?.status,
+      stripeCustomerId: sub?.stripeCustomerId ?? undefined,
+      stripeSubscriptionId: sub?.stripeSubscriptionId ?? undefined,
+      persisted: true,
+      measuredFrom: DB_MEASURED_FROM,
+      source: 'usage_records'
+    };
+  }
+
+  /**
+   * DB-backed usage: resolveTenantId -> getSubscription -> getUsageAggregate.
+   * With no database it returns the in-memory record with persisted:false.
+   */
+  public async getClientUsage(clientId: string, companyName?: string): Promise<ClientUsageTelemetry> {
+    const tenantId = await resolveTenantId(clientId);
+    if (!tenantId) return this.memoryUsage(clientId, companyName);
+    return this.getTenantUsage(tenantId, companyName || clientId);
+  }
+
+  /**
+   * In-memory only (no-DATABASE_URL path). Live calls are metered by
+   * usageService.finalizeCall from telemetry, not by this method.
+   */
   public recordCallUsage(
     clientId: string,
     durationSeconds: number,
     isAfterHours: boolean = true,
     leadCaptured: boolean = false,
-    estimatedDealValueUsd: number = 2997
+    estimatedDealValueUsd: number = 0
   ): ClientUsageTelemetry {
-    const usage = this.getClientUsage(clientId);
-    const addedMinutes = Math.max(1, Math.ceil(durationSeconds / 60));
-    usage.minutesUsed += addedMinutes;
+    void isAfterHours;
+    const usage = this.memoryUsage(clientId);
+    usage.minutesUsed += computeBilledMinutes(durationSeconds);
     usage.callsCount += 1;
-
-    if (isAfterHours) {
-      usage.afterHoursLeadsCaptured += leadCaptured ? 1 : 0;
-    }
-
     if (leadCaptured) {
+      usage.leadsCaptured += 1;
       usage.pipelineGeneratedUsd += estimatedDealValueUsd;
-      // Approximate human SDR / agency CAC savings ($250 per qualified booked meeting)
-      usage.cacSavedUsd += 250;
     }
-
-    this.clientUsageMap.set(clientId, usage);
     return usage;
   }
 
@@ -136,7 +148,7 @@ export class BillingService {
     planId: SubscriptionTierId,
     billingCycle: 'monthly' | 'annual' = 'monthly'
   ): ClientUsageTelemetry {
-    const usage = this.getClientUsage(clientId);
+    const usage = this.memoryUsage(clientId);
     const plan = SUBSCRIPTION_PLANS.find((p) => p.id === planId) || SUBSCRIPTION_PLANS[1];
 
     usage.planId = planId;
@@ -248,7 +260,7 @@ export class BillingService {
 
     this.updateSubscription(state.tenantId, planId, cycle);
 
-    const usage = this.getClientUsage(state.tenantId);
+    const usage = this.memoryUsage(state.tenantId);
     usage.planId = planId;
     usage.subscriptionStatus = state.status;
     usage.minutesLimit = minutesLimit;

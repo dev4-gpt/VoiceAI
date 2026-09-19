@@ -55,7 +55,10 @@ export async function persistCallTelemetry(call: ValidatedCall): Promise<Persist
   for (const turn of call.turns) {
     const turnSet = {
       tenantId,
-      responseLatencyMs: turn.responseLatencyMs,
+      userPerceivedLatencyMs: turn.userPerceivedLatencyMs,
+      endpointingDelayMs: turn.endpointingDelayMs,
+      postEndpointLatencyMs: turn.postEndpointLatencyMs,
+      segmentCount: turn.segmentCount,
       generationLatencyMs: turn.generationLatencyMs,
       interrupted: turn.interrupted,
       bargeInOffsetMs: turn.bargeInOffsetMs,
@@ -82,7 +85,9 @@ export async function persistCallTelemetry(call: ValidatedCall): Promise<Persist
 
 export interface TelemetryWindow {
   turns: Array<{
-    responseLatencyMs: number | null;
+    userPerceivedLatencyMs: number | null;
+    endpointingDelayMs: number | null;
+    postEndpointLatencyMs: number | null;
     generationLatencyMs: number | null;
     interrupted: boolean;
   }>;
@@ -100,7 +105,9 @@ export async function loadTelemetryWindow(
 
   const turnRows = await db
     .select({
-      responseLatencyMs: callTurns.responseLatencyMs,
+      userPerceivedLatencyMs: callTurns.userPerceivedLatencyMs,
+      endpointingDelayMs: callTurns.endpointingDelayMs,
+      postEndpointLatencyMs: callTurns.postEndpointLatencyMs,
       generationLatencyMs: callTurns.generationLatencyMs,
       interrupted: callTurns.interrupted
     })

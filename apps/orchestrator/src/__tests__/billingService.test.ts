@@ -1,11 +1,31 @@
 import { BillingService, SUBSCRIPTION_PLANS, COST_PER_VOICE_MINUTE_USD } from '../services/billingService';
 import catalog from '@voice-os/shared/plans.json';
 
+const resolveTenantId = jest.fn();
+const getSubscription = jest.fn();
+const getUsageAggregate = jest.fn();
+jest.mock('../db/repository', () => ({
+  resolveTenantId: (...a: any[]) => resolveTenantId(...a),
+  upsertSubscription: jest.fn(),
+  getSubscription: (...a: any[]) => getSubscription(...a),
+  getUsageAggregate: (...a: any[]) => getUsageAggregate(...a),
+  finalizeCallUsage: jest.fn(),
+  attachCallBilling: jest.fn(),
+  getCallRecordByCallId: jest.fn(),
+  listStaleOpenCalls: jest.fn(),
+  markCallLeadCaptured: jest.fn(),
+  findSiteKey: jest.fn(),
+  insertSiteKey: jest.fn()
+}));
+
 describe('BillingService — pricing, usage and ROI', () => {
   let service: BillingService;
 
   beforeEach(() => {
     service = new BillingService();
+    resolveTenantId.mockReset().mockResolvedValue(null);
+    getSubscription.mockReset().mockResolvedValue(null);
+    getUsageAggregate.mockReset().mockResolvedValue(null);
   });
 
   it('exposes the three tiers at their current prices', () => {
@@ -45,28 +65,62 @@ describe('BillingService — pricing, usage and ROI', () => {
     });
   });
 
-  it('does not provision unknown clients with a paid plan', () => {
+  it('does not provision unknown clients with a paid plan', async () => {
     // This used to auto-create any unknown id on Pro with 2,500 minutes.
-    const usage = service.getClientUsage('test_client_42', 'NovaTech');
+    const usage = await service.getClientUsage('test_client_42', 'NovaTech');
     expect(usage.companyName).toBe('NovaTech');
     expect(usage.minutesLimit).toBe(0);
     expect(usage.minutesUsed).toBe(0);
   });
 
-  it('seeds demo clients with zero usage rather than invented activity', () => {
-    const demo = service.getClientUsage('lead_jm_901');
-    expect(demo.minutesUsed).toBe(0);
-    expect(demo.pipelineGeneratedUsd).toBe(0);
-    expect(demo.estimatedRoiMultiplier).toBe(0);
-    expect(demo.minutesLimit).toBe(1500);
+  it('reports no-database usage as in-memory with persisted:false and no fabricated fields', async () => {
+    const usage = await service.getClientUsage('lead_jm_901');
+    expect(usage.persisted).toBe(false);
+    expect(usage.source).toBe('memory');
+    expect(usage.minutesUsed).toBe(0);
+    expect(usage.pipelineGeneratedUsd).toBe(0);
+    expect(usage).not.toHaveProperty('estimatedRoiMultiplier');
+    expect(usage).not.toHaveProperty('cacSavedUsd');
   });
 
-  it('records call minutes, after-hours leads and pipeline', () => {
-    const initial = { ...service.getClientUsage('lead_jm_901') };
-    const updated = service.recordCallUsage('lead_jm_901', 180, true, true, 3000);
-    expect(updated.minutesUsed).toBe(initial.minutesUsed + 3);
-    expect(updated.afterHoursLeadsCaptured).toBe(initial.afterHoursLeadsCaptured + 1);
-    expect(updated.pipelineGeneratedUsd).toBe(initial.pipelineGeneratedUsd + 3000);
+  it('reads usage from the DB aggregate for the subscription period', async () => {
+    const periodStart = new Date('2026-09-10T00:00:00Z');
+    resolveTenantId.mockResolvedValue('tenant-1');
+    getSubscription.mockResolvedValue({
+      planId: 'pro',
+      billingCycle: 'monthly',
+      status: 'active',
+      minutesLimit: 1500,
+      currentPeriodStart: periodStart,
+      currentPeriodEnd: new Date('2026-10-10T00:00:00Z'),
+      stripeCustomerId: null,
+      stripeSubscriptionId: null
+    });
+    getUsageAggregate.mockResolvedValue({
+      minutesUsed: 42,
+      callsCount: 5,
+      leadsCaptured: 2,
+      pipelineGeneratedUsd: 0
+    });
+
+    const usage = await service.getClientUsage('acme', 'Acme');
+    expect(getUsageAggregate).toHaveBeenCalledWith('tenant-1', periodStart);
+    expect(usage).toMatchObject({
+      minutesUsed: 42,
+      minutesLimit: 1500,
+      callsCount: 5,
+      leadsCaptured: 2,
+      persisted: true,
+      source: 'usage_records',
+      planId: 'pro'
+    });
+  });
+
+  it('records in-memory call minutes, and defaults deal value to 0', () => {
+    const updated = service.recordCallUsage('lead_jm_901', 180, true, true);
+    expect(updated.minutesUsed).toBe(3);
+    expect(updated.leadsCaptured).toBe(1);
+    expect(updated.pipelineGeneratedUsd).toBe(0);
   });
 
   describe('ROI model', () => {
@@ -131,7 +185,7 @@ describe('BillingService — pricing, usage and ROI', () => {
     it('activates the plan when Stripe confirms payment', async () => {
       await service.applySubscriptionState(webhookState() as any);
 
-      const client = service.getClientUsage('test_client_checkout');
+      const client = await service.getClientUsage('test_client_checkout');
       expect(client.planId).toBe('enterprise');
       expect(client.billingCycle).toBe('annual');
       expect(client.minutesLimit).toBe(5000);
@@ -144,13 +198,13 @@ describe('BillingService — pricing, usage and ROI', () => {
       // payment would still buy a month of voice minutes.
       for (const status of ['past_due', 'canceled', 'incomplete', 'unpaid']) {
         await service.applySubscriptionState(webhookState({ tenantId: `t_${status}`, status }) as any);
-        expect(service.getClientUsage(`t_${status}`).minutesLimit).toBe(0);
+        expect((await service.getClientUsage(`t_${status}`)).minutesLimit).toBe(0);
       }
     });
 
     it('grants minutes while trialing', async () => {
       await service.applySubscriptionState(webhookState({ tenantId: 't_trial', status: 'trialing' }) as any);
-      expect(service.getClientUsage('t_trial').minutesLimit).toBe(5000);
+      expect((await service.getClientUsage('t_trial')).minutesLimit).toBe(5000);
     });
 
     it('ignores a webhook naming an unknown plan rather than defaulting one', async () => {
@@ -158,8 +212,8 @@ describe('BillingService — pricing, usage and ROI', () => {
         webhookState({ tenantId: 't_unknown', planId: 'free-forever' }) as any
       );
       // Must not silently provision a paid tier for a plan that does not exist.
-      expect(service.getClientUsage('t_unknown').planId).not.toBe('free-forever');
-      expect(service.getClientUsage('t_unknown').subscriptionStatus).toBeUndefined();
+      expect((await service.getClientUsage('t_unknown')).planId).not.toBe('free-forever');
+      expect((await service.getClientUsage('t_unknown')).subscriptionStatus).toBeUndefined();
     });
   });
 

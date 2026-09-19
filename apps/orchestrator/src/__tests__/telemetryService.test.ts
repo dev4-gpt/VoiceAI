@@ -8,10 +8,17 @@ import {
   type TurnSample
 } from '../services/telemetryService';
 
+/**
+ * `values` are the user-perceived (headline) latencies. The post-endpoint part
+ * is deliberately tiny: that is what a real call looked like (~8ms after a ~1s
+ * endpointing wait), and it is what makes any mix-up between the two visible.
+ */
 function turns(values: Array<number | null>): TurnSample[] {
   return values.map((v, i) => ({
-    responseLatencyMs: v,
-    generationLatencyMs: v === null ? null : v - 50,
+    userPerceivedLatencyMs: v,
+    endpointingDelayMs: v === null ? null : v - 10,
+    postEndpointLatencyMs: 10,
+    generationLatencyMs: v === null ? null : 5,
     interrupted: i % 10 === 0
   }));
 }
@@ -48,6 +55,7 @@ describe('summarizeTurns — the never-quote-an-unmeasured-number gate', () => {
     if (result.status !== 'insufficient_data') throw new Error('unreachable');
     expect(result.sampleSize).toBe(3);
     expect(result.requiredSampleSize).toBe(MIN_SAMPLE_SIZE);
+    expect(result.metric).toBe('userPerceivedLatencyMs');
     expect(JSON.stringify(result)).not.toContain('p95');
   });
 
@@ -63,9 +71,9 @@ describe('summarizeTurns — the never-quote-an-unmeasured-number gate', () => {
     if (result.status !== 'success') throw new Error('unreachable');
     expect(result.sampleSize).toBe(MIN_SAMPLE_SIZE);
     // Nearest rank over 20 samples: ceil(0.5 * 20) = 10th value = 109.
-    expect(result.responseLatencyMs.p50).toBe(109);
-    expect(result.responseLatencyMs.min).toBe(100);
-    expect(result.responseLatencyMs.max).toBe(119);
+    expect(result.userPerceivedLatencyMs.p50).toBe(109);
+    expect(result.userPerceivedLatencyMs.min).toBe(100);
+    expect(result.userPerceivedLatencyMs.max).toBe(119);
   });
 
   it('counts only measured turns, so unanswered turns cannot pad the sample', () => {
@@ -88,8 +96,8 @@ describe('summarizeTurns — the never-quote-an-unmeasured-number gate', () => {
 
     expect(result.status).toBe('success');
     if (result.status !== 'success') throw new Error('unreachable');
-    expect(result.responseLatencyMs.p50).toBe(500);
-    expect(result.responseLatencyMs.max).toBe(500);
+    expect(result.userPerceivedLatencyMs.p50).toBe(500);
+    expect(result.userPerceivedLatencyMs.max).toBe(500);
     expect('p50' in result.greetingTtfaMs && result.greetingTtfaMs.p50).toBe(1500);
     expect(result.callCount).toBe(20);
   });
@@ -115,6 +123,59 @@ describe('summarizeTurns — the never-quote-an-unmeasured-number gate', () => {
     if (result.status !== 'success') throw new Error('unreachable');
     // turns() marks every 10th turn interrupted: 2 of 20.
     expect(result.interruptionRate).toBe(0.1);
+  });
+});
+
+describe('summarizeTurns — the headline is user-perceived latency, never the post-endpoint tail', () => {
+  it('refuses to summarise when only the narrow post-endpoint interval was measured', () => {
+    // 50 turns whose mic side was never measured: post-endpoint is ~8ms on every
+    // one. Emitting p50=8 here is exactly the flattering number this guards against.
+    const onlyNarrow: TurnSample[] = Array.from({ length: 50 }, () => ({
+      userPerceivedLatencyMs: null,
+      endpointingDelayMs: null,
+      postEndpointLatencyMs: 8,
+      generationLatencyMs: 1,
+      interrupted: false
+    }));
+    const result = summarizeTurns({ turns: onlyNarrow });
+    expect(result.status).toBe('insufficient_data');
+    if (result.status !== 'insufficient_data') throw new Error('unreachable');
+    expect(result.sampleSize).toBe(0);
+    expect(result.metric).toBe('userPerceivedLatencyMs');
+  });
+
+  it('puts the headline at the top level and the narrow interval under components with a warning', () => {
+    const result = summarizeTurns({
+      turns: turns(Array.from({ length: MIN_SAMPLE_SIZE }, () => 1000))
+    });
+    if (result.status !== 'success') throw new Error('unreachable');
+    expect(result.userPerceivedLatencyMs.p50).toBe(1000);
+    expect(result.components.postEndpointLatencyMs).toMatchObject({ p50: 10 });
+    expect(result.components.endpointingDelayMs).toMatchObject({ p50: 990 });
+    expect(result.components.note).toMatch(/Do not quote postEndpointLatencyMs/);
+    // The old, ambiguous field name must not exist anywhere in the payload.
+    expect(JSON.stringify(result)).not.toContain('responseLatencyMs');
+  });
+
+  it('computes the components over the same turns as the headline', () => {
+    const mixed: TurnSample[] = [
+      ...turns(Array.from({ length: MIN_SAMPLE_SIZE }, () => 1000)),
+      // Measurable post-endpoint but no headline: must not leak into the components.
+      ...Array.from({ length: 30 }, () => ({
+        userPerceivedLatencyMs: null,
+        endpointingDelayMs: null,
+        postEndpointLatencyMs: 8,
+        generationLatencyMs: 1,
+        interrupted: false
+      }))
+    ];
+    const result = summarizeTurns({ turns: mixed });
+    if (result.status !== 'success') throw new Error('unreachable');
+    expect(result.sampleSize).toBe(MIN_SAMPLE_SIZE);
+    expect(result.components.postEndpointLatencyMs).toMatchObject({
+      sampleSize: MIN_SAMPLE_SIZE,
+      p50: 10
+    });
   });
 });
 
@@ -151,26 +212,49 @@ describe('validateCallPayload', () => {
     const result = validateCallPayload({
       ...base,
       turns: [
-        { turnIndex: 0, responseLatencyMs: 400 },
-        { turnIndex: 0, responseLatencyMs: 900 },
-        { turnIndex: 1, responseLatencyMs: 500 }
+        { turnIndex: 0, userPerceivedLatencyMs: 400 },
+        { turnIndex: 0, userPerceivedLatencyMs: 900 },
+        { turnIndex: 1, userPerceivedLatencyMs: 500 }
       ]
     });
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error('unreachable');
     expect(result.value.turns.map((t) => t.turnIndex)).toEqual([0, 1]);
-    expect(result.value.turns[0].responseLatencyMs).toBe(400);
+    expect(result.value.turns[0].userPerceivedLatencyMs).toBe(400);
+  });
+
+  it('carries the new latency fields and segment count through validation', () => {
+    const result = validateCallPayload({
+      ...base,
+      turns: [
+        {
+          turnIndex: 0,
+          userPerceivedLatencyMs: 997.4,
+          endpointingDelayMs: 989,
+          postEndpointLatencyMs: 8,
+          generationLatencyMs: 1,
+          segmentCount: 3
+        }
+      ]
+    });
+    if (!result.ok) throw new Error('unreachable');
+    expect(result.value.turns[0]).toMatchObject({
+      userPerceivedLatencyMs: 997,
+      endpointingDelayMs: 989,
+      postEndpointLatencyMs: 8,
+      segmentCount: 3
+    });
   });
 
   it('coerces hostile field types to null instead of storing them', () => {
     const result = validateCallPayload({
       ...base,
       greetingTtfaMs: 'fast',
-      turns: [{ turnIndex: 0, responseLatencyMs: -12, generationLatencyMs: { evil: true } }]
+      turns: [{ turnIndex: 0, userPerceivedLatencyMs: -12, generationLatencyMs: { evil: true } }]
     });
     if (!result.ok) throw new Error('unreachable');
     expect(result.value.greetingTtfaMs).toBeNull();
-    expect(result.value.turns[0].responseLatencyMs).toBeNull();
+    expect(result.value.turns[0].userPerceivedLatencyMs).toBeNull();
     expect(result.value.turns[0].generationLatencyMs).toBeNull();
   });
 });
