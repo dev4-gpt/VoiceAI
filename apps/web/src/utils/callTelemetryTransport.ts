@@ -26,23 +26,53 @@ export interface TelemetryTransportOptions {
   /** Injectable for tests. */
   fetchImpl?: typeof fetch;
   sendBeaconImpl?: (url: string, data: Blob) => boolean;
+  /**
+   * Read at send time, not construction time, because the lead-captured flag
+   * changes during the call.
+   */
+  getExtras?: () => MeteringExtras;
 }
 
-function serialize(batch: TelemetryBatch): string {
+/** Fields the server's metering hook reads, sent alongside the telemetry itself. */
+export interface MeteringExtras {
+  /** Server-signed token from /api/voice/token. Binds the call to a tenant we chose. */
+  callToken?: string;
+  qualifyLeadSucceeded?: boolean;
+}
+
+function serialize(batch: TelemetryBatch, extras?: MeteringExtras): string {
   const turns =
     batch.turns.length > MAX_TURNS_PER_BATCH
       ? batch.turns.slice(0, MAX_TURNS_PER_BATCH)
       : batch.turns;
-  return JSON.stringify({ ...batch.record, callId: batch.callId, turns });
+  // Elapsed call time, used as the reported audio seconds. Mid-call flushes have no
+  // durationMs yet, so fall back to time since start; that also serves as the
+  // heartbeat the server uses to close a call that never reports an end. The server
+  // clamps this to the lifetime of the token it signed, so over-reporting gains
+  // nothing.
+  const elapsedMs =
+    batch.record.durationMs ?? (batch.record.startedAt ? Date.now() - batch.record.startedAt : null);
+  const audioSecondsCaptured =
+    elapsedMs !== null && Number.isFinite(elapsedMs) && elapsedMs >= 0 ? Math.round(elapsedMs / 1000) : undefined;
+  return JSON.stringify({
+    ...batch.record,
+    callId: batch.callId,
+    turns,
+    ...(extras?.callToken ? { callToken: extras.callToken } : {}),
+    ...(audioSecondsCaptured !== undefined ? { audioSecondsCaptured } : {}),
+    ...(extras?.qualifyLeadSucceeded ? { qualifyLeadSucceeded: true } : {})
+  });
 }
 
 export class TelemetryTransport {
   private readonly url: string;
+  private readonly getExtras?: () => MeteringExtras;
   private readonly fetchImpl?: typeof fetch;
   private readonly sendBeaconImpl?: (url: string, data: Blob) => boolean;
 
   constructor(opts: TelemetryTransportOptions) {
     this.url = opts.url;
+    this.getExtras = opts.getExtras;
     this.fetchImpl =
       opts.fetchImpl ||
       (typeof fetch === 'function' ? fetch.bind(globalThis) : undefined);
@@ -55,7 +85,7 @@ export class TelemetryTransport {
 
   /** Mid-call flush. Never awaited by the caller. */
   public send(batch: TelemetryBatch): void {
-    const body = serialize(batch);
+    const body = serialize(batch, this.getExtras?.());
     void this.post(body, 1);
   }
 
@@ -65,7 +95,7 @@ export class TelemetryTransport {
    * back to a keepalive fetch, which usually survives.
    */
   public sendFinal(batch: TelemetryBatch): void {
-    const body = serialize(batch);
+    const body = serialize(batch, this.getExtras?.());
     if (this.sendBeaconImpl) {
       try {
         const blob = new Blob([body], { type: 'application/json' });

@@ -627,6 +627,10 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
   // arriving and the clock being read and is billed to the model as latency.
   const callTelemetryRef = useRef<CallTelemetry | null>(null);
   const telemetryTransportRef = useRef<TelemetryTransport | null>(null);
+  // Metering: the server-signed token echoed back with telemetry, and whether the
+  // agent captured a lead. Refs, not state, so reading them at flush time is free.
+  const callTokenRef = useRef<string | undefined>(undefined);
+  const qualifyLeadOkRef = useRef(false);
   const telemetryFlushTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const finalizeCallTelemetry = (reason: string, viaBeacon = false) => {
@@ -927,7 +931,9 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
         throw new Error(
           tokenData.code === 'VOICE_UNCONFIGURED'
             ? 'Live voice is not configured on this server (ASSEMBLYAI_API_KEY is unset). Text chat still works.'
-            : tokenData.error || 'Failed to acquire a voice session token'
+            : tokenData.code === 'MINUTES_EXHAUSTED'
+              ? `Voice minutes are used up for this billing period (${tokenData.minutesUsed} of ${tokenData.minutesLimit}). Text chat still works.`
+              : tokenData.error || 'Failed to acquire a voice session token'
         );
       }
 
@@ -944,8 +950,12 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
       // Telemetry for this call. performance.now() rather than Date.now():
       // it is monotonic, so an NTP correction mid-call cannot produce a
       // negative latency.
+      // Adopt the server's callId when it issued one: the signed callToken is bound
+      // to it, and the server drops a token whose callId does not match the payload.
+      callTokenRef.current = typeof tokenData.callToken === 'string' ? tokenData.callToken : undefined;
+      qualifyLeadOkRef.current = false;
       const telemetry = new CallTelemetry({
-        callId: createCallId(),
+        callId: typeof tokenData.callId === 'string' && tokenData.callId ? tokenData.callId : createCallId(),
         clock: () => performance.now(),
         persona: selectedScenario,
         companyName: prospectCompany || null,
@@ -953,7 +963,11 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
       });
       callTelemetryRef.current = telemetry;
       telemetryTransportRef.current = new TelemetryTransport({
-        url: apiUrl(TELEMETRY_INGEST_PATH)
+        url: apiUrl(TELEMETRY_INGEST_PATH),
+        getExtras: () => ({
+          callToken: callTokenRef.current,
+          qualifyLeadSucceeded: qualifyLeadOkRef.current
+        })
       });
       if (telemetryFlushTimerRef.current) clearInterval(telemetryFlushTimerRef.current);
       telemetryFlushTimerRef.current = setInterval(() => {
@@ -1301,6 +1315,11 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
               }
 
               telemetry.markToolResult(msg.call_id);
+              // Client-side hint only. The server treats it as a fallback and takes
+              // the authoritative signal from its own dispatch of qualify_lead.
+              if (msg.name === 'qualify_lead' && (result as { status?: string })?.status === 'success') {
+                qualifyLeadOkRef.current = true;
+              }
 
               const agentWs = wsRef.current;
               if (agentWs && agentWs.readyState === WebSocket.OPEN) {

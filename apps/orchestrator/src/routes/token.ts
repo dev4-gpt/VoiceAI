@@ -11,6 +11,9 @@ import { createOptionalUser, OptionalAuthedRequest } from '../middleware/optiona
 import { workspaceService } from '../services/workspaceService';
 import { workspaceKeysService } from '../services/workspaceKeysService';
 import { isDatabaseConfigured } from '../db/client';
+import { randomUUID } from 'crypto';
+import { resolveCallAttribution, checkEntitlement } from '../services/usageService';
+import { signCallToken, isCallTokenConfigured } from '../services/callTokenService';
 
 export const tokenRouter = Router();
 
@@ -21,6 +24,83 @@ const optionalUser = createOptionalUser({
   workspaces: workspaceService,
   storageReady: isDatabaseConfigured
 });
+
+const MAX_SESSION_SECONDS = 3600;
+
+interface MeteringDecision {
+  /** Set when the caller has no minutes left. The mint must not happen. */
+  refusal?: { error: string; code: 'MINUTES_EXHAUSTED'; minutesUsed: number; minutesLimit: number };
+  maxSessionSeconds: number;
+  callId?: string;
+  callToken?: string;
+  warning?: 'MINUTES_LOW';
+  minutesRemaining?: number;
+}
+
+/**
+ * Attribute the call and check the allowance. Fails OPEN on anything except a
+ * genuinely exhausted allowance: metering is bookkeeping, and a database blip,
+ * an unset CALL_TOKEN_SECRET or an unmapped tenant must never take voice down.
+ * The cost of failing open is an unbilled call, which is recoverable; the cost
+ * of failing closed is a dead product.
+ */
+async function prepareMetering(req: Request, authed: OptionalAuthedRequest): Promise<MeteringDecision> {
+  const open: MeteringDecision = { maxSessionSeconds: MAX_SESSION_SECONDS };
+  if (!isDatabaseConfigured()) return open;
+
+  try {
+    const siteKey = typeof req.body?.siteKey === 'string' ? req.body.siteKey : null;
+    // A site key marks a widget call. data-company is deliberately not consulted:
+    // any page can send it, and it used to decide whose minutes were spent.
+    const attribution = await resolveCallAttribution({
+      channel: siteKey ? 'widget' : 'console',
+      workspaceTenantId: authed.workspace?.tenantId ?? null,
+      siteKey,
+      origin: req.header('origin') ?? null
+    });
+    if (!attribution) return open;
+
+    let maxSessionSeconds = MAX_SESSION_SECONDS;
+    let warning: 'MINUTES_LOW' | undefined;
+    let minutesRemaining: number | undefined;
+
+    if (attribution.billable) {
+      const ent = await checkEntitlement(attribution.tenantId);
+      if (ent.metered !== false && !ent.allowed) {
+        return {
+          maxSessionSeconds,
+          refusal: {
+            error: 'Voice minutes are used up for this billing period.',
+            code: 'MINUTES_EXHAUSTED',
+            minutesUsed: ent.minutesUsed,
+            minutesLimit: ent.minutesLimit
+          }
+        };
+      }
+      if (ent.metered !== false) {
+        maxSessionSeconds = Math.min(MAX_SESSION_SECONDS, ent.maxSessionSeconds);
+        warning = ent.warning;
+        minutesRemaining = ent.minutesRemaining;
+      }
+    }
+
+    if (!isCallTokenConfigured()) return { ...open, maxSessionSeconds, warning, minutesRemaining };
+
+    const callId = randomUUID();
+    const { token } = signCallToken({
+      callId,
+      tenantId: attribution.tenantId,
+      source: attribution.source,
+      billable: attribution.billable,
+      maxSessionSeconds
+    });
+    return { maxSessionSeconds, callId, callToken: token, warning, minutesRemaining };
+  } catch (err: any) {
+    // Name only: never err.message, which can carry query text.
+    console.warn('[Token Route] Metering unavailable, minting unmetered:', err?.name);
+    return open;
+  }
+}
 
 tokenRouter.post('/token', optionalUser, async (req: Request, res: Response) => {
   const authed = req as OptionalAuthedRequest;
@@ -54,11 +134,22 @@ tokenRouter.post('/token', optionalUser, async (req: Request, res: Response) => 
     });
   }
 
+  // Decide whose minutes this call spends, and whether they have any left, BEFORE
+  // minting: a refused mint costs nothing, a minted one spends AssemblyAI money.
+  // This is the only point where usage can actually be enforced. The browser talks
+  // to AssemblyAI directly with the token, so there is no mid-call cutoff without
+  // proxying audio. What we can do is refuse here and cap the session length so
+  // the vendor ends it: max_session_duration_seconds below.
+  const metering = await prepareMetering(req, authed);
+  if (metering.refusal) {
+    return res.status(402).json(metering.refusal);
+  }
+
   try {
     // AssemblyAI Voice Agent Token Minting endpoint
     // Voice Agent API requires Bearer header!
     const response = await fetch(
-      'https://agents.assemblyai.com/v1/token?expires_in_seconds=300&max_session_duration_seconds=3600',
+      `https://agents.assemblyai.com/v1/token?expires_in_seconds=300&max_session_duration_seconds=${metering.maxSessionSeconds}`,
       {
         method: 'GET',
         headers: {
@@ -104,7 +195,14 @@ tokenRouter.post('/token', optionalUser, async (req: Request, res: Response) => 
       token: data.token,
       isDemo: false,
       brandVoice: bv,
-      compliance: policy
+      compliance: policy,
+      // The client must send callToken back with its telemetry so the server can
+      // attribute the call to a tenant it chose, not one the client named.
+      // Absent when metering is not configured; the client then reports nothing
+      // billable, which is the safe direction.
+      ...(metering.callId ? { callId: metering.callId } : {}),
+      ...(metering.callToken ? { callToken: metering.callToken } : {}),
+      ...(metering.warning ? { warning: metering.warning, minutesRemaining: metering.minutesRemaining } : {})
     });
   } catch (err: any) {
     console.error('[Token Route Exception]', err);
