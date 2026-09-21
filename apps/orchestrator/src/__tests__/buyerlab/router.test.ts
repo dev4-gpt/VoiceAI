@@ -337,7 +337,7 @@ describe('/api/buyerlab', () => {
 });
 
 describe('/api/buyerlab boundary hygiene', () => {
-  const NUL = ' ';
+  const NUL = '\u0000';
   const LONE = '\uD83D';
   const wellFormed = (s: string) => s === (s as any).toWellFormed();
 
@@ -361,11 +361,11 @@ describe('/api/buyerlab boundary hygiene', () => {
     const { app, store } = build();
     const id = await empty(app);
     const r = await request(app).post(`/api/buyerlab/projects/${id}/ingest`).set(A).send({ text: `${TEXT}${NUL} more${LONE}`, label: `Ho${NUL}me${LONE}` }).expect(201);
-    expect(r.body.added[0].label).toBe('Home�');
+    expect(r.body.added[0].label).toBe('Home\uFFFD');
     const [src] = await store.listSources('A', id);
     expect(src.text).not.toContain(NUL);
     expect(wellFormed(src.text)).toBe(true);
-    expect(src.text.endsWith('more�')).toBe(true);
+    expect(src.text.endsWith('more\uFFFD')).toBe(true);
   });
 
   it('stores a crawled page clean: text, title, label and headings', async () => {
@@ -373,11 +373,11 @@ describe('/api/buyerlab boundary hygiene', () => {
     crawl.mockResolvedValue({ pages: [{ url: 'https://a.com/', title: `Ti${NUL}tle${LONE}`, headings: [`H${NUL}1`, `H${LONE}2`], text: `Buyer ${NUL}copy. `.repeat(30), status: 200 }], skipped: [], truncated: false });
     const id = await empty(app);
     const r = await request(app).post(`/api/buyerlab/projects/${id}/ingest`).set(A).send({ url: 'https://a.com/' }).expect(201);
-    expect(r.body.added[0].label).toBe('Title�');
+    expect(r.body.added[0].label).toBe('Title\uFFFD');
     const [src] = await store.listSources('A', id);
     expect(src.text).not.toContain(NUL);
     expect(src.text.startsWith('Buyer copy. ')).toBe(true);
-    expect(src.meta).toEqual({ status: 200, headings: ['H1', 'H�2'] });
+    expect(src.meta).toEqual({ status: 200, headings: ['H1', 'H\uFFFD2'] });
     expect(JSON.stringify(src)).not.toContain('\\u0000');
   });
 
