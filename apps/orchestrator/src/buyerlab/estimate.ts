@@ -10,7 +10,7 @@ export interface RunEstimate {
 }
 
 const OVERHEAD_TOKENS = 1200; // persona, rules and schema around the sources
-const OUTPUT_TOKENS_PER_CALL = 1500; // measured: 13,128 output tokens over 8 calls in the Veloce prototype
+const OUTPUT_TOKENS_PER_CALL = 2500; // max_tokens cap for a reaction call; measured mean was ~1,641 (13,128 output tokens over 8 calls in Veloce prototype)
 const USD_PER_M_INPUT = 0.3; // deepseek-flash upper list price
 const USD_PER_M_OUTPUT = 1.2;
 
@@ -27,6 +27,6 @@ export function estimateRun(sources: Source[], personas: Persona[]): RunEstimate
     approxInputTokens: input,
     approxOutputTokens: output,
     usdUpperBound: (input * USD_PER_M_INPUT + output * USD_PER_M_OUTPUT) / 1e6,
-    note: 'Upper bound at deepseek-flash list prices. Billed to your own key unless the owner granted you the server keys.'
+    note: 'Upper bound at deepseek-flash list prices for the buyer reactions (one model call per buyer, at most 2,500 output tokens each). Inferring the panel is a separate call. Billed to your own key unless the owner granted you the server keys.'
   };
 }

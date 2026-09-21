@@ -14,9 +14,9 @@ export interface RenderedSources {
   truncatedRefs: string[];
 }
 
-/** A `</source` or `<source` inside untrusted text becomes `<\/source`, so it cannot close or open a wrapper. */
+/** A `</source` or `<source` inside untrusted text becomes `<\/source`, so it cannot close or open a wrapper. Handles whitespace variants. */
 export function escapeSourceText(text: string): string {
-  return text.replace(/<(\/?)source/gi, '<\\$1source');
+  return text.replace(/<\s*(\/?)\s*source/gi, '<\\$1source');
 }
 
 const attr = (s: string) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
