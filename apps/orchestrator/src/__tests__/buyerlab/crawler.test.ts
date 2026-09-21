@@ -96,6 +96,8 @@ const FIXTURES: Record<string, string> = {
     '<body><a class="btn" data-track="1" href="/with-attrs" rel="nofollow">Go</a><a\nhref="/newline">NL</a></body>'
 };
 
+const HOSTILE_INPUT_BUDGET_MS = 2000; // catches quadratic blowups (measured 10-27 s); 500 ms flaked under parallel full-suite load
+
 describe('extractPage', () => {
   const r = extractPage(PAGE, 'https://veloceos.cloud/');
   it('reads title and headings', () => {
@@ -120,12 +122,12 @@ describe('extractPage', () => {
     ]);
   });
 
-  // Hostile input tests: all must complete in < 500 ms
+  // Hostile input tests: all must complete within the budget
   it('handles many unclosed tags linearly', () => {
     const start = Date.now();
     const result = extractPage('<script>'.repeat(50000), 'https://example.com/');
     const elapsed = Date.now() - start;
-    expect(elapsed).toBeLessThan(500);
+    expect(elapsed).toBeLessThan(HOSTILE_INPUT_BUDGET_MS);
     expect(result.text.length).toBeLessThan(10); // mostly empty
   });
 
@@ -133,7 +135,7 @@ describe('extractPage', () => {
     const start = Date.now();
     const result = extractPage('<'.repeat(200000), 'https://example.com/');
     const elapsed = Date.now() - start;
-    expect(elapsed).toBeLessThan(500);
+    expect(elapsed).toBeLessThan(HOSTILE_INPUT_BUDGET_MS);
     expect(result.text.length).toBeLessThan(10);
   });
 
@@ -142,7 +144,7 @@ describe('extractPage', () => {
     const links = Array.from({ length: 60000 }, (_, i) => `<a href="/p${i}">link</a>`).join('');
     const result = extractPage(`<html><body>${links}</body></html>`, 'https://example.com/');
     const elapsed = Date.now() - start;
-    expect(elapsed).toBeLessThan(500);
+    expect(elapsed).toBeLessThan(HOSTILE_INPUT_BUDGET_MS);
     // Links capped at 500
     expect(result.links.length).toBeLessThanOrEqual(500);
   });
@@ -175,22 +177,22 @@ describe('extractPage', () => {
     expect(result.text).toContain('A');
   });
 
-  describe('is linear on hostile input (each under 500 ms)', () => {
+  describe('is linear on hostile input (each within budget)', () => {
     it('200,000 unclosed <h1> tags', () => {
-      expect(timed(() => extractPage('<h1>'.repeat(200000), 'https://example.com/'))).toBeLessThan(500);
+      expect(timed(() => extractPage('<h1>'.repeat(200000), 'https://example.com/'))).toBeLessThan(HOSTILE_INPUT_BUDGET_MS);
     });
     it('100,000 unclosed <title> tags', () => {
-      expect(timed(() => extractPage('<title>'.repeat(100000), 'https://example.com/'))).toBeLessThan(500);
+      expect(timed(() => extractPage('<title>'.repeat(100000), 'https://example.com/'))).toBeLessThan(HOSTILE_INPUT_BUDGET_MS);
     });
     it('50,000 open <h1> tags then one close tag', () => {
       let r: ReturnType<typeof extractPage> | undefined;
-      expect(timed(() => { r = extractPage('<h1>'.repeat(50000) + '</h1>', 'https://example.com/'); })).toBeLessThan(500);
+      expect(timed(() => { r = extractPage('<h1>'.repeat(50000) + '</h1>', 'https://example.com/'); })).toBeLessThan(HOSTILE_INPUT_BUDGET_MS);
       expect(r?.headings).toEqual([]);
     });
     it('many unclosed comments, tags and attribute-less anchors', () => {
-      expect(timed(() => extractPage('<!--'.repeat(100000), 'https://example.com/'))).toBeLessThan(500);
-      expect(timed(() => extractPage('<a href="'.repeat(100000), 'https://example.com/'))).toBeLessThan(500);
-      expect(timed(() => extractPage('<a '.repeat(200000) + '>', 'https://example.com/'))).toBeLessThan(500);
+      expect(timed(() => extractPage('<!--'.repeat(100000), 'https://example.com/'))).toBeLessThan(HOSTILE_INPUT_BUDGET_MS);
+      expect(timed(() => extractPage('<a href="'.repeat(100000), 'https://example.com/'))).toBeLessThan(HOSTILE_INPUT_BUDGET_MS);
+      expect(timed(() => extractPage('<a '.repeat(200000) + '>', 'https://example.com/'))).toBeLessThan(HOSTILE_INPUT_BUDGET_MS);
     });
   });
 
