@@ -58,4 +58,36 @@ describe('quote verification', () => {
     expect(verifyQuote('', source)).toBe(false);
     expect(verifyQuote('Veloce replaces six tools.', '')).toBe(false);
   });
+
+  it('rejects a divider made of hyphens, even though it appears in the source', () => {
+    const divider = '----------------';
+    const sourceWithDivider = 'Section one.\n\n' + divider + '\n\nSection two.';
+    expect(sourceWithDivider).toContain(divider);
+    expect(divider.length).toBeGreaterThanOrEqual(12);
+    expect(verifyQuote(divider, sourceWithDivider)).toBe(false);
+  });
+
+  it('rejects a divider made of em-dashes normalised to hyphens', () => {
+    const divider = '————————————————';
+    const sourceWithDivider = 'Section one.\n\n' + divider + '\n\nSection two.';
+    expect(divider.length).toBeGreaterThanOrEqual(12);
+    expect(verifyQuote(divider, sourceWithDivider)).toBe(false);
+  });
+
+  it('rejects a mixed punctuation divider with no alphanumeric chars', () => {
+    const divider = '.......... ------';
+    const sourceWithDivider = 'Content\n\n' + divider + '\n\nMore content.';
+    expect(sourceWithDivider).toContain(divider);
+    expect(verifyQuote(divider, sourceWithDivider)).toBe(false);
+  });
+
+  it('accepts a quote with 6+ alphanumeric characters even if padded with punctuation', () => {
+    const source2 = 'no free plan is available for all users';
+    expect(verifyQuote('no free plan', source2)).toBe(true);
+  });
+
+  it('rejects a quote with only 5 alphanumeric chars padded to 12+ total length', () => {
+    const source2 = 'hello!!!!!!!!!';
+    expect(verifyQuote('hello!!!!!!!!!', source2)).toBe(false);
+  });
 });

@@ -1,4 +1,5 @@
 import { verifyQuote } from './quotes';
+import { clip } from './text';
 import type { ShownSource } from './prompts';
 import { Claim, ClaimKind, DISCLAIMER, DroppedClaim, NormalizedOutcome, Persona, PersonaOutcome, ProviderId, Source } from './types';
 
@@ -14,7 +15,6 @@ const KINDS: ClaimKind[] = ['objection', 'confusion', 'delight'];
 const SENTIMENTS = ['negative', 'mixed', 'positive'] as const;
 const SEVERITIES = ['low', 'medium', 'high'] as const;
 const MAX_CLAIMS_CONSIDERED = 12;
-const str = (v: unknown, max: number) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
 
 /**
  * Turns a persona's raw model answer into a PersonaOutcome, keeping only claims whose quote is
@@ -26,8 +26,9 @@ export function normaliseReaction(i: { persona: Persona; raw: unknown; refs: Map
   const raw = i.raw as Record<string, unknown>;
 
   const intentRaw = raw.intent as { score?: unknown; rationale?: unknown } | undefined;
-  const score = Number(intentRaw?.score);
-  if (intentRaw === null || typeof intentRaw !== 'object' || typeof intentRaw.score !== 'number' || !Number.isFinite(score)) throw new ReactionMalformedError();
+  if (intentRaw === null || typeof intentRaw !== 'object' || typeof intentRaw.score !== 'number') throw new ReactionMalformedError();
+  const score = Number(intentRaw.score);
+  if (!Number.isFinite(score)) throw new ReactionMalformedError();
 
   const claims: Claim[] = [];
   const dropped: DroppedClaim[] = [];
@@ -35,14 +36,14 @@ export function normaliseReaction(i: { persona: Persona; raw: unknown; refs: Map
 
   for (const item of items) {
     const c = (item !== null && typeof item === 'object' ? item : {}) as Record<string, unknown>;
-    const text = str(c.text, 400);
+    const text = clip(c.text, 400);
     const drop = (reason: DroppedClaim['reason']) => dropped.push({ text, reason });
 
     if (!text || !KINDS.includes(c.kind as ClaimKind)) {
       drop('malformed');
       continue;
     }
-    const shown = refs.get(str(c.source, 10));
+    const shown = refs.get(clip(c.source, 10));
     if (!shown) {
       drop('unknown_source');
       continue;
@@ -55,7 +56,7 @@ export function normaliseReaction(i: { persona: Persona; raw: unknown; refs: Map
       drop('surface_not_allowed');
       continue;
     }
-    const quote = str(c.quote, 600);
+    const quote = clip(c.quote, 600);
     if (!quote) {
       drop('no_quote');
       continue;
@@ -81,7 +82,7 @@ export function normaliseReaction(i: { persona: Persona; raw: unknown; refs: Map
     name: persona.spec.name,
     archetype: persona.archetype,
     surfaces: persona.surfaces,
-    intent: { score: Math.min(10, Math.max(0, Math.round(score))), rationale: str(intentRaw.rationale, 500) },
+    intent: { score: Math.min(10, Math.max(0, Math.round(score))), rationale: clip(intentRaw.rationale, 500) },
     sentiment: SENTIMENTS.includes(raw.sentiment as (typeof SENTIMENTS)[number]) ? (raw.sentiment as PersonaOutcome['sentiment']) : 'mixed',
     claims,
     dropped

@@ -1,5 +1,6 @@
 import { BuyerLlm, LlmOutputError, parseJsonObject } from './llm';
 import { buildPanelPrompt, renderSources } from './prompts';
+import { clip } from './text';
 import { ARCHETYPES, Archetype, NewPersona, REQUIRED_ARCHETYPES, Source, SURFACES, Surface } from './types';
 
 export class PanelIncompleteError extends Error {
@@ -9,19 +10,8 @@ export class PanelIncompleteError extends Error {
   }
 }
 
-const dropTrailingSurrogate = (s: string) => {
-  // If the last character is a lone HIGH surrogate (0xD800-0xDBFF), drop it.
-  const code = s.charCodeAt(s.length - 1);
-  return code >= 0xd800 && code <= 0xdbff ? s.slice(0, -1) : s;
-};
-
-const str = (v: unknown, max: number) => {
-  if (typeof v !== 'string') return '';
-  let s = v.trim().slice(0, max);
-  return dropTrailingSurrogate(s);
-};
 const strList = (v: unknown, maxItems: number, maxLen: number) =>
-  Array.isArray(v) ? v.map((x) => str(x, maxLen)).filter(Boolean).slice(0, maxItems) : [];
+  Array.isArray(v) ? v.map((x) => clip(x, maxLen)).filter(Boolean).slice(0, maxItems) : [];
 
 export function availableSurfacesOf(sources: Source[]): Surface[] {
   return SURFACES.filter((s) => sources.some((x) => x.surface === s && x.kind !== 'agent'));
@@ -31,7 +21,7 @@ export function availableSurfacesOf(sources: Source[]): Surface[] {
 export function sanitizePersona(raw: unknown, availableSurfaces: Surface[]): NewPersona | null {
   if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return null;
   const r = raw as Record<string, unknown>;
-  const name = str(r.name, 80);
+  const name = clip(r.name, 80);
   if (!name) return null;
 
   const archetype: Archetype = (ARCHETYPES as readonly string[]).includes(r.archetype as string) ? (r.archetype as Archetype) : 'other';
@@ -48,12 +38,12 @@ export function sanitizePersona(raw: unknown, availableSurfaces: Surface[]): New
     edited: false,
     spec: {
       name,
-      role: str(r.role, 120),
+      role: clip(r.role, 120),
       goals: strList(r.goals, 5, 200),
       constraints: strList(r.constraints, 5, 200),
       budgetAuthority,
       priorTools: strList(r.priorTools, 5, 80),
-      reasonNotToBuy: str(r.reasonNotToBuy, 400)
+      reasonNotToBuy: clip(r.reasonNotToBuy, 400)
     }
   };
 }
@@ -110,7 +100,7 @@ export async function inferPanel(i: {
     }
     const personas = sanitizePersonas(parsed.personas, available);
     const gaps = missingArchetypes(personas);
-    if (gaps.length === 0) return { icp: str(parsed.icp, 600), personas: arrange(personas, size), callsUsed, tokens };
+    if (gaps.length === 0) return { icp: clip(parsed.icp, 600), personas: arrange(personas, size), callsUsed, tokens };
     missing = gaps;
     lastError = new PanelIncompleteError(gaps);
   }

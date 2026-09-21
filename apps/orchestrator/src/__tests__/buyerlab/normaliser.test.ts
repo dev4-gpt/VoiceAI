@@ -95,6 +95,36 @@ describe('normaliseReaction', () => {
     const o = run(react([claim({ kind: 'delight', severity: 'high', text: 'I like the promise' })]));
     expect(o.claims[0].severity).toBeNull();
   });
+
+  it('drops a claim quoting a content-free divider, even though it appears in the source', () => {
+    const divider = '----------------';
+    const sourceWithDivider = mkSource({ id: 'div', text: 'Section one.\n\n' + divider + '\n\nSection two.' });
+    const refs = renderSources([sourceWithDivider]).refs;
+    const o = run(react([claim({ source: 'S1', quote: divider })]), refs);
+    expect(o.dropped).toHaveLength(1);
+    expect(o.dropped[0].reason).toBe('quote_not_found');
+  });
+
+  it('rejects a Symbol score with ReactionMalformedError', () => {
+    expect(() => run({ intent: { score: Symbol('bad') }, claims: [] })).toThrow(ReactionMalformedError);
+  });
+
+  it('stores claim text without a trailing lone surrogate when it contains an emoji', () => {
+    // Create a text that is 399 chars + emoji. When clipped at 400, it would end with a lone high surrogate.
+    const ascii = 'a'.repeat(399);
+    const emoji = '😀'; // emoji (surrogate pair)
+    const claimText = ascii + emoji; // 401 chars total
+    const sourceText = 'Pricing is by signed proposal only. More details about features.';
+    const src = mkSource({ id: 's1', text: sourceText });
+    const refs = renderSources([src]).refs;
+    const o = run(react([claim({ text: claimText, quote: 'Pricing is by signed proposal only' })]));
+    expect(o.claims).toHaveLength(1);
+    // The text should not end with a lone surrogate
+    const stored = o.claims[0].text;
+    const lastCode = stored.charCodeAt(stored.length - 1);
+    const isLoneSurrogate = lastCode >= 0xd800 && lastCode <= 0xdbff;
+    expect(isLoneSurrogate).toBe(false);
+  });
 });
 
 describe('buildOutcome', () => {
