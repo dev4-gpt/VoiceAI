@@ -15,7 +15,7 @@ import { instaticRouter } from './routes/instatic';
 import { complianceRouter } from './routes/compliance';
 import { telemetryRouter } from './routes/telemetry';
 import { evalsRouter } from './routes/evals';
-import { buyerLabRouter } from './buyerlab/defaultRouter';
+import { createDefaultBuyerLabRouter } from './buyerlab/defaultRouter';
 import { createMeRouter } from './routes/me';
 import { createRequireUser } from './middleware/requireUser';
 import { isDatabaseConfigured } from './db/client';
@@ -238,7 +238,7 @@ app.use('/api/billing', billingRouter);
 app.use('/api/instatic', instaticRouter);
 app.use('/api/compliance', complianceRouter);
 app.use('/api/telemetry', telemetryRouter);
-app.use('/api/buyerlab', buyerLabRouter);
+app.use('/api/buyerlab', createDefaultBuyerLabRouter());
 
 // Root landing info
 app.get('/', (_req, res) => {

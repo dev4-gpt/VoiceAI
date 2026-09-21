@@ -518,3 +518,13 @@ describe('crawl', () => {
     expect(r.pages.map((p) => p.url)).toEqual(['https://a.com/', 'https://a.com/new']);
   });
 });
+
+describe('decodeEntities: NUL', () => {
+  it('maps numeric references to code point 0 to U+FFFD', () => {
+    expect(decodeEntities('a&#0;b&#x0;c&#x00;d&#000;e')).toBe('a�b�c�d�e');
+  });
+  it('never lets a NUL reach extracted page text', () => {
+    const html = '<html><body><p>Hello &#0; world &#x0; here, enough words to be a real paragraph of copy for the buyer.</p></body></html>';
+    expect(extractPage(html, 'https://a.com/').text).not.toContain(' ');
+  });
+});

@@ -12,6 +12,7 @@ import { advanceRun, ProviderUnavailableError, RunNotReadyError, startRun } from
 import { FetchFailedError } from '../buyerlab/safeFetch';
 import { UnsafeUrlError } from '../buyerlab/ssrf';
 import { BuyerLabNotFoundError, BuyerLabStore } from '../buyerlab/store';
+import { clip, cleanText } from '../buyerlab/text';
 import { NewSource, ProviderId, Run, Source, SURFACES, Surface } from '../buyerlab/types';
 
 export interface BuyerLabRouterDeps {
@@ -30,9 +31,14 @@ const MAX_PROJECTS = 20;
 const MAX_SOURCES = 40;
 const MIN_PASTED_CHARS = 40;
 const MAX_PASTED_CHARS = 200_000;
+const MAX_SKIPPED_ECHOED = 50;
+const MAX_SKIPPED_URL_CHARS = 200;
 const sha = (s: string) => createHash('sha256').update(s).digest('hex');
 const words = (s: string) => s.split(/\s+/).filter(Boolean).length;
 const isTerminal = (r: Run) => r.status === 'done' || r.status === 'failed' || r.status === 'budget_exhausted';
+/** Echo at most 50 skipped entries, each url cut to 200 characters. */
+const echoSkipped = (skipped: { url: string; reason: string }[]) =>
+  skipped.slice(0, MAX_SKIPPED_ECHOED).map((s) => ({ url: clip(s.url, MAX_SKIPPED_URL_CHARS), reason: s.reason }));
 const summarise = (s: Source) => ({ id: s.id, kind: s.kind, surface: s.surface, label: s.label, url: s.url, words: words(s.text), fetchedAt: s.fetchedAt });
 
 /** Every route acts only on the workspace requireUser resolved from the token. */
@@ -90,11 +96,11 @@ export function createBuyerLabRouter(deps: BuyerLabRouterDeps): Router {
 
   router.post('/projects', write, wrap(async (req, res) => {
     const body = (req.body ?? {}) as Record<string, unknown>;
-    const name = typeof body.name === 'string' ? body.name.trim() : '';
+    const name = typeof body.name === 'string' ? cleanText(body.name).trim() : '';
     if (!name || name.length > 120) return bad(res, 'Give the project a name of 1 to 120 characters.');
     let targetUrl: string | null = null;
     if (body.targetUrl !== undefined && body.targetUrl !== null && body.targetUrl !== '') {
-      const u = typeof body.targetUrl === 'string' ? body.targetUrl.trim() : '';
+      const u = typeof body.targetUrl === 'string' ? cleanText(body.targetUrl).trim() : '';
       let ok = u.length > 0 && u.length <= 500 && /^https?:\/\//i.test(u);
       if (ok) {
         try {
@@ -107,9 +113,10 @@ export function createBuyerLabRouter(deps: BuyerLabRouterDeps): Router {
       targetUrl = u;
     }
     let brief: string | null = null;
-    if (typeof body.brief === 'string' && body.brief.trim()) {
-      if (body.brief.length > 5000) return bad(res, 'The brief is limited to 5,000 characters.');
-      brief = body.brief.trim();
+    const briefText = typeof body.brief === 'string' ? cleanText(body.brief).trim() : '';
+    if (briefText) {
+      if (briefText.length > 5000) return bad(res, 'The brief is limited to 5,000 characters.');
+      brief = briefText;
     }
     if ((await store.listProjects(tenantOf(req))).length >= MAX_PROJECTS) return res.status(409).json({ error: `A workspace can hold ${MAX_PROJECTS} projects.`, code: 'PROJECT_LIMIT' });
     res.status(201).json({ project: await store.createProject(tenantOf(req), { name, targetUrl, brief }) });
@@ -148,37 +155,47 @@ export function createBuyerLabRouter(deps: BuyerLabRouterDeps): Router {
     if (existing.length >= MAX_SOURCES) return res.status(409).json({ error: `A project can hold ${MAX_SOURCES} sources.`, code: 'SOURCE_LIMIT' });
 
     if (typeof body.url === 'string') {
-      const target = body.url.trim();
+      const target = cleanText(body.url).trim();
       try {
         new URL(target);
       } catch {
         return bad(res, 'That is not a valid URL.');
       }
       const result = await deps.crawl(target, { maxPages: 12, deadlineMs: 40_000 });
-      if (result.pages.length === 0) {
+      const pages = result.pages
+        .map((p) => ({
+          url: cleanText(p.url),
+          label: clip(cleanText(p.title || p.url), 120),
+          text: clip(cleanText(p.text), MAX_PASTED_CHARS),
+          status: p.status,
+          headings: p.headings.map(cleanText)
+        }))
+        .filter((p) => p.text.length > 0);
+      const skipped = echoSkipped(result.skipped);
+      if (pages.length === 0) {
         const thin = result.skipped.some((s) => s.reason === 'thin_content');
         return res.status(422).json({
           error: thin ? 'This page builds its content in the browser, so there is no text to read from the server. Paste the page text instead.' : 'No readable pages were found at that address.',
           code: 'NO_READABLE_TEXT',
-          skipped: result.skipped
+          skipped
         });
       }
-      const fresh: NewSource[] = result.pages.slice(0, MAX_SOURCES - existing.length).map((p) => ({
-        kind: 'crawl', surface: 'public', label: (p.title || p.url).slice(0, 120), url: p.url, contentHash: sha(p.text), text: p.text, meta: { status: p.status, headings: p.headings }
+      const fresh: NewSource[] = pages.slice(0, MAX_SOURCES - existing.length).map((p) => ({
+        kind: 'crawl', surface: 'public', label: p.label || clip(p.url, 120), url: p.url, contentHash: sha(p.text), text: p.text, meta: { status: p.status, headings: p.headings }
       }));
       const saved = await store.addSources(t, id, fresh);
-      return res.status(201).json({ added: saved.added.map(summarise), duplicates: saved.duplicates, skipped: result.skipped, truncated: result.truncated });
+      return res.status(201).json({ added: saved.added.map(summarise), duplicates: saved.duplicates, skipped, truncated: result.truncated });
     }
 
     if (typeof body.text === 'string') {
-      const text = body.text.trim();
+      const text = cleanText(body.text).trim();
       if (text.length < MIN_PASTED_CHARS) return bad(res, `Paste at least ${MIN_PASTED_CHARS} characters of page text.`);
       if (text.length > MAX_PASTED_CHARS) return bad(res, 'That text is too long (200,000 characters at most).');
       const surface = (body.surface ?? 'public') as string;
       if (!(SURFACES as readonly string[]).includes(surface)) return bad(res, 'surface must be "public" or "signed_in".');
       const kind = (body.kind ?? 'upload') as string;
       if (kind !== 'upload' && kind !== 'brief') return bad(res, 'kind must be "upload" or "brief".');
-      const label = typeof body.label === 'string' && body.label.trim() ? body.label.trim().slice(0, 120) : 'Pasted text';
+      const label = (typeof body.label === 'string' && clip(cleanText(body.label), 120)) || 'Pasted text';
       const saved = await store.addSources(t, id, [{ kind: kind as NewSource['kind'], surface: surface as Surface, label, url: null, contentHash: sha(text), text, meta: {} }]);
       return res.status(201).json({ added: saved.added.map(summarise), duplicates: saved.duplicates, skipped: [], truncated: false });
     }

@@ -335,3 +335,73 @@ describe('/api/buyerlab', () => {
     });
   });
 });
+
+describe('/api/buyerlab boundary hygiene', () => {
+  const NUL = ' ';
+  const LONE = '\uD83D';
+  const wellFormed = (s: string) => s === (s as any).toWellFormed();
+
+  async function empty(app: express.Express) {
+    return (await request(app).post('/api/buyerlab/projects').set(A).send({ name: 'V' }).expect(201)).body.project.id as string;
+  }
+
+  it('strips NUL from name and brief, and never answers 500', async () => {
+    const { app } = build();
+    const r = await request(app).post('/api/buyerlab/projects').set(A).send({ name: `Vel${NUL}oce`, brief: `A${NUL} brief` }).expect(201);
+    expect(r.body.project.name).toBe('Veloce');
+    expect(r.body.project.brief).toBe('A brief');
+  });
+
+  it('rejects a name that is only NULs, as empty', async () => {
+    const { app } = build();
+    await request(app).post('/api/buyerlab/projects').set(A).send({ name: `${NUL}${NUL}` }).expect(400);
+  });
+
+  it('stores pasted text and label without NUL, and well-formed', async () => {
+    const { app, store } = build();
+    const id = await empty(app);
+    const r = await request(app).post(`/api/buyerlab/projects/${id}/ingest`).set(A).send({ text: `${TEXT}${NUL} more${LONE}`, label: `Ho${NUL}me${LONE}` }).expect(201);
+    expect(r.body.added[0].label).toBe('Home�');
+    const [src] = await store.listSources('A', id);
+    expect(src.text).not.toContain(NUL);
+    expect(wellFormed(src.text)).toBe(true);
+    expect(src.text.endsWith('more�')).toBe(true);
+  });
+
+  it('stores a crawled page clean: text, title, label and headings', async () => {
+    const { app, crawl, store } = build();
+    crawl.mockResolvedValue({ pages: [{ url: 'https://a.com/', title: `Ti${NUL}tle${LONE}`, headings: [`H${NUL}1`, `H${LONE}2`], text: `Buyer ${NUL}copy. `.repeat(30), status: 200 }], skipped: [], truncated: false });
+    const id = await empty(app);
+    const r = await request(app).post(`/api/buyerlab/projects/${id}/ingest`).set(A).send({ url: 'https://a.com/' }).expect(201);
+    expect(r.body.added[0].label).toBe('Title�');
+    const [src] = await store.listSources('A', id);
+    expect(src.text).not.toContain(NUL);
+    expect(src.text.startsWith('Buyer copy. ')).toBe(true);
+    expect(src.meta).toEqual({ status: 200, headings: ['H1', 'H�2'] });
+    expect(JSON.stringify(src)).not.toContain('\\u0000');
+  });
+
+  it('caps crawled page text at 200,000 characters', async () => {
+    const { app, crawl, store } = build();
+    crawl.mockResolvedValue({ pages: [{ url: 'https://a.com/', title: 'Big', headings: [], text: 'word '.repeat(60_000), status: 200 }], skipped: [], truncated: false });
+    const id = await empty(app);
+    await request(app).post(`/api/buyerlab/projects/${id}/ingest`).set(A).send({ url: 'https://a.com/' }).expect(201);
+    const [src] = await store.listSources('A', id);
+    expect(src.text.length).toBeLessThanOrEqual(200_000);
+    expect(src.text.length).toBeGreaterThan(199_000);
+  });
+
+  it('caps the echoed skipped list at 50 entries of 200 characters, on success and on 422', async () => {
+    const { app, crawl } = build();
+    const skipped = Array.from({ length: 60 }, (_, i) => ({ url: `https://a.com/${i}/${'x'.repeat(300)}`, reason: 'robots' }));
+    const id = await empty(app);
+    crawl.mockResolvedValueOnce({ pages: [{ url: 'https://a.com/', title: 'Home', headings: [], text: 'Buyer facing copy. '.repeat(30), status: 200 }], skipped, truncated: false });
+    const ok = await request(app).post(`/api/buyerlab/projects/${id}/ingest`).set(A).send({ url: 'https://a.com/' }).expect(201);
+    expect(ok.body.skipped).toHaveLength(50);
+    expect(ok.body.skipped.every((s: any) => s.url.length === 200 && s.reason === 'robots')).toBe(true);
+    crawl.mockResolvedValueOnce({ pages: [], skipped, truncated: false });
+    const none = await request(app).post(`/api/buyerlab/projects/${id}/ingest`).set(A).send({ url: 'https://a.com/' }).expect(422);
+    expect(none.body.skipped).toHaveLength(50);
+    expect(none.body.skipped[0].url).toHaveLength(200);
+  });
+});

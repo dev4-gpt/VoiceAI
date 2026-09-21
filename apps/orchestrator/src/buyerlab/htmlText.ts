@@ -10,7 +10,7 @@ export function decodeEntities(s: string): string {
     .replace(/&#x([0-9a-f]+);/gi, (_, h) => {
       try {
         const code = parseInt(h, 16);
-        if (code < 0 || code > 0x10FFFF || (code >= 0xD800 && code <= 0xDFFF)) return REPLACEMENT_CHAR;
+        if (code <= 0 || code > 0x10FFFF || (code >= 0xD800 && code <= 0xDFFF)) return REPLACEMENT_CHAR;
         return String.fromCodePoint(code);
       } catch {
         return REPLACEMENT_CHAR;
@@ -19,7 +19,7 @@ export function decodeEntities(s: string): string {
     .replace(/&#(\d+);/g, (_, d) => {
       try {
         const code = parseInt(d, 10);
-        if (code < 0 || code > 0x10FFFF || (code >= 0xD800 && code <= 0xDFFF)) return REPLACEMENT_CHAR;
+        if (code <= 0 || code > 0x10FFFF || (code >= 0xD800 && code <= 0xDFFF)) return REPLACEMENT_CHAR;
         return String.fromCodePoint(code);
       } catch {
         return REPLACEMENT_CHAR;

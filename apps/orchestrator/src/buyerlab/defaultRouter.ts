@@ -10,19 +10,24 @@ import { crawl } from './crawler';
 import { createBuyerLlm } from './llm';
 import { NativeProvider } from './nativeProvider';
 
-/** The production Buyer Lab router. Mounted at /api/buyerlab. */
-export const buyerLabRouter = createBuyerLabRouter({
-  requireUser: createRequireUser({
-    authBaseUrl: process.env.NEON_AUTH_BASE_URL,
-    workspaces: workspaceService,
-    storageReady: isDatabaseConfigured
-  }),
-  store: drizzleBuyerLabStore,
-  access: (tenantId) => resolveBuyerAccess(tenantId),
-  makeLlm: (apiKey) => createBuyerLlm(apiKey),
-  // MiroFish arrives in sub-project 3; until then only Native exists and runs return 501 for it.
-  makeProvider: (id, ctx) => (id === 'native' ? new NativeProvider({ store: drizzleBuyerLabStore, llm: ctx.llm }) : null),
-  crawl,
-  writeLimiter: new PerUserRateLimiter(10),
-  pollLimiter: new PerUserRateLimiter(120)
-});
+/**
+ * The production Buyer Lab router, mounted at /api/buyerlab. A factory rather than a constant:
+ * building it reads NEON_AUTH_BASE_URL, which must happen after index.ts has loaded .env.
+ */
+export function createDefaultBuyerLabRouter() {
+  return createBuyerLabRouter({
+    requireUser: createRequireUser({
+      authBaseUrl: process.env.NEON_AUTH_BASE_URL,
+      workspaces: workspaceService,
+      storageReady: isDatabaseConfigured
+    }),
+    store: drizzleBuyerLabStore,
+    access: (tenantId) => resolveBuyerAccess(tenantId),
+    makeLlm: (apiKey) => createBuyerLlm(apiKey),
+    // MiroFish arrives in sub-project 3; until then only Native exists and runs return 501 for it.
+    makeProvider: (id, ctx) => (id === 'native' ? new NativeProvider({ store: drizzleBuyerLabStore, llm: ctx.llm }) : null),
+    crawl,
+    writeLimiter: new PerUserRateLimiter(10),
+    pollLimiter: new PerUserRateLimiter(120)
+  });
+}
