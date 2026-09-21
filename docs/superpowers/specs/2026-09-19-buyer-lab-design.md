@@ -97,7 +97,11 @@ and `transcript` (turns). Per run: `agreement` (where personas and, later, provi
 split), `coverage` (pages and inputs actually seen), `provider`, `model`, `callsUsed`.
 
 **A claim without a `quote` from the ingested material is rejected by the normaliser.** This is the
-main defence against a confident report that nobody can trace to anything.
+main defence against a confident report that nobody can trace to anything. Verification is exact
+substring matching after whitespace and quote-mark normalisation against the source the quote
+names; a paraphrase fails it. Section 6.1 records what the prototype showed this rule can and
+cannot catch, and the rules added because of it (raw-text sources only, surface tags, claim ids in
+the report).
 
 ## 6. Pipeline stages
 
@@ -126,15 +130,52 @@ main defence against a confident report that nobody can trace to anything.
    same panel against a changed source (a new URL snapshot or edited brief) and reports the
    per-persona intent delta, with the same caveat that this is a simulation.
 
+### 6.1 Lessons from the Veloce prototype
+
+A throwaway script (not in the repo) ran the panel, react and report stages over captures of
+`veloceos.cloud` and its signed-in app: 1 panel call, 6 persona calls, 1 report call. These are the
+findings that change this spec.
+
+1. **Sources are raw text only.** The app captures given to the prototype contained wording written
+   by the agents that captured them (their notes on what a screen showed). Quote verification passed
+   some of those quotes, because they were verbatim *in the capture*, even though the client never
+   wrote them. A source therefore holds only text extracted from the client's page, or text the user
+   supplied and labelled as theirs. The `agent` source kind is limited to conversation transcripts
+   from stage 4 and is never a quote source for claims about the client's copy. Capture tooling must
+   store extracted DOM text, never a summary.
+2. **Every source carries a `surface` tag** (`public` or `signed_in`) and a per-persona
+   `surfaces` list says what that persona was shown. The public site and the signed-in app told
+   different stories in the prototype, and that mismatch was itself the strongest finding, so a
+   persona who only saw the public site must not make claims about the app. The normaliser rejects
+   a quote whose source surface is outside the persona's list, and the report labels each finding
+   with the surface it came from.
+3. **Persona-stage grounding worked; report-stage grounding did not.** 108 of 111 persona claims
+   (97%) carried a verifiable quote. In the report, only 14 of 24 evidence quotes traced to a
+   source, because the report agent quoted a persona's paraphrase or merged two quotes. Report
+   findings therefore cite **claim ids**, not free-text quotes, and the renderer pulls the verified
+   quote from the claim. A report line with no claim id is dropped, not shown.
+4. **Do not ask for splits.** Told to lead with disagreement, the report agent invented some,
+   listing two personas as "disagreeing" while quoting the same line. A split is computed from the
+   outcome (personas whose intent or stance differ by a threshold on the same topic) and handed to
+   the report as data. The report may describe splits, not create them.
+5. **Judge the client's real product, not a seeded test tenant.** Part of the low intent scores came
+   from seed data visible in a test tenant. The Target step asks whether the material is a demo or
+   a live account and prints that on the report.
+6. **One sample of six personas is a set of hypotheses.** The report already says so (section 11);
+   the UI must not present the panel's average intent as a result.
+
 ## 7. Data model (additive, Drizzle)
 
 All tables carry `tenant_id` referencing `organizations`, cascade on delete, and are only read or
 written with the caller's tenant.
 
 - `buyer_projects`: id, tenant_id, name, target_url, brief, created_at.
-- `buyer_sources`: id, project_id, kind (`crawl|brief|upload|agent`), url, content_hash, text,
-  meta jsonb, fetched_at. Snapshots are immutable, so a re-test compares like with like.
-- `buyer_personas`: id, project_id, run_id nullable, archetype, spec jsonb, edited boolean.
+- `buyer_sources`: id, project_id, kind (`crawl|brief|upload|agent`), surface
+  (`public|signed_in`), url, content_hash, text, meta jsonb, fetched_at. `text` is raw extracted
+  text only (section 6.1); `agent` rows are conversation transcripts. Snapshots are immutable, so a
+  re-test compares like with like.
+- `buyer_personas`: id, project_id, run_id nullable, archetype, surfaces (`public|signed_in`
+  values this persona is shown), spec jsonb, edited boolean.
 - `buyer_runs`: id, project_id, provider (`native|mirofish`), status
   (`queued|running|done|failed|budget_exhausted`), config jsonb, cursor jsonb, calls_used,
   call_budget, funded_by (`byok|free_allowance`), started_at, finished_at, error_code.
@@ -202,6 +243,16 @@ legal advice.** Have counsel confirm it before Buyer Lab is offered commercially
 - Every run has a `call_budget`; `advance()` refuses to start a step it cannot finish inside the
   budget and ends the run `budget_exhausted` with whatever completed, clearly marked partial.
 - Estimate shown before a run starts (panel size x pages x steps), so nobody is surprised.
+- **Thinking is off for every Buyer Lab call** (`thinking: 'disabled'`, now the default in
+  `deepseekService`). The prototype found that `deepseek-flash` reasons by default and hidden
+  reasoning tokens count against `max_tokens`, so a small budget returned empty content. Turning it
+  off also cut tokens by about 57% on the same call. A stage that genuinely needs reasoning opts in
+  and sets a budget large enough for both the reasoning and the reply.
+- **Measured cost of the prototype run** (a real run, not an estimate): 8 calls, 88,612 input and
+  13,128 output tokens, at most $0.042 on `deepseek-flash` list prices, for a panel of 6 personas
+  over a 1,104-word public site plus a 12,850-word app capture. Native runs are therefore cents,
+  not dollars. Per-run budgets and the pre-run estimate still apply, because panel size and page
+  count scale it and MiroFish will not be this cheap.
 
 ## 11. Security and safety
 
@@ -230,7 +281,12 @@ UI, and a stub-LLM **offline mode** so CI needs no API key.
   later against MiroFish with recorded responses: idempotent `start`, resumable `advance`, no
   double charge on retry, `outcome` only when done.
 - **Normaliser tests:** a claim without a verifiable quote is rejected; a quote not present in
-  the ingested source is rejected.
+  the ingested source is rejected; a quote from a source whose `surface` is outside the persona's
+  `surfaces` is rejected; a quote found only in an `agent` source is rejected as evidence about the
+  client's copy.
+- **Report grounding tests:** a report line without a claim id is dropped; the rendered quote comes
+  from the claim, never from the report agent's text; splits are computed, and a stub report that
+  asserts a split the data does not contain is rejected.
 - **Crawler tests:** the hostile-URL table (loopback, metadata IP, IPv6 forms, DNS names that
   resolve to private addresses, redirects into private space, oversized bodies).
 - **Injection eval:** a fixture page containing instructions to inflate the score; the verdict
