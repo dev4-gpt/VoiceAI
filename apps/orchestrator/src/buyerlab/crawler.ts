@@ -44,6 +44,7 @@ export async function crawl(
 
   // Fetch robots.txt for the initial origin
   let rules: RobotsRule[] = [];
+  fetchAttempts++;
   try {
     const r = await fetchPage(`${origin}/robots.txt`, { accept: /^text\//i, maxBytes: 200_000, deadlineAt, maxRedirects: 1 });
     if (r.status === 200) rules = parseRobots(r.body);
@@ -88,6 +89,7 @@ export async function crawl(
     if (pages.length === 0 && finalUrl.origin !== origin) {
       origin = finalUrl.origin;
       // Fetch robots.txt for the new origin
+      fetchAttempts++;
       try {
         const r = await fetchPage(`${origin}/robots.txt`, { accept: /^text\//i, maxBytes: 200_000, deadlineAt, maxRedirects: 1 });
         if (r.status === 200) rules = parseRobots(r.body);
@@ -143,6 +145,7 @@ export async function crawl(
       queue.push(link);
     }
   }
-  if (queue.length > 0 && pages.length >= maxPages) truncated = true;
+  // Set truncated if: we have unprocessed URLs, OR we hit resource limits, OR we didn't get maxPages
+  if (queue.length > 0 || fetchAttempts >= maxAttempts || now() >= deadlineAt || pages.length < maxPages) truncated = true;
   return { pages, skipped, truncated };
 }

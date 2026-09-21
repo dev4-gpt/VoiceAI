@@ -157,24 +157,29 @@ describe('safeFetch with deadline (deadlineAt and now)', () => {
     ).rejects.toMatchObject({ reason: 'timeout' });
   });
 
-  it('stops a never-resolving assertPublicUrl by deadline', async () => {
-    let t = 0;
-    const now = () => t;
+  it('stops a resolver by deadline using real timers', async () => {
+    const startTime = Date.now();
+    const deadlineAt = startTime + 80;
+
+    let resolverCalled = false;
     const slowResolver: Resolver = async () => {
-      // Simulate a slow resolver that takes 120ms
-      const startT = t;
-      t += 120;
+      resolverCalled = true;
+      // Simulate slow resolution (never actually resolves in 80ms)
+      await new Promise((r) => setTimeout(r, 500));
       return [{ address: '93.184.216.34', family: 4 }];
     };
+
     const transport: Transport = async () => html('ok');
-    // deadlineAt is 100 ms from start; resolver takes 120ms, so should timeout before resolving
+
+    // Must throw timeout because the resolver won't complete within 80ms
     await expect(
       safeFetch('https://example.com/', {
         resolve: slowResolver,
         transport,
-        deadlineAt: 100,
-        now
+        deadlineAt
       })
     ).rejects.toMatchObject({ reason: 'timeout' });
+
+    expect(resolverCalled).toBe(true);
   });
 });
