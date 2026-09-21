@@ -28,6 +28,9 @@ export class MemoryBuyerLabStore implements BuyerLabStore {
   private owns(tenantId: string, projectId: string) {
     return this.projects.get(projectId)?.tenantId === tenantId;
   }
+  private ownsRun(tenantId: string, runId: string) {
+    return this.runs.get(runId)?.tenantId === tenantId;
+  }
   private stepKey(runId: string, key: string) {
     return `${runId}::${key}`;
   }
@@ -61,13 +64,15 @@ export class MemoryBuyerLabStore implements BuyerLabStore {
     if (!this.owns(tenantId, projectId)) throw new BuyerLabNotFoundError('project');
     const added: Source[] = [];
     let duplicates = 0;
-    for (const s of list) {
+    const base = this.now();
+    for (let index = 0; index < list.length; index++) {
+      const s = list[index];
       const exists = [...this.sources.values()].some((x) => x.projectId === projectId && x.contentHash === s.contentHash);
       if (exists) {
         duplicates++;
         continue;
       }
-      const row: Owned<Source> = { ...s, id: this.id('src'), projectId, fetchedAt: this.iso(), tenantId };
+      const row: Owned<Source> = { ...s, id: this.id('src'), projectId, fetchedAt: new Date(base + index).toISOString(), tenantId };
       this.sources.set(row.id, row);
       added.push(clean(row) as Source);
     }
@@ -80,14 +85,22 @@ export class MemoryBuyerLabStore implements BuyerLabStore {
   async replacePanel(tenantId: string, projectId: string, list: NewPersona[]) {
     if (!this.owns(tenantId, projectId)) throw new BuyerLabNotFoundError('project');
     for (const [k, p] of this.personas) if (p.projectId === projectId) this.personas.delete(k);
-    return list.map((p) => {
-      const row: Owned<Persona> = { ...p, id: this.id('per'), projectId, tenantId };
+    const base = this.now();
+    return list.map((p, index) => {
+      const row: any = { ...p, id: this.id('per'), projectId, tenantId, createdAt: new Date(base + index).toISOString() };
       this.personas.set(row.id, row);
-      return clean(row) as Persona;
+      const { tenantId: _t, createdAt: _c, ...rest } = row;
+      return rest as Persona;
     });
   }
   async listPersonas(tenantId: string, projectId: string) {
-    return [...this.personas.values()].filter((p) => p.tenantId === tenantId && p.projectId === projectId).map((p) => clean(p) as Persona);
+    return [...this.personas.values()]
+      .filter((p) => p.tenantId === tenantId && p.projectId === projectId)
+      .sort((a, b) => new Date((a as any).createdAt).getTime() - new Date((b as any).createdAt).getTime())
+      .map((p) => {
+        const { tenantId: _t, createdAt: _c, ...rest } = p as any;
+        return rest as Persona;
+      });
   }
 
   async createRun(tenantId: string, input: Parameters<BuyerLabStore['createRun']>[1]) {
@@ -119,6 +132,7 @@ export class MemoryBuyerLabStore implements BuyerLabStore {
   }
 
   async claimStep(tenantId: string, runId: string, stepKey: string, o: { staleAfterMs: number; maxAttempts: number }): Promise<ClaimResult> {
+    if (!this.ownsRun(tenantId, runId)) throw new BuyerLabNotFoundError('run');
     const key = this.stepKey(runId, stepKey);
     const row = this.steps.get(key);
     if (!row) {
@@ -150,6 +164,7 @@ export class MemoryBuyerLabStore implements BuyerLabStore {
   }
 
   async saveOutcome(tenantId: string, runId: string, outcome: NormalizedOutcome) {
+    if (!this.ownsRun(tenantId, runId)) throw new BuyerLabNotFoundError('run');
     this.outcomes.set(runId, { tenantId, outcome });
   }
   async getOutcome(tenantId: string, runId: string) {

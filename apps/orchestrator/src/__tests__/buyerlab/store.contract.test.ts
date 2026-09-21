@@ -134,4 +134,107 @@ describe('BuyerLabStore contract (memory implementation)', () => {
     expect(await store.listSteps(A, r.id)).toEqual([]);
     expect(await store.getOutcome(A, r.id)).toBeNull();
   });
+
+  describe('Tenant isolation - cross-tenant operations must throw or have no effect', () => {
+    it('cross-tenant claimStep throws BuyerLabNotFoundError and leaves owner\'s run untouched', async () => {
+      const { store, project } = await seed();
+      const r = await store.createRun(A, { projectId: project.id, provider: 'native', config: { personaIds: [], sourceIds: [] }, callBudget: 5, fundedBy: 'byok' });
+      const opts = { staleAfterMs: 90_000, maxAttempts: 3 };
+
+      // Tenant B tries to claim a step on A's run
+      await expect(store.claimStep(B, r.id, 'react:u1', opts)).rejects.toBeInstanceOf(BuyerLabNotFoundError);
+
+      // Tenant A can still claim the step (it was never written)
+      const result = await store.claimStep(A, r.id, 'react:u1', opts);
+      expect(result).toEqual({ claimed: true, attempt: 1 });
+    });
+
+    it('claimStep on a nonexistent run throws BuyerLabNotFoundError', async () => {
+      const { store } = await seed();
+      const opts = { staleAfterMs: 90_000, maxAttempts: 3 };
+      await expect(store.claimStep(A, 'nonexistent-run', 'react:u1', opts)).rejects.toBeInstanceOf(BuyerLabNotFoundError);
+    });
+
+    it('cross-tenant saveOutcome throws BuyerLabNotFoundError, owner\'s outcome unchanged', async () => {
+      const { store, project } = await seed();
+      const r = await store.createRun(A, { projectId: project.id, provider: 'native', config: { personaIds: [], sourceIds: [] }, callBudget: 5, fundedBy: 'byok' });
+      const outcomeA = { provider: 'native', panelSize: 1 } as unknown as NormalizedOutcome;
+
+      // Tenant A saves an outcome
+      await store.saveOutcome(A, r.id, outcomeA);
+      expect(await store.getOutcome(A, r.id)).toEqual(outcomeA);
+
+      // Tenant B tries to save an outcome on A's run
+      const outcomeB = { provider: 'native', panelSize: 2 } as unknown as NormalizedOutcome;
+      await expect(store.saveOutcome(B, r.id, outcomeB)).rejects.toBeInstanceOf(BuyerLabNotFoundError);
+
+      // A's outcome is unchanged
+      expect(await store.getOutcome(A, r.id)).toEqual(outcomeA);
+      expect(await store.getOutcome(B, r.id)).toBeNull();
+    });
+
+    it('createProject ignores extra keys on input (tenantId, id, createdAt)', async () => {
+      const { store } = await seed();
+      const projectRes = await store.createProject(A, { name: 'Test', targetUrl: 'https://test.com', brief: null, tenantId: 'other', id: 'bad-id' } as any);
+
+      // The stored project belongs to A, not 'other'
+      expect(projectRes.tenantId).toBe(A);
+      expect(projectRes.id).not.toBe('bad-id');
+
+      // Tenant 'other' cannot see it
+      expect(await store.getProject('other', projectRes.id)).toBeNull();
+    });
+
+    it('finishStep, addCalls, listSteps from another tenant have no effect', async () => {
+      const { store, project } = await seed();
+      const r = await store.createRun(A, { projectId: project.id, provider: 'native', config: { personaIds: [], sourceIds: [] }, callBudget: 5, fundedBy: 'byok' });
+      const opts = { staleAfterMs: 90_000, maxAttempts: 3 };
+
+      // A claims a step
+      await store.claimStep(A, r.id, 'k', opts);
+
+      // B tries to finish it (no effect)
+      await store.finishStep(B, r.id, 'k', 'done', { ok: true });
+      const steps = await store.listSteps(A, r.id);
+      expect(steps[0]).toMatchObject({ status: 'running' });
+
+      // B tries to add calls to A's run
+      await expect(store.addCalls(B, r.id, 5)).rejects.toBeInstanceOf(BuyerLabNotFoundError);
+      expect((await store.getRun(A, r.id))!.callsUsed).toBe(0);
+
+      // B tries to list steps
+      const bSteps = await store.listSteps(B, r.id);
+      expect(bSteps).toEqual([]);
+    });
+  });
+
+  describe('Ordering stability', () => {
+    it('multiple personas in one replacePanel call return in input order', async () => {
+      const { store, project } = await seed();
+      const names = ['Alpha', 'Bravo', 'Charlie', 'Delta', 'Echo'];
+      const personas = names.map((n) => {
+        const p = mkPersona({ spec: { ...mkPersona().spec, name: n } });
+        const { id, projectId, ...rest } = p;
+        return rest;
+      });
+
+      await store.replacePanel(A, project.id, personas);
+      const listed = await store.listPersonas(A, project.id);
+      expect(listed.map((p) => p.spec.name)).toEqual(names);
+    });
+
+    it('multiple sources in one addSources call return in input order', async () => {
+      const { store, project } = await seed();
+      const labels = ['Home', 'About', 'Pricing', 'Blog', 'Contact'];
+      const sources = labels.map((label) => ({
+        kind: 'crawl' as const, surface: 'public' as const, label, url: 'https://a.com/', contentHash: `h-${label}`, text: `Text for ${label}`, meta: {}
+      }));
+
+      const { added } = await store.addSources(A, project.id, sources);
+      expect(added.map((s) => s.label)).toEqual(labels);
+
+      const listed = await store.listSources(A, project.id);
+      expect(listed.map((s) => s.label)).toEqual(labels);
+    });
+  });
 });

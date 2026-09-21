@@ -30,10 +30,15 @@ async function requireProject(tenantId: string, projectId: string) {
   if (!row) throw new BuyerLabNotFoundError('project');
 }
 
+async function requireRun(tenantId: string, runId: string) {
+  const [row] = await getDb().select({ id: buyerRuns.id }).from(buyerRuns).where(and(eq(buyerRuns.id, runId), eq(buyerRuns.tenantId, tenantId))).limit(1);
+  if (!row) throw new BuyerLabNotFoundError('run');
+}
+
 /** Drizzle-backed store. Every query is filtered by tenant_id. */
 export const drizzleBuyerLabStore: BuyerLabStore = {
   async createProject(tenantId, input) {
-    const [row] = await getDb().insert(buyerProjects).values({ tenantId, ...input }).returning();
+    const [row] = await getDb().insert(buyerProjects).values({ tenantId, name: input.name, targetUrl: input.targetUrl, brief: input.brief }).returning();
     return toProject(row);
   },
   async listProjects(tenantId) {
@@ -52,9 +57,10 @@ export const drizzleBuyerLabStore: BuyerLabStore = {
   async addSources(tenantId, projectId, sources) {
     await requireProject(tenantId, projectId);
     if (sources.length === 0) return { added: [], duplicates: 0 };
+    const base = Date.now();
     const rows = await getDb()
       .insert(buyerSources)
-      .values(sources.map((s) => ({ tenantId, projectId, kind: s.kind, surface: s.surface, label: s.label, url: s.url, contentHash: s.contentHash, text: s.text, meta: s.meta })))
+      .values(sources.map((s, index) => ({ tenantId, projectId, kind: s.kind, surface: s.surface, label: s.label, url: s.url, contentHash: s.contentHash, text: s.text, meta: s.meta, fetchedAt: new Date(base + index) })))
       .onConflictDoNothing()
       .returning();
     return { added: rows.map(toSource), duplicates: sources.length - rows.length };
@@ -67,12 +73,27 @@ export const drizzleBuyerLabStore: BuyerLabStore = {
   async replacePanel(tenantId, projectId, personas: NewPersona[]) {
     await requireProject(tenantId, projectId);
     const db = getDb();
-    // Insert first, then delete the old rows, so a failure leaves a duplicated panel rather than none.
-    const inserted = personas.length
-      ? await db.insert(buyerPersonas).values(personas.map((p) => ({ tenantId, projectId, archetype: p.archetype, surfaces: p.surfaces, spec: p.spec, edited: p.edited }))).returning()
-      : [];
-    const keep = inserted.map((r) => r.id);
-    await db.delete(buyerPersonas).where(and(eq(buyerPersonas.projectId, projectId), eq(buyerPersonas.tenantId, tenantId), keep.length ? notInArray(buyerPersonas.id, keep) : sql`true`));
+    const base = Date.now();
+
+    // Atomic batch: delete old + insert new in one operation
+    const operations: any[] = [];
+
+    // Always delete old personas for this project
+    operations.push(
+      db.delete(buyerPersonas).where(and(eq(buyerPersonas.projectId, projectId), eq(buyerPersonas.tenantId, tenantId)))
+    );
+
+    // Insert new personas if provided
+    if (personas.length > 0) {
+      operations.push(
+        db.insert(buyerPersonas).values(personas.map((p, index) => ({
+          tenantId, projectId, archetype: p.archetype, surfaces: p.surfaces, spec: p.spec, edited: p.edited, createdAt: new Date(base + index)
+        }))).returning()
+      );
+    }
+
+    const results = await (db as any).batch(operations);
+    const inserted = personas.length > 0 ? (results[1] as typeof buyerPersonas.$inferSelect[]) : [];
     return inserted.map(toPersona);
   },
   async listPersonas(tenantId, projectId) {
@@ -109,6 +130,7 @@ export const drizzleBuyerLabStore: BuyerLabStore = {
   },
 
   async claimStep(tenantId, runId, stepKey, o): Promise<ClaimResult> {
+    await requireRun(tenantId, runId);
     const db = getDb();
     const [inserted] = await db.insert(buyerRunSteps).values({ tenantId, runId, stepKey, status: 'running', attempts: 1 }).onConflictDoNothing().returning();
     if (inserted) return { claimed: true, attempt: 1 };
@@ -139,10 +161,11 @@ export const drizzleBuyerLabStore: BuyerLabStore = {
   },
 
   async saveOutcome(tenantId, runId, outcome: NormalizedOutcome) {
+    await requireRun(tenantId, runId);
     await getDb()
       .insert(buyerOutcomes)
       .values({ runId, tenantId, outcome: outcome as any })
-      .onConflictDoUpdate({ target: buyerOutcomes.runId, set: { outcome: outcome as any, builtAt: new Date() } });
+      .onConflictDoUpdate({ target: buyerOutcomes.runId, set: { outcome: outcome as any, builtAt: new Date() }, setWhere: eq(buyerOutcomes.tenantId, tenantId) });
   },
   async getOutcome(tenantId, runId) {
     const [row] = await getDb().select().from(buyerOutcomes).where(and(eq(buyerOutcomes.runId, runId), eq(buyerOutcomes.tenantId, tenantId))).limit(1);
