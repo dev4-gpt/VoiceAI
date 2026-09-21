@@ -31,23 +31,38 @@ async function main() {
     console.error('DATABASE_URL is not set (checked .env.local and .env).');
     process.exit(2);
   }
-  console.log(`${statements.length} statements -> ${new URL(url).host}${dry ? ' (dry run, nothing applied)' : ''}`);
+
+  let host;
+  try {
+    host = new URL(url).host;
+  } catch (err) {
+    console.error('DATABASE_URL is malformed.');
+    process.exit(2);
+  }
+
+  console.log(`${statements.length} statements -> ${host}${dry ? ' (dry run, nothing applied)' : ''}`);
   if (dry) return;
 
   const pool = new Pool({ connectionString: url });
-  const client = await pool.connect();
+  let client;
   try {
+    client = await pool.connect();
     await client.query('BEGIN');
     for (const s of statements) await client.query(s);
     await client.query('COMMIT');
     console.log('Applied.');
   } catch (err) {
-    await client.query('ROLLBACK');
+    if (client) {
+      await client.query('ROLLBACK').catch(() => {});
+    }
     console.error('Rolled back:', err.code || err.name);
     process.exitCode = 1;
   } finally {
-    client.release();
+    if (client) client.release();
     await pool.end();
   }
 }
-main();
+main().catch((e) => {
+  console.error('Failed:', e.code || e.name);
+  process.exit(1);
+});
