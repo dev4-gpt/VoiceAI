@@ -1,15 +1,44 @@
 import { normalizeText, verifyQuote, MIN_QUOTE_CHARS } from '../../buyerlab/quotes';
 
-const source = 'Veloce replaces six tools.\n\n  Pricing is by "signed proposal" only — talk to us.';
+const source = 'Veloce replaces six tools.\n\n  Pricing is by \u201Csigned proposal\u201D only \u2014 talk to us.';
 
 describe('quote verification', () => {
   it('normalises whitespace and typographic marks', () => {
     expect(normalizeText('a  b\n\nc')).toBe('a b c');
-    expect(normalizeText(`"hi" — it's`)).toBe(`"hi" - it's`);
+    // Test multiple mapped characters: U+201C, U+201D, U+2019, U+2014
+    expect(normalizeText('\u201Chi\u201D \u2014 it\u2019s')).toBe('"hi" - it\'s');
+  });
+
+  it('normalises left single quotation mark (U+2018)', () => {
+    expect(normalizeText('\u2018word')).toBe("'word");
+  });
+
+  it('normalises right single quotation mark (U+2019)', () => {
+    expect(normalizeText('word\u2019s')).toBe("word's");
+  });
+
+  it('normalises left double quotation mark (U+201C)', () => {
+    expect(normalizeText('\u201Cquote')).toBe('"quote');
+  });
+
+  it('normalises right double quotation mark (U+201D)', () => {
+    expect(normalizeText('quote\u201D')).toBe('quote"');
+  });
+
+  it('normalises en-dash (U+2013)', () => {
+    expect(normalizeText('1\u20132')).toBe('1-2');
+  });
+
+  it('normalises em-dash (U+2014)', () => {
+    expect(normalizeText('yes\u2014no')).toBe('yes-no');
+  });
+
+  it('normalises non-breaking space (U+00A0)', () => {
+    expect(normalizeText('a\u00A0b')).toBe('a b');
   });
 
   it('accepts a verbatim quote across line breaks and smart quotes', () => {
-    expect(verifyQuote('Veloce replaces six tools. Pricing is by "signed proposal" only', source)).toBe(true);
+    expect(verifyQuote('Veloce replaces six tools. Pricing is by \u201Csigned proposal\u201D only', source)).toBe(true);
   });
 
   it('rejects a paraphrase', () => {

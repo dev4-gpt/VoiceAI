@@ -1,17 +1,17 @@
 const MARKS: Record<string, string> = {
-  '‘': "'",
-  '’': "'",
-  '“': '"',
-  '”': '"',
-  '–': '-',
-  '—': '-',
-  ' ': ' '
+  '\u2018': "'",
+  '\u2019': "'",
+  '\u201C': '"',
+  '\u201D': '"',
+  '\u2013': '-',
+  '\u2014': '-',
+  '\u00A0': ' '
 };
 
 /** Collapse whitespace and unify typographic quotes and dashes. Case is preserved. */
 export function normalizeText(s: string): string {
   return s
-    .replace(/[‘’“”–— ]/g, (c) => MARKS[c])
+    .replace(/[\u2018\u2019\u201C\u201D\u2013\u2014\u00A0]/g, (c) => MARKS[c])
     .replace(/\s+/g, ' ')
     .trim();
 }
