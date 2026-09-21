@@ -7,7 +7,7 @@ import type { Config } from 'drizzle-kit';
  * connection error rather than a missing-variable message.
  */
 export default {
-  schema: './src/db/schema.ts',
+  schema: ['./src/db/schema.ts', './src/db/schemaBuyerLab.ts'],
   out: './drizzle',
   dialect: 'postgresql',
   dbCredentials: {
