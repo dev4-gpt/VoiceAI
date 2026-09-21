@@ -36,15 +36,17 @@ export async function crawl(
   const pages: CrawledPage[] = [];
   const skipped: Array<{ url: string; reason: string }> = [];
   const queue: string[] = [start.href];
-  const queued = new Set<string>(queue); // URLs we've queued (to avoid queueing same URL twice)
+  // Every URL we have queued or landed on (a redirect target counts), so nothing is fetched twice.
+  const queued = new Set<string>(queue);
   const processed = new Set<string>(); // Final URLs we've already processed
   let truncated = false;
+  // Page-URL fetches only (failures included, robots.txt excluded).
   let fetchAttempts = 0;
   const maxAttempts = maxPages * 3;
+  let firstFetchDone = false;
 
   // Fetch robots.txt for the initial origin
   let rules: RobotsRule[] = [];
-  fetchAttempts++;
   try {
     const r = await fetchPage(`${origin}/robots.txt`, { accept: /^text\//i, maxBytes: 200_000, deadlineAt, maxRedirects: 1 });
     if (r.status === 200) rules = parseRobots(r.body);
@@ -52,7 +54,8 @@ export async function crawl(
     /* no readable robots.txt: allow all */
   }
 
-  // One request at a time, in order: courtesy to the host and deadline enforcement
+  // One request at a time, in order: courtesy to the host and deadline enforcement.
+  // `truncated` means exactly this: we stopped early with URLs still queued.
   while (queue.length > 0) {
     if (pages.length >= maxPages || fetchAttempts >= maxAttempts || now() >= deadlineAt) {
       truncated = true;
@@ -67,6 +70,8 @@ export async function crawl(
     }
 
     let res: SafeFetchResult;
+    const isFirstFetch = !firstFetchDone;
+    firstFetchDone = true;
     fetchAttempts++;
     try {
       res = await fetchPage(url, { deadlineAt, maxRedirects: 4 });
@@ -85,11 +90,10 @@ export async function crawl(
 
     const finalUrl = new URL(res.finalUrl);
 
-    // On first page, pin origin to the final URL's origin (handles apex->www redirects)
-    if (pages.length === 0 && finalUrl.origin !== origin) {
+    // Only the very first page fetch may move the origin (apex -> www). Any later page that lands elsewhere is skipped.
+    if (isFirstFetch && finalUrl.origin !== origin) {
       origin = finalUrl.origin;
       // Fetch robots.txt for the new origin
-      fetchAttempts++;
       try {
         const r = await fetchPage(`${origin}/robots.txt`, { accept: /^text\//i, maxBytes: 200_000, deadlineAt, maxRedirects: 1 });
         if (r.status === 200) rules = parseRobots(r.body);
@@ -98,8 +102,7 @@ export async function crawl(
       }
     }
 
-    // Skip if a non-first page redirected to a different origin
-    if (pages.length > 0 && finalUrl.origin !== origin) {
+    if (finalUrl.origin !== origin) {
       skipped.push({ url, reason: 'cross_origin_redirect' });
       continue;
     }
@@ -110,6 +113,7 @@ export async function crawl(
       continue;
     }
     processed.add(res.finalUrl);
+    queued.add(res.finalUrl);
 
     // Re-check robots for the final URL's path (in case redirect changed it)
     if (!isAllowedByRobots(rules, finalUrl.pathname)) {
@@ -145,7 +149,5 @@ export async function crawl(
       queue.push(link);
     }
   }
-  // Set truncated if: we have unprocessed URLs, OR we hit resource limits, OR we didn't get maxPages
-  if (queue.length > 0 || fetchAttempts >= maxAttempts || now() >= deadlineAt || pages.length < maxPages) truncated = true;
   return { pages, skipped, truncated };
 }
