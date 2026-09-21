@@ -72,6 +72,14 @@ describe('safeFetch (guard logic, fake transport)', () => {
     await expect(safeFetch('http://127.0.0.1/', { resolve: publicResolver, transport: transport as any })).rejects.toBeInstanceOf(UnsafeUrlError);
     expect(transport).not.toHaveBeenCalled();
   });
+
+  it('rejects with typed error when redirect Location is not a valid URL', async () => {
+    const transport: Transport = async () => redirect('http://[');
+    const err = await safeFetch('https://example.com/a', { resolve: publicResolver, transport }).catch((e) => e);
+    expect(err).toBeInstanceOf(UnsafeUrlError);
+    expect(err.reason).toBe('bad_url');
+    expect(err.message).not.toContain('http://[');
+  });
 });
 
 describe('httpRequestOnce (real transport, local server, below the guard)', () => {
@@ -86,7 +94,7 @@ describe('httpRequestOnce (real transport, local server, below the guard)', () =
       } else if (req.url === '/hang') {
         // never answers
       } else {
-        res.writeHead(200, { 'content-type': 'text/html', 'x-host': String(req.headers.host) });
+        res.writeHead(200, { 'content-type': 'text/html', 'x-host': String(req.headers.host), 'x-conn': String(req.headers.connection ?? 'none') });
         res.end('<p>ok</p>');
       }
     });
@@ -115,5 +123,10 @@ describe('httpRequestOnce (real transport, local server, below the guard)', () =
 
   it('times out on a server that never answers', async () => {
     await expect(httpRequestOnce(new URL(`http://pinned.invalid:${port}/hang`), '127.0.0.1', 4, { ...opts, timeoutMs: 200 })).rejects.toBeInstanceOf(FetchFailedError);
+  });
+
+  it('does not pool sockets (agent: false)', async () => {
+    const r = await httpRequestOnce(new URL(`http://pinned.invalid:${port}/`), '127.0.0.1', 4, opts);
+    expect(r.headers['x-conn']).toBe('close');
   });
 });

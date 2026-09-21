@@ -1,7 +1,7 @@
 import http from 'node:http';
 import https from 'node:https';
 import { isIP } from 'node:net';
-import { assertPublicUrl, Resolver } from './ssrf';
+import { assertPublicUrl, Resolver, UnsafeUrlError } from './ssrf';
 
 export const BUYERLAB_USER_AGENT = 'GrowthVoiceOS-BuyerLab/1.0 (+https://growthvoice-os.vercel.app)';
 
@@ -51,6 +51,7 @@ export const httpRequestOnce: Transport = (url, address, family, o) =>
         port: url.port || undefined,
         path: url.pathname + url.search,
         method: 'GET',
+        agent: false,
         headers: { 'User-Agent': o.userAgent, Accept: 'text/html,application/xhtml+xml,text/plain;q=0.8', 'Accept-Encoding': 'identity' },
         servername: isIP(hostname) ? undefined : hostname,
         lookup: (_host: string, options: any, cb: any) => {
@@ -128,7 +129,11 @@ export async function safeFetch(rawUrl: string, opts: SafeFetchOptions = {}): Pr
     });
 
     if (res.status >= 300 && res.status < 400 && res.headers.location) {
-      current = new URL(res.headers.location, url).href;
+      try {
+        current = new URL(res.headers.location, url).href;
+      } catch {
+        throw new UnsafeUrlError('The redirect target is not a valid URL.', 'bad_url');
+      }
       continue;
     }
     const contentType = res.headers['content-type'] ?? '';
