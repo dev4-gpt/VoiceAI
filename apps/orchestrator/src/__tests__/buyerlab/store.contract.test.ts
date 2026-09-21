@@ -97,8 +97,10 @@ describe('BuyerLabStore contract (memory implementation)', () => {
     it('reclaims a step released for retry, and gives up after maxAttempts', async () => {
       const { store, r } = await run();
       for (let attempt = 1; attempt <= 3; attempt++) {
-        expect(await store.claimStep(A, r.id, 'k', opts)).toEqual({ claimed: true, attempt });
-        await store.finishStep(A, r.id, 'k', 'retry', { error: 'boom' });
+        const claim = await store.claimStep(A, r.id, 'k', opts);
+        expect(claim).toEqual({ claimed: true, attempt });
+        const applied = await store.finishStep(A, r.id, 'k', 'retry', { error: 'boom' }, claim.attempt);
+        expect(applied).toBe(true);
       }
       expect((await store.claimStep(A, r.id, 'k', opts)).claimed).toBe(false);
       expect((await store.listSteps(A, r.id)).find((s) => s.stepKey === 'k')!.status).toBe('failed');
@@ -106,8 +108,8 @@ describe('BuyerLabStore contract (memory implementation)', () => {
 
     it('never reclaims a finished step', async () => {
       const { store, r } = await run();
-      await store.claimStep(A, r.id, 'k', opts);
-      await store.finishStep(A, r.id, 'k', 'done', { ok: true });
+      const claim = await store.claimStep(A, r.id, 'k', opts);
+      await store.finishStep(A, r.id, 'k', 'done', { ok: true }, claim.attempt);
       now += 1_000_000;
       expect((await store.claimStep(A, r.id, 'k', opts)).claimed).toBe(false);
       expect((await store.listSteps(A, r.id))[0]).toMatchObject({ status: 'done', output: { ok: true } });
@@ -191,10 +193,11 @@ describe('BuyerLabStore contract (memory implementation)', () => {
       const opts = { staleAfterMs: 90_000, maxAttempts: 3 };
 
       // A claims a step
-      await store.claimStep(A, r.id, 'k', opts);
+      const claim = await store.claimStep(A, r.id, 'k', opts);
 
-      // B tries to finish it (no effect)
-      await store.finishStep(B, r.id, 'k', 'done', { ok: true });
+      // B tries to finish it (returns false, no effect)
+      const applied = await store.finishStep(B, r.id, 'k', 'done', { ok: true }, claim.attempt);
+      expect(applied).toBe(false);
       const steps = await store.listSteps(A, r.id);
       expect(steps[0]).toMatchObject({ status: 'running' });
 
@@ -205,6 +208,66 @@ describe('BuyerLabStore contract (memory implementation)', () => {
       // B tries to list steps
       const bSteps = await store.listSteps(B, r.id);
       expect(bSteps).toEqual([]);
+    });
+  });
+
+  describe('finishStep compare-and-set (takeover guard)', () => {
+    async function run() {
+      const { store, project } = await seed();
+      const r = await store.createRun(A, { projectId: project.id, provider: 'native', config: { personaIds: [], sourceIds: [] }, callBudget: 5, fundedBy: 'byok' });
+      return { store, r };
+    }
+    const opts = { staleAfterMs: 90_000, maxAttempts: 3 };
+
+    it('finishStep with a stale attempt returns false and leaves the row untouched', async () => {
+      const { store, r } = await run();
+      const claim1 = await store.claimStep(A, r.id, 'k', opts);
+      expect(claim1.attempt).toBe(1);
+
+      // Try to finish with a wrong (old) attempt number
+      const result = await store.finishStep(A, r.id, 'k', 'retry', { error: 'fake' }, 0);
+      expect(result).toBe(false);
+
+      // The step is still running with attempt 1
+      const steps = await store.listSteps(A, r.id);
+      expect(steps[0]).toMatchObject({ status: 'running', attempts: 1 });
+    });
+
+    it('finishStep with the current attempt returns true and applies the change', async () => {
+      const { store, r } = await run();
+      const claim = await store.claimStep(A, r.id, 'k', opts);
+      expect(claim.attempt).toBe(1);
+
+      const result = await store.finishStep(A, r.id, 'k', 'done', { ok: true }, claim.attempt);
+      expect(result).toBe(true);
+
+      const steps = await store.listSteps(A, r.id);
+      expect(steps[0]).toMatchObject({ status: 'done', output: { ok: true }, attempts: 1 });
+    });
+
+    it('takeover scenario: A hangs, B takes over and completes done; A\'s late retry is ignored', async () => {
+      const { store, r } = await run();
+
+      // A claims the step (attempt 1)
+      const claimA = await store.claimStep(A, r.id, 'k', opts);
+      expect(claimA).toEqual({ claimed: true, attempt: 1 });
+
+      // Time passes, B takes over (attempt 2)
+      now += 100_000;
+      const claimB = await store.claimStep(A, r.id, 'k', opts);
+      expect(claimB).toEqual({ claimed: true, attempt: 2 });
+
+      // B completes with done
+      const bApplied = await store.finishStep(A, r.id, 'k', 'done', { ok: true }, claimB.attempt);
+      expect(bApplied).toBe(true);
+
+      // A's late failure with attempt 1 is ignored (stale attempt)
+      const aApplied = await store.finishStep(A, r.id, 'k', 'retry', { error: 'late' }, claimA.attempt);
+      expect(aApplied).toBe(false);
+
+      // The step is still done with B's output
+      const steps = await store.listSteps(A, r.id);
+      expect(steps[0]).toMatchObject({ status: 'done', output: { ok: true }, attempts: 2 });
     });
   });
 

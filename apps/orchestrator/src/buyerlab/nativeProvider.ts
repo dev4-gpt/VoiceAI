@@ -113,7 +113,12 @@ export class NativeProvider implements SimulationProvider {
         break;
       }
 
-      const batch = pending.slice(0, Math.max(this.concurrency, 1));
+      // Cap batch at min(concurrency, callsLeft) when all pending are runnable (avoid claiming steps we can't afford).
+      let batchSize = this.concurrency;
+      if (runnable.length === pending.length && callsLeft > 0) {
+        batchSize = Math.min(this.concurrency, callsLeft);
+      }
+      const batch = pending.slice(0, batchSize);
       batch.forEach((p) => attempted.add(p.id));
       const outcomes = await Promise.all(batch.map((p) => this.runStep(handle, fresh.callBudget, p, sources, budget)));
       if (outcomes.every((o) => o === 'skipped')) break; // everything left is owned by another poll
@@ -138,39 +143,54 @@ export class NativeProvider implements SimulationProvider {
 
     const visible = selectSourcesFor(sources, persona.surfaces);
     if (visible.length === 0) {
-      await store.finishStep(handle.tenantId, handle.runId, key, 'failed', { error: 'NO_SOURCES' });
-      return 'failed';
+      const applied = await store.finishStep(handle.tenantId, handle.runId, key, 'failed', { error: 'NO_SOURCES' }, claim.attempt);
+      return applied ? 'failed' : 'skipped';
     }
+
+    // Build prompt before reserving the call, so a throw here does not leak a reserved call.
+    const rendered = renderSources(visible);
+    const prompt = buildReactPrompt({ persona, rendered });
 
     // Reserve the call before making it; a lost race over the last call is refunded.
     const total = await store.addCalls(handle.tenantId, handle.runId, 1);
     if (total > callBudget) {
       await store.addCalls(handle.tenantId, handle.runId, -1);
-      await store.finishStep(handle.tenantId, handle.runId, key, 'retry', { error: 'BUDGET' });
-      return 'budget';
+      const applied = await store.finishStep(handle.tenantId, handle.runId, key, 'retry', { error: 'BUDGET' }, claim.attempt);
+      return applied ? 'budget' : 'skipped';
     }
 
-    const rendered = renderSources(visible);
-    const prompt = buildReactPrompt({ persona, rendered });
+    let outcome: PersonaOutcome;
+    let modelName: string;
     try {
       const res = await withTimeout(llm({ system: prompt.system, user: prompt.user, maxTokens: 2500 }), Math.min(this.stepTimeoutMs, Math.max(this.budgetLeftMs(budget), 1000)));
-      const outcome = normaliseReaction({ persona, raw: parseJsonObject(res.content), refs: rendered.refs });
-      const out: StepOutput & Record<string, unknown> = { outcome, model: res.model, promptTokens: res.promptTokens, completionTokens: res.completionTokens, truncatedRefs: rendered.truncatedRefs };
-      await store.finishStep(handle.tenantId, handle.runId, key, 'done', out);
-      return 'done';
+      outcome = normaliseReaction({ persona, raw: parseJsonObject(res.content), refs: rendered.refs });
+      modelName = res.model;
     } catch (err) {
       // Only the error's name is recorded: never a message, which may echo model or key material.
       const name = err instanceof LlmOutputError ? 'LlmOutputError' : (err as { name?: string })?.name ?? 'Error';
-      await store.finishStep(handle.tenantId, handle.runId, key, 'retry', { error: name });
-      return 'retry';
+      const applied = await store.finishStep(handle.tenantId, handle.runId, key, 'retry', { error: name }, claim.attempt);
+      return applied ? 'retry' : 'skipped';
     }
+
+    // finishStep('done') outside try/catch so a failed write does not turn the step into 'retry'.
+    const out: StepOutput & Record<string, unknown> = { outcome, model: modelName, truncatedRefs: rendered.truncatedRefs };
+    const applied = await store.finishStep(handle.tenantId, handle.runId, key, 'done', out, claim.attempt);
+    return applied ? 'done' : 'skipped';
   }
 
   private async progress(handle: ProviderHandle, personas: Persona[], budgetExhausted: boolean): Promise<Progress> {
     const { store } = this.deps;
     const run = await store.getRun(handle.tenantId, handle.runId);
     const steps = await store.listSteps(handle.tenantId, handle.runId);
-    const status = (p: Persona) => steps.find((s) => s.stepKey === personaStepKey(p.id))?.status;
+    const status = (p: Persona) => {
+      const step = steps.find((s) => s.stepKey === personaStepKey(p.id));
+      if (!step) return undefined;
+      // A running step is only considered running if it started recently; otherwise it is stale and we can reclaim it.
+      if (step.status === 'running' && this.now() - Date.parse(step.startedAt) >= this.staleAfterMs) {
+        return undefined; // Stale, will be reclaimed on next advance
+      }
+      return step.status;
+    };
     const completedSteps = personas.filter((p) => status(p) === 'done').length;
     const failedSteps = personas.filter((p) => status(p) === 'failed').length;
     const running = personas.some((p) => status(p) === 'running');

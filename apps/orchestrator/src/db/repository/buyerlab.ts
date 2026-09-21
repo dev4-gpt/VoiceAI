@@ -149,11 +149,13 @@ export const drizzleBuyerLabStore: BuyerLabStore = {
     const [won] = await db.update(buyerRunSteps).set({ status: 'running', attempts: row.attempts + 1, startedAt: new Date() }).where(same).returning();
     return won ? { claimed: true, attempt: won.attempts } : { claimed: false, attempt: row.attempts };
   },
-  async finishStep(tenantId, runId, stepKey, status, output) {
-    await getDb()
+  async finishStep(tenantId, runId, stepKey, status, output, attempt): Promise<boolean> {
+    const rows = await getDb()
       .update(buyerRunSteps)
       .set({ status, output: output as any, finishedAt: status === 'retry' ? null : new Date() })
-      .where(and(eq(buyerRunSteps.runId, runId), eq(buyerRunSteps.stepKey, stepKey), eq(buyerRunSteps.tenantId, tenantId)));
+      .where(and(eq(buyerRunSteps.runId, runId), eq(buyerRunSteps.stepKey, stepKey), eq(buyerRunSteps.tenantId, tenantId), eq(buyerRunSteps.status, 'running' as any), eq(buyerRunSteps.attempts, attempt)))
+      .returning({ id: buyerRunSteps.id });
+    return rows.length > 0;
   },
   async listSteps(tenantId, runId) {
     const rows = await getDb().select().from(buyerRunSteps).where(and(eq(buyerRunSteps.runId, runId), eq(buyerRunSteps.tenantId, tenantId)));

@@ -152,12 +152,13 @@ export class MemoryBuyerLabStore implements BuyerLabStore {
     row.startedAt = this.iso();
     return { claimed: true, attempt: row.attempts };
   }
-  async finishStep(tenantId: string, runId: string, stepKey: string, status: 'done' | 'failed' | 'retry', output: unknown) {
+  async finishStep(tenantId: string, runId: string, stepKey: string, status: 'done' | 'failed' | 'retry', output: unknown, attempt: number): Promise<boolean> {
     const row = this.steps.get(this.stepKey(runId, stepKey));
-    if (row && row.tenantId === tenantId) {
-      row.status = status;
-      row.output = output;
-    }
+    if (!row || row.tenantId !== tenantId) return false;
+    if (row.status !== 'running' || row.attempts !== attempt) return false;
+    row.status = status;
+    row.output = output;
+    return true;
   }
   async listSteps(tenantId: string, runId: string) {
     return [...this.steps.values()].filter((s) => s.tenantId === tenantId && s.runId === runId).map((s) => clean(s) as StepRow);

@@ -165,4 +165,71 @@ describe('NativeProvider', () => {
     const s = await setup();
     await expect(s.make(async () => good()).chat(s.handle, 'x', 'hi')).rejects.toBeInstanceOf(NotBuiltError);
   });
+
+  it('stale-running plus exhausted budget: progress returns done:true with partial outcome', async () => {
+    const s = await setup({ personas: [{ name: 'One' }, { name: 'Two' }], callBudget: 1 });
+    const llm = jest.fn(async () => good());
+    const p = s.make(llm);
+
+    // Manually set Two as running (simulating a dead poll's claim)
+    await s.store.claimStep(T, s.run.id, personaStepKey(s.personas[1].id), { staleAfterMs: 90_000, maxAttempts: 3 });
+
+    // Poll 1: One completes with the only available call
+    let progress1 = await p.advance(s.handle, s.deadline());
+    expect(progress1.completedSteps).toBe(1);
+    expect(progress1.done).toBe(false); // Budget exhausted and Two is running
+    expect(progress1.budgetExhausted).toBe(true);
+
+    // Time passes past staleAfterMs
+    now += 100_000;
+
+    // Poll 2: Sees stale running step and considers it reclaimable (not stuck)
+    progress1 = await p.advance(s.handle, s.deadline());
+    expect(progress1.done).toBe(true); // Now done, because stale running is not counted as running
+    expect(progress1.budgetExhausted).toBe(true);
+
+    // Outcome is partial
+    const o = await p.outcome(s.handle);
+    expect(o.partial).not.toBeNull();
+    expect(o.partial!.missingPersonaIds).toHaveLength(1);
+  });
+
+  it('batch cap: 3 runnable personas with budget 2 claims exactly 2 steps', async () => {
+    const s = await setup({ personas: [{ name: 'One' }, { name: 'Two' }, { name: 'Three' }], callBudget: 2 });
+    let claimedCount = 0;
+    const originalClaimStep = s.store.claimStep.bind(s.store);
+    jest.spyOn(s.store, 'claimStep').mockImplementation(async (tenantId: string, runId: string, stepKey: string, opts: any) => {
+      const result = await originalClaimStep(tenantId, runId, stepKey, opts);
+      if (result.claimed) claimedCount++;
+      return result;
+    });
+
+    const llm = jest.fn(async () => good());
+    const p = s.make(llm);
+    await p.advance(s.handle, s.deadline());
+
+    // Exactly 2 personas should have been claimed (capped by budget)
+    expect(claimedCount).toBe(2);
+    expect(llm).toHaveBeenCalledTimes(2);
+  });
+
+  it('throwing finishStep(done) propagates and does not turn step into retry', async () => {
+    const s = await setup({ personas: [{ name: 'One' }] });
+    const llm = jest.fn(async () => good());
+    const p = s.make(llm);
+
+    // Mock finishStep to throw on 'done'
+    const originalFinish = s.store.finishStep.bind(s.store);
+    jest.spyOn(s.store, 'finishStep').mockImplementation(async (t: string, r: string, k: string, status: any, output: any, attempt: number) => {
+      if (status === 'done') throw new Error('finishStep failed');
+      return originalFinish(t, r, k, status, output, attempt);
+    });
+
+    // advance should throw, not catch and turn into retry
+    await expect(p.advance(s.handle, s.deadline())).rejects.toThrow('finishStep failed');
+
+    // The step should still be running (not retry)
+    const steps = await s.store.listSteps(T, s.run.id);
+    expect(steps[0].status).toBe('running');
+  });
 });

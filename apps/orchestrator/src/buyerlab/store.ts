@@ -57,7 +57,12 @@ export interface BuyerLabStore {
    * running fresh, or has used `maxAttempts` (in which case it is marked failed).
    */
   claimStep(tenantId: string, runId: string, stepKey: string, o: { staleAfterMs: number; maxAttempts: number }): Promise<ClaimResult>;
-  finishStep(tenantId: string, runId: string, stepKey: string, status: 'done' | 'failed' | 'retry', output: unknown): Promise<void>;
+  /**
+   * Compare-and-set: updates the step only if it is still `running` with the given attempt number.
+   * Returns true if the update applied, false if the step was claimed or finished by another caller.
+   * A false return means the caller lost its claim and should treat the step as 'skipped'.
+   */
+  finishStep(tenantId: string, runId: string, stepKey: string, status: 'done' | 'failed' | 'retry', output: unknown, attempt: number): Promise<boolean>;
   listSteps(tenantId: string, runId: string): Promise<StepRow[]>;
 
   saveOutcome(tenantId: string, runId: string, outcome: NormalizedOutcome): Promise<void>;
