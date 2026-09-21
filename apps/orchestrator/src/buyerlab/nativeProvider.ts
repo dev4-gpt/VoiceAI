@@ -108,17 +108,15 @@ export class NativeProvider implements SimulationProvider {
       const callsLeft = fresh.callBudget - fresh.callsUsed;
       // A persona with no visible sources costs no call, so it is handled even at zero budget.
       const runnable = pending.filter((p) => selectSourcesFor(sources, p.surfaces).length > 0);
+      const noSource = pending.filter((p) => selectSourcesFor(sources, p.surfaces).length === 0);
       if (callsLeft <= 0 && runnable.length > 0 && runnable.length === pending.length) {
         budgetExhausted = true;
         break;
       }
 
-      // Cap batch at min(concurrency, callsLeft) when all pending are runnable (avoid claiming steps we can't afford).
-      let batchSize = this.concurrency;
-      if (runnable.length === pending.length && callsLeft > 0) {
-        batchSize = Math.min(this.concurrency, callsLeft);
-      }
-      const batch = pending.slice(0, batchSize);
+      // Take all no-source personas (cost 0), cap runnable to min(concurrency, callsLeft) to avoid claiming steps we can't afford.
+      const maxRunnable = Math.min(this.concurrency - noSource.length, Math.max(callsLeft, 0));
+      const batch = [...noSource, ...runnable.slice(0, maxRunnable)];
       batch.forEach((p) => attempted.add(p.id));
       const outcomes = await Promise.all(batch.map((p) => this.runStep(handle, fresh.callBudget, p, sources, budget)));
       if (outcomes.every((o) => o === 'skipped')) break; // everything left is owned by another poll

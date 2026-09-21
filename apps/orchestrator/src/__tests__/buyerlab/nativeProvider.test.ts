@@ -166,6 +166,82 @@ describe('NativeProvider', () => {
     await expect(s.make(async () => good()).chat(s.handle, 'x', 'hi')).rejects.toBeInstanceOf(NotBuiltError);
   });
 
+  it('late failure from original claimer after takeover leaves step done, calls exact', async () => {
+    const s = await setup({ personas: [{ name: 'One' }] });
+    let rejectA: (e: Error) => void = () => {};
+    let n = 0;
+    const llm = jest.fn(async () => {
+      n++;
+      if (n === 1) return new Promise<any>((_, rej) => { rejectA = rej; });
+      return good();
+    });
+    const p = s.make(llm);
+
+    // Poll A claims and starts (hangs on first call)
+    const pollA = p.advance(s.handle, s.deadline());
+    await new Promise((r) => setTimeout(r, 20)); // Let A get past the claim
+
+    // Clock advances past staleAfterMs
+    now += 100_000;
+
+    // Poll B takes over (attempt 2) and completes
+    const pB = await p.advance(s.handle, s.deadline());
+    expect(pB.done).toBe(true);
+
+    // A's late failure arrives
+    rejectA(Object.assign(new Error('late'), { name: 'Boom' }));
+    await pollA;
+
+    // Step stays done, callsUsed is exact (2 actual calls)
+    const steps = await s.store.listSteps(T, s.run.id);
+    expect(steps[0].status).toBe('done');
+    expect((await s.store.getRun(T, s.run.id))!.callsUsed).toBe(2);
+    expect(llm).toHaveBeenCalledTimes(2);
+
+    // Outcome contains the persona
+    const o = await p.outcome(s.handle);
+    expect(o.personas).toHaveLength(1);
+
+    // Further advance makes no extra call
+    await p.advance(s.handle, s.deadline());
+    expect(llm).toHaveBeenCalledTimes(2);
+  });
+
+  it('late success from original claimer after takeover keeps B\'s done output', async () => {
+    const s = await setup({ personas: [{ name: 'One' }] });
+    let resolveA: (value?: any) => void = () => {};
+    let n = 0;
+    const llm = jest.fn(async () => {
+      n++;
+      if (n === 1) return new Promise<any>((res) => { resolveA = res; });
+      return good();
+    });
+    const p = s.make(llm);
+
+    // Poll A claims and starts (hangs on first call)
+    const pollA = p.advance(s.handle, s.deadline());
+    await new Promise((r) => setTimeout(r, 20));
+
+    // Clock advances
+    now += 100_000;
+
+    // Poll B takes over and completes
+    await p.advance(s.handle, s.deadline());
+
+    // A's late success arrives
+    resolveA();
+    await pollA;
+
+    // Step still has B's output, callsUsed is 2
+    const steps = await s.store.listSteps(T, s.run.id);
+    expect(steps[0].status).toBe('done');
+    expect((await s.store.getRun(T, s.run.id))!.callsUsed).toBe(2);
+
+    // Outcome contains the persona (from B's output)
+    const o = await p.outcome(s.handle);
+    expect(o.personas).toHaveLength(1);
+  });
+
   it('stale-running plus exhausted budget: progress returns done:true with partial outcome', async () => {
     const s = await setup({ personas: [{ name: 'One' }, { name: 'Two' }], callBudget: 1 });
     const llm = jest.fn(async () => good());
@@ -211,6 +287,63 @@ describe('NativeProvider', () => {
     // Exactly 2 personas should have been claimed (capped by budget)
     expect(claimedCount).toBe(2);
     expect(llm).toHaveBeenCalledTimes(2);
+  });
+
+  it('mixed pending at budget 1 and 0: no persona ends retry with zero model calls', async () => {
+    // Budget 1: one no-source + two runnable. One runnable completes, other stays retry.
+    const s1 = await setup({
+      personas: [
+        { name: 'NoSource', surfaces: ['signed_in'] },
+        { name: 'RunOne', surfaces: ['public'] },
+        { name: 'RunTwo', surfaces: ['public'] }
+      ],
+      sources: [{ surface: 'public' as any, text: PUBLIC_TEXT, hash: 'h1' }],  // Only public, no signed_in
+      callBudget: 1
+    });
+    const llm1 = jest.fn(async () => good());
+    await s1.make(llm1).advance(s1.handle, s1.deadline());
+
+    // Check: RunOne completed, RunTwo is retry, NoSource is failed (no budget after RunOne)
+    const steps1 = await s1.store.listSteps(T, s1.run.id);
+    const noSourceStep = steps1.find((st) => st.stepKey === personaStepKey(s1.personas[0].id));
+    const runOneStep = steps1.find((st) => st.stepKey === personaStepKey(s1.personas[1].id));
+    const runTwoStep = steps1.find((st) => st.stepKey === personaStepKey(s1.personas[2].id));
+
+    // NoSource should be failed (no sources)
+    expect(noSourceStep!.status).toBe('failed');
+    expect(noSourceStep!.output).toEqual({ error: 'NO_SOURCES' });
+    // RunOne should be done
+    expect(runOneStep!.status).toBe('done');
+    // RunTwo should not have a step (not claimed, no budget for 2nd runnable)
+    expect(runTwoStep).toBeUndefined();
+    // Exactly 1 model call: RunOne (NoSource costs 0)
+    expect(llm1).toHaveBeenCalledTimes(1);
+
+    // Budget 0: one no-source + two runnable. Both runnable should be retry, only no-source processes.
+    const s2 = await setup({
+      personas: [
+        { name: 'NoSource', surfaces: ['signed_in'] },
+        { name: 'RunOne', surfaces: ['public'] },
+        { name: 'RunTwo', surfaces: ['public'] }
+      ],
+      sources: [{ surface: 'public' as any, text: PUBLIC_TEXT, hash: 'h1' }],  // Only public, no signed_in
+      callBudget: 0
+    });
+    const llm2 = jest.fn(async () => good());
+    await s2.make(llm2).advance(s2.handle, s2.deadline());
+
+    const steps2 = await s2.store.listSteps(T, s2.run.id);
+    const noSourceStep2 = steps2.find((st) => st.stepKey === personaStepKey(s2.personas[0].id));
+    const runOneStep2 = steps2.find((st) => st.stepKey === personaStepKey(s2.personas[1].id));
+    const runTwoStep2 = steps2.find((st) => st.stepKey === personaStepKey(s2.personas[2].id));
+
+    // NoSource should be failed (no sources)
+    expect(noSourceStep2!.status).toBe('failed');
+    // RunOne and RunTwo should not have steps (no budget for runnable personas)
+    expect(runOneStep2).toBeUndefined();
+    expect(runTwoStep2).toBeUndefined();
+    // No llm calls because no budget
+    expect(llm2).not.toHaveBeenCalled();
   });
 
   it('throwing finishStep(done) propagates and does not turn step into retry', async () => {
