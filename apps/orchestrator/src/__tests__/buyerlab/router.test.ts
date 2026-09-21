@@ -1,6 +1,8 @@
 // apps/orchestrator/src/__tests__/buyerlab/router.test.ts
+import http from 'http';
+import type { AddressInfo } from 'net';
 import express, { RequestHandler } from 'express';
-import request from 'supertest';
+import supertest from 'supertest';
 import { createBuyerLabRouter, BuyerLabRouterDeps } from '../../routes/buyerlab';
 import { NativeProvider } from '../../buyerlab/nativeProvider';
 import { KeyRequiredError } from '../../buyerlab/access';
@@ -14,6 +16,43 @@ const reactionJson = { intent: { score: 2, rationale: 'Unpriced.' }, sentiment: 
 const TEXT = 'Veloce replaces six tools. Pricing is by signed proposal only. Human approval is required for every action.';
 const A = { 'x-tenant': 'A' };
 const B = { 'x-tenant': 'B' };
+
+// supertest's own `app.listen(0)` binds the wildcard address (`::`) but then connects to 127.0.0.1:<port>. On macOS
+// a wildcard bind can be handed a port that another process already listens on at 127.0.0.1 (IDE helpers, language
+// servers, other test runs), and the connection then goes to that process: a stray 404/400 that never reaches this
+// app. So one server is bound to 127.0.0.1 explicitly (the kernel then refuses any port held there) before any
+// request is sent, and each app under test is reached through it by a header. `listen(0, '127.0.0.1')` cannot be
+// handed to supertest directly: it resolves the host asynchronously, supertest sees no address and re-listens on `::`.
+const APP_HEADER = 'x-test-app';
+const apps = new Map<string, express.Express>();
+const appIds = new WeakMap<express.Express, string>();
+let gateway: http.Server;
+let gatewayUrl: string;
+beforeAll(async () => {
+  gateway = http.createServer((req, res) => {
+    const app = apps.get(String(req.headers[APP_HEADER]));
+    if (!app) { res.statusCode = 500; res.end('unknown test app'); return; }
+    app(req, res);
+  });
+  await new Promise<void>((ready) => gateway.listen(0, '127.0.0.1', ready));
+  gatewayUrl = `http://127.0.0.1:${(gateway.address() as AddressInfo).port}`;
+});
+afterAll(async () => {
+  gateway.closeAllConnections();
+  await new Promise<void>((done) => gateway.close(() => done()));
+});
+function request(app: express.Express) {
+  let id = appIds.get(app);
+  if (!id) { id = String(apps.size); apps.set(id, app); appIds.set(app, id); }
+  const agent = supertest(gatewayUrl);
+  const tag = (t: supertest.Test) => t.set(APP_HEADER, id as string);
+  return {
+    get: (url: string) => tag(agent.get(url)),
+    post: (url: string) => tag(agent.post(url)),
+    put: (url: string) => tag(agent.put(url)),
+    delete: (url: string) => tag(agent.delete(url))
+  };
+}
 
 const fakeAuth: RequestHandler = (req, res, next) => {
   const tenant = req.header('x-tenant');
