@@ -28,6 +28,13 @@ export interface DeepSeekCompletionOptions {
   temperature?: number;
   max_tokens?: number;
   response_format?: { type: 'json_object' };
+  /**
+   * deepseek-flash reasons by default, and hidden reasoning tokens count against
+   * `max_tokens`, so a small budget can come back with empty content. Thinking is
+   * therefore off unless a caller asks for it, and a caller that does must budget
+   * for the reasoning as well as the reply. Ignored for the legacy chat/reasoner models.
+   */
+  thinking?: 'enabled' | 'disabled';
   /** Per-call key override — a signed-in caller's own saved key, when they have one. Never written onto the instance; the server key remains this.apiKey for every other call. */
   apiKey?: string;
 }
@@ -68,6 +75,8 @@ export class DeepSeekService {
       return this.generateFallback(options);
     }
 
+    const supportsThinkingToggle = model !== 'deepseek-reasoner' && model !== 'deepseek-chat';
+
     try {
       const response = await fetch(`${this.baseUrl}/chat/completions`, {
         method: 'POST',
@@ -80,6 +89,7 @@ export class DeepSeekService {
           messages: options.messages,
           ...(options.tools && options.tools.length > 0 ? { tools: options.tools } : {}),
           max_tokens: options.max_tokens ?? 2000,
+          ...(supportsThinkingToggle ? { thinking: { type: options.thinking ?? 'disabled' } } : {}),
           ...(model !== 'deepseek-reasoner' ? { temperature: options.temperature ?? 0.3 } : {}),
           ...(model !== 'deepseek-reasoner' && options.response_format ? { response_format: options.response_format } : {})
         })
@@ -93,6 +103,12 @@ export class DeepSeekService {
 
       const data = (await response.json()) as any;
       const choice = data.choices[0];
+
+      if (!choice.message.content && !choice.message.tool_calls?.length) {
+        console.warn(
+          `[DeepSeek] empty reply from ${model} (finish_reason=${choice.finish_reason ?? 'unknown'}, max_tokens=${options.max_tokens ?? 2000}); the token budget may be too small for this model.`
+        );
+      }
 
       return {
         content: choice.message.content ?? '',

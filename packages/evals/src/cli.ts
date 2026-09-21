@@ -14,7 +14,8 @@
  * offline trial fails. A measured run reports its results and exits 0 unless it
  * could not run at all: model failures are findings, not tooling errors.
  */
-import { writeFileSync } from 'node:fs';
+import { existsSync, writeFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import {
   runOfflineSuite,
   runMeasuredSuite,
@@ -23,6 +24,20 @@ import {
   formatSuite
 } from '../../../apps/orchestrator/src/evals/runner';
 import type { SuiteResult } from '../../../apps/orchestrator/src/evals/types';
+
+/**
+ * `npm run eval --workspace packages/evals` runs with packages/evals as the working
+ * directory, so the server's cwd-relative .env lookup never finds the repo-root file.
+ * Load it by path. Variables already in the environment win (CI supplies its own).
+ */
+function loadRootEnv(): void {
+  const file = resolve(__dirname, '../../../.env');
+  if (existsSync(file) && typeof (process as any).loadEnvFile === 'function') {
+    try {
+      (process as any).loadEnvFile(file);
+    } catch {}
+  }
+}
 
 function arg(name: string): string | undefined {
   const i = process.argv.indexOf(name);
@@ -44,6 +59,8 @@ async function post(url: string, suite: SuiteResult) {
 
 async function main() {
   const offline = flag('--offline');
+  // An offline run must not touch the environment, unless it is posting (which needs ORCHESTRATOR_API_KEY).
+  if (!offline || flag('--post') || arg('--post')) loadRootEnv();
   const taskId = arg('--task');
   const k = Number(arg('--k') ?? (offline ? 2 : 3));
   if (!Number.isInteger(k) || k < 1) throw new Error('--k must be a positive integer');
