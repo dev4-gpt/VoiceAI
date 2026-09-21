@@ -9,7 +9,17 @@ export class PanelIncompleteError extends Error {
   }
 }
 
-const str = (v: unknown, max: number) => (typeof v === 'string' ? v.trim().slice(0, max) : '');
+const dropTrailingSurrogate = (s: string) => {
+  // If the last character is a lone HIGH surrogate (0xD800-0xDBFF), drop it.
+  const code = s.charCodeAt(s.length - 1);
+  return code >= 0xd800 && code <= 0xdbff ? s.slice(0, -1) : s;
+};
+
+const str = (v: unknown, max: number) => {
+  if (typeof v !== 'string') return '';
+  let s = v.trim().slice(0, max);
+  return dropTrailingSurrogate(s);
+};
 const strList = (v: unknown, maxItems: number, maxLen: number) =>
   Array.isArray(v) ? v.map((x) => str(x, maxLen)).filter(Boolean).slice(0, maxItems) : [];
 
@@ -28,7 +38,7 @@ export function sanitizePersona(raw: unknown, availableSurfaces: Surface[]): New
   const budgetAuthority = r.budgetAuthority === 'holder' || r.budgetAuthority === 'influencer' ? r.budgetAuthority : 'none';
 
   const asked = Array.isArray(r.surfaces) ? r.surfaces.filter((s): s is Surface => (SURFACES as readonly string[]).includes(s as string) && availableSurfaces.includes(s as Surface)) : [];
-  let surfaces: Surface[] = asked.length ? asked : [availableSurfaces[0] ?? 'public'];
+  let surfaces: Surface[] = asked.length ? SURFACES.filter((s) => asked.includes(s)) : [availableSurfaces[0] ?? 'public'];
   // A distracted first-time visitor has no account, so it never sees the signed-in app.
   if (archetype === 'distracted_visitor' && availableSurfaces.includes('public')) surfaces = ['public'];
 

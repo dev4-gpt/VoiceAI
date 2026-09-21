@@ -95,3 +95,62 @@ describe('missingArchetypes', () => {
     expect(missingArchetypes(have)).toEqual(['budget_holder', 'champion', 'technical_evaluator', 'distracted_visitor']);
   });
 });
+
+describe('surfaces deduplication and capping', () => {
+  it('dedupes huge arrays: Array(100000).fill("public") yields exactly ["public"]', () => {
+    const p = sanitizePersona({ name: 'N', surfaces: Array(100000).fill('public') }, ['public', 'signed_in'])!;
+    expect(p.surfaces).toEqual(['public']);
+  });
+  it('preserves canonical order from SURFACES: ["signed_in","public","public","signed_in"] yields ["public","signed_in"]', () => {
+    const p = sanitizePersona({ name: 'N', surfaces: ['signed_in', 'public', 'public', 'signed_in'] }, ['public', 'signed_in'])!;
+    expect(p.surfaces).toEqual(['public', 'signed_in']);
+  });
+});
+
+describe('surrogate pair safety', () => {
+  const loneHighSurrogatePattern = /[\ud800-\udbff](?![\udc00-\udfff])/;
+  const emojiCodepoint = '\ud83d\ude00'; // Grinning face emoji as surrogate pair
+  const ascii79 = 'a'.repeat(79);
+
+  it('name: 79 ASCII + emoji does not leave a lone surrogate', () => {
+    const p = sanitizePersona({ name: ascii79 + emojiCodepoint }, ['public'])!;
+    expect(p.spec.name).not.toMatch(loneHighSurrogatePattern);
+    expect(JSON.stringify(p.spec.name)).not.toContain('\\ud83d');
+  });
+
+  it('reasonNotToBuy: 400-char + emoji does not leave a lone surrogate', () => {
+    const p = sanitizePersona({ name: 'N', reasonNotToBuy: 'x'.repeat(400) + emojiCodepoint }, ['public'])!;
+    expect(p.spec.reasonNotToBuy).not.toMatch(loneHighSurrogatePattern);
+    expect(JSON.stringify(p.spec.reasonNotToBuy)).not.toContain('\\ud83d');
+  });
+
+  it('goal list item: 200-char + emoji does not leave a lone surrogate', () => {
+    const p = sanitizePersona({ name: 'N', goals: ['x'.repeat(200) + emojiCodepoint] }, ['public'])!;
+    expect(p.spec.goals[0]).not.toMatch(loneHighSurrogatePattern);
+    expect(JSON.stringify(p.spec.goals[0])).not.toContain('\\ud83d');
+  });
+});
+
+describe('hostile input and edge cases', () => {
+  it('prototype pollution via JSON.parse: output keys are exact', () => {
+    const raw = JSON.parse('{"name":"N","__proto__":{"admin":true},"constructor":{"x":1}}');
+    const p = sanitizePersona(raw, ['public'])!;
+    const keys = Object.keys(p);
+    expect(keys.sort()).toEqual(['archetype', 'edited', 'spec', 'surfaces']);
+    expect(Object.keys(p.spec).sort()).toEqual(['budgetAuthority', 'constraints', 'goals', 'name', 'priorTools', 'reasonNotToBuy', 'role']);
+    expect((({} as any).admin)).toBeUndefined();
+  });
+
+  it('goals with mixed types yields only strings', () => {
+    const p = sanitizePersona({ name: 'N', goals: [{ x: 1 }, ['y'], 5, null, 'ok', true] }, ['public'])!;
+    expect(p.spec.goals).toEqual(['ok']);
+  });
+
+  it('non-object inputs return null', () => {
+    expect(sanitizePersona(undefined, ['public'])).toBeNull();
+    expect(sanitizePersona(5, ['public'])).toBeNull();
+    expect(sanitizePersona('x', ['public'])).toBeNull();
+    expect(sanitizePersona([], ['public'])).toBeNull();
+    expect(sanitizePersona(true, ['public'])).toBeNull();
+  });
+});
