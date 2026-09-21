@@ -33,6 +33,61 @@ describe('extractPage', () => {
       'https://veloceos.cloud/about'
     ]);
   });
+
+  // Hostile input tests: all must complete in < 500 ms
+  it('handles many unclosed tags linearly', () => {
+    const start = Date.now();
+    const result = extractPage('<script>'.repeat(50000), 'https://example.com/');
+    const elapsed = Date.now() - start;
+    expect(elapsed).toBeLessThan(500);
+    expect(result.text.length).toBeLessThan(10); // mostly empty
+  });
+
+  it('handles many angle brackets without backtracking', () => {
+    const start = Date.now();
+    const result = extractPage('<'.repeat(200000), 'https://example.com/');
+    const elapsed = Date.now() - start;
+    expect(elapsed).toBeLessThan(500);
+    expect(result.text.length).toBeLessThan(10);
+  });
+
+  it('handles many link tags without quadratic dedup', () => {
+    const start = Date.now();
+    const links = Array.from({ length: 60000 }, (_, i) => `<a href="/p${i}">link</a>`).join('');
+    const result = extractPage(`<html><body>${links}</body></html>`, 'https://example.com/');
+    const elapsed = Date.now() - start;
+    expect(elapsed).toBeLessThan(500);
+    // Links capped at 500
+    expect(result.links.length).toBeLessThanOrEqual(500);
+  });
+
+  it('caps links at 500 and headings at 100', () => {
+    const links = Array.from({ length: 600 }, (_, i) => `<a href="/p${i}">link</a>`).join('');
+    const headings = Array.from({ length: 150 }, (_, i) => `<h1>H${i}</h1>`).join('');
+    const result = extractPage(`<html><body>${headings}${links}</body></html>`, 'https://example.com/');
+    expect(result.links.length).toBeLessThanOrEqual(500);
+    expect(result.headings.length).toBeLessThanOrEqual(100);
+  });
+
+  it('decodes bad numeric entity &#x110000; to replacement character', () => {
+    const result = extractPage('<p>test &#x110000; end</p>', 'https://example.com/');
+    expect(result.text).toContain('\uFFFD');
+  });
+
+  it('decodes bad numeric entity &#99999999999; to replacement character', () => {
+    const result = extractPage('<p>test &#99999999999; end</p>', 'https://example.com/');
+    expect(result.text).toContain('\uFFFD');
+  });
+
+  it('decodes surrogate entity &#xD800; to replacement character', () => {
+    const result = extractPage('<p>test &#xD800; end</p>', 'https://example.com/');
+    expect(result.text).toContain('\uFFFD');
+  });
+
+  it('decodes valid entity &#65; correctly', () => {
+    const result = extractPage('<p>test &#65; end</p>', 'https://example.com/');
+    expect(result.text).toContain('A');
+  });
 });
 
 describe('robots', () => {
@@ -126,5 +181,82 @@ describe('crawl', () => {
     const r = await crawl('https://a.com/', {}, { fetch: fakeFetch({ 'https://a.com/': { body: '<html><body><div id="root"></div></body></html>' } }) });
     expect(r.pages).toHaveLength(0);
     expect(r.skipped).toContainEqual({ url: 'https://a.com/', reason: 'thin_content' });
+  });
+
+  it('respects deadline passed to every fetch and stops mid-crawl', async () => {
+    let t = 0;
+    const inner = fakeFetch({
+      'https://a.com/': { body: html(long, ['/1', '/2', '/3']) },
+      'https://a.com/1': { body: html(long + ' one') },
+      'https://a.com/2': { body: html(long + ' two') }
+    });
+    const fetch: CrawlFetch = async (u, o) => {
+      t += 100;
+      if (o?.deadlineAt && t > o.deadlineAt) throw new Error('deadline exceeded');
+      return inner(u, o);
+    };
+    const r = await crawl('https://a.com/', { deadlineMs: 250 }, { fetch, now: () => t });
+    expect(r.pages.length).toBeLessThan(3);
+    expect(r.truncated).toBe(true);
+  });
+
+  it('caps total fetch attempts at maxPages * 3 (including failed fetches)', async () => {
+    const attempts: string[] = [];
+    const fetch: CrawlFetch = async (u) => {
+      attempts.push(u);
+      // Most 404s, a few successes
+      if (u.includes('/ok')) return { finalUrl: u, status: 200, contentType: 'text/html', body: html(long, ['/ok2']), truncated: false };
+      return { finalUrl: u, status: 404, contentType: 'text/html', body: '', truncated: false };
+    };
+    const r = await crawl('https://a.com/', { maxPages: 2 }, { fetch });
+    // maxPages * 3 = 6 attempts total (including robots.txt)
+    expect(attempts.length).toBeLessThanOrEqual(7); // robots + up to 6 pages
+    expect(r.truncated).toBe(true);
+  });
+
+  it('skips same-origin link that 302s to another host', async () => {
+    let fetchCalls: string[] = [];
+    const smartFetch: CrawlFetch = async (u) => {
+      fetchCalls.push(u);
+      if (u === 'https://a.com/') return { finalUrl: u, status: 200, contentType: 'text/html', body: html(long, ['/redir']), truncated: false };
+      if (u === 'https://a.com/redir') return { finalUrl: 'https://b.com/landing', status: 200, contentType: 'text/html', body: html(long), truncated: false };
+      return { finalUrl: u, status: 404, contentType: 'text/html', body: '', truncated: false };
+    };
+    const r = await crawl('https://a.com/', {}, { fetch: smartFetch });
+    expect(r.pages.map((p) => p.url)).toEqual(['https://a.com/']);
+    expect(r.skipped).toContainEqual({ url: 'https://a.com/redir', reason: 'cross_origin_redirect' });
+  });
+
+  it('handles apex to www redirect (origin changes but same-origin), fetches new robots.txt', async () => {
+    const requests: string[] = [];
+    const smartFetch: CrawlFetch = async (u) => {
+      requests.push(u);
+      // robots.txt for apex
+      if (u === 'https://a.com/robots.txt') return { finalUrl: u, status: 200, contentType: 'text/plain', body: 'User-agent: *\nDisallow: /private\n', truncated: false };
+      // robots.txt for www (no disallows)
+      if (u === 'https://www.a.com/robots.txt') return { finalUrl: u, status: 200, contentType: 'text/plain', body: 'User-agent: *\n', truncated: false };
+      // Start page redirects to www version
+      if (u === 'https://a.com/') return { finalUrl: 'https://www.a.com/', status: 200, contentType: 'text/html', body: html(long, ['/page1', '/private']), truncated: false };
+      // www pages
+      if (u === 'https://www.a.com/page1') return { finalUrl: u, status: 200, contentType: 'text/html', body: html(long + ' page1'), truncated: false };
+      if (u === 'https://www.a.com/private') return { finalUrl: u, status: 200, contentType: 'text/html', body: html(long + ' private'), truncated: false };
+      return { finalUrl: u, status: 404, contentType: 'text/html', body: '', truncated: false };
+    };
+    const r = await crawl('https://a.com/', {}, { fetch: smartFetch });
+    // Should have fetched robots.txt twice and ingested apex-redirected pages
+    expect(requests.filter((u) => u.includes('robots')).length).toBeGreaterThanOrEqual(2);
+    expect(r.pages.map((p) => p.url).sort()).toEqual(['https://www.a.com/', 'https://www.a.com/page1', 'https://www.a.com/private']);
+  });
+
+  it('deduplicates by finalUrl: two links that redirect to the same content yield one page', async () => {
+    const smartFetch: CrawlFetch = async (u) => {
+      if (u === 'https://a.com/') return { finalUrl: u, status: 200, contentType: 'text/html', body: html(long, ['/old', '/new']), truncated: false };
+      if (u === 'https://a.com/old') return { finalUrl: 'https://a.com/new', status: 301, contentType: 'text/html', body: html(long), truncated: false };
+      if (u === 'https://a.com/new') return { finalUrl: u, status: 200, contentType: 'text/html', body: html(long), truncated: false };
+      return { finalUrl: u, status: 404, contentType: 'text/html', body: '', truncated: false };
+    };
+    const r = await crawl('https://a.com/', {}, { fetch: smartFetch });
+    expect(r.pages).toHaveLength(2); // / and /new (not /old since it redirects)
+    expect(r.pages.map((p) => p.url)).toEqual(['https://a.com/', 'https://a.com/new']);
   });
 });

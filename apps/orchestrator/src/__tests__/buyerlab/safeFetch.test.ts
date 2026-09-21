@@ -130,3 +130,51 @@ describe('httpRequestOnce (real transport, local server, below the guard)', () =
     expect(r.headers['x-conn']).toBe('close');
   });
 });
+
+describe('safeFetch with deadline (deadlineAt and now)', () => {
+  it('honours a hop deadline and throws timeout when time expires before the hop', async () => {
+    let t = 100;
+    const now = () => t;
+    // deadlineAt = 180, so deadline is 80ms from t=100
+    // Each guard check is instant, each transport takes 50ms
+    // Hop 1: guard (t=100), transport (t=150)
+    // Hop 2: guard (t=150), transport (t=200) - but deadline is 180, so should timeout here
+    const hopTransport: Transport = async (url, addr, fam, o) => {
+      t += 50; // Each hop takes 50ms
+      if (url.pathname === '/a') return redirect('/b');
+      if (url.pathname === '/b') return redirect('/c');
+      if (url.pathname === '/c') return html('end');
+      return html('ok');
+    };
+    await expect(
+      safeFetch('https://example.com/a', {
+        resolve: publicResolver,
+        transport: hopTransport,
+        deadlineAt: 180,
+        now,
+        maxRedirects: 5
+      })
+    ).rejects.toMatchObject({ reason: 'timeout' });
+  });
+
+  it('stops a never-resolving assertPublicUrl by deadline', async () => {
+    let t = 0;
+    const now = () => t;
+    const slowResolver: Resolver = async () => {
+      // Simulate a slow resolver that takes 120ms
+      const startT = t;
+      t += 120;
+      return [{ address: '93.184.216.34', family: 4 }];
+    };
+    const transport: Transport = async () => html('ok');
+    // deadlineAt is 100 ms from start; resolver takes 120ms, so should timeout before resolving
+    await expect(
+      safeFetch('https://example.com/', {
+        resolve: slowResolver,
+        transport,
+        deadlineAt: 100,
+        now
+      })
+    ).rejects.toMatchObject({ reason: 'timeout' });
+  });
+});

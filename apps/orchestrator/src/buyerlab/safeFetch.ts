@@ -105,6 +105,10 @@ export interface SafeFetchOptions {
   maxRedirects?: number;
   resolve?: Resolver;
   transport?: Transport;
+  /** Absolute deadline (epoch ms). Each hop's timeout becomes min(timeoutMs, deadlineAt - now()). */
+  deadlineAt?: number;
+  /** Clock function for deadline checks. Default: Date.now. */
+  now?: () => number;
 }
 
 const DEFAULT_ACCEPT = /^(text\/html|application\/xhtml\+xml)/i;
@@ -118,12 +122,41 @@ export async function safeFetch(rawUrl: string, opts: SafeFetchOptions = {}): Pr
   const maxRedirects = opts.maxRedirects ?? 4;
   const transport = opts.transport ?? httpRequestOnce;
   const accept = opts.accept ?? DEFAULT_ACCEPT;
+  const now = opts.now ?? (() => Date.now());
   let current = rawUrl;
 
   for (let hop = 0; hop <= maxRedirects; hop++) {
-    const { url, address, family } = await assertPublicUrl(current, opts.resolve);
+    // Check deadline before starting this hop
+    if (opts.deadlineAt !== undefined) {
+      const remaining = opts.deadlineAt - now();
+      if (remaining <= 0) {
+        throw new FetchFailedError('The request timed out.', 'timeout');
+      }
+    }
+
+    // Race assertPublicUrl against the remaining deadline
+    let guardResult;
+    if (opts.deadlineAt !== undefined) {
+      const remaining = opts.deadlineAt - now();
+      let timeoutId: any = null;
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        timeoutId = setTimeout(() => {
+          reject(new FetchFailedError('The request timed out.', 'timeout'));
+        }, Math.max(1, remaining));
+      });
+      try {
+        guardResult = await Promise.race([assertPublicUrl(current, opts.resolve), timeoutPromise]);
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    } else {
+      guardResult = await assertPublicUrl(current, opts.resolve);
+    }
+    const { url, address, family } = guardResult;
+
+    const hopTimeout = opts.deadlineAt !== undefined ? Math.max(1, opts.deadlineAt - now()) : opts.timeoutMs ?? 8000;
     const res = await transport(url, address, family, {
-      timeoutMs: opts.timeoutMs ?? 8000,
+      timeoutMs: Math.min(hopTimeout, opts.timeoutMs ?? 8000),
       maxBytes: opts.maxBytes ?? 1_500_000,
       userAgent: BUYERLAB_USER_AGENT
     });
