@@ -29,5 +29,6 @@ export interface Outcome {
 
 export interface ReportFinding { text: string; claimIds: string[] }
 export interface ReportRecommendation { text: string; claimIds: string[]; rewrite: string | null }
-export interface Report { headline: string; findings: ReportFinding[]; recommendations: ReportRecommendation[]; disclaimer: string; generatedAt: string }
+/** `conversationAttempted` is false when stage 4 (buyer-to-agent conversation) was never run for this project. */
+export interface Report { headline: string; findings: ReportFinding[]; recommendations: ReportRecommendation[]; conversationAttempted?: boolean; disclaimer: string; generatedAt: string }
 export interface ChatTurn { role: 'user' | 'persona'; text: string; createdAt: string }

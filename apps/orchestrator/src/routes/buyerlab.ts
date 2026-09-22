@@ -290,7 +290,8 @@ export function createBuyerLabRouter(deps: BuyerLabRouterDeps): Router {
     res.json({ run, outcome });
   }));
 
-  router.get('/runs/:id/report', wrap(async (req, res) => {
+  // `write`-limited although it is a GET: a cache miss here spends a billable model call.
+  router.get('/runs/:id/report', write, wrap(async (req, res) => {
     const id = idOf(req, res);
     if (!id) return;
     const t = tenantOf(req);
@@ -304,7 +305,9 @@ export function createBuyerLabRouter(deps: BuyerLabRouterDeps): Router {
     const outcome = await store.getOutcome(t, id);
     if (!outcome) return res.status(404).json({ error: 'This run has no outcome yet.', code: 'NO_OUTCOME' });
     const { llm } = await withLlm(t);
-    const { report, model } = await generateReport(outcome, llm);
+    // Only a self_test project's runs attempt stage 4, so the report must say so for every other project.
+    const project = await store.getProject(t, run.projectId);
+    const { report, model } = await generateReport(outcome, llm, { conversationAttempted: project?.selfTest === true });
     await store.saveReport(t, id, report, model);
     res.json({ report, outcome });
   }));

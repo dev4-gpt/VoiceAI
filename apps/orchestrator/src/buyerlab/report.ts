@@ -12,7 +12,12 @@ function allClaims(outcome: NormalizedOutcome): Map<string, Claim> {
   return m;
 }
 
-export function buildReportPrompt(outcome: NormalizedOutcome): { system: string; user: string } {
+export interface ReportContext {
+  /** True only for a self_test project: the only kind whose runs attempt stage 4 (converse). */
+  conversationAttempted: boolean;
+}
+
+export function buildReportPrompt(outcome: NormalizedOutcome, ctx: ReportContext): { system: string; user: string } {
   const claims = allClaims(outcome);
   const claimLines = [...claims.values()].map((c) => `${c.id} [${c.kind}${c.severity ? `/${c.severity}` : ''}]: ${c.text} — quote: "${c.quote}"`).join('\n');
   const agreementLine = outcome.agreement.split
@@ -27,6 +32,9 @@ export function buildReportPrompt(outcome: NormalizedOutcome): { system: string;
     'Rules:',
     '- Every finding and recommendation must cite claimIds from the list above, EXACTLY as given. Never invent an id. A line with no real claimIds is discarded, so always include at least one.',
     '- Do not describe a "split" between personas unless the agreement line above says buyers disagree.',
+    ...(ctx.conversationAttempted
+      ? []
+      : ['- No buyer-to-agent conversation was attempted for this project. Do not describe, quote or imply one happened; every claim above comes from reading the material, not from talking to anyone.']),
     '- Never state a probability, percentage, conversion rate or revenue/dollar figure as a fact.',
     '- At most 6 findings and 6 recommendations.',
     'Return JSON: {"headline":"one sentence","findings":[{"text":"...","claimIds":["u1:1"]}],"recommendations":[{"text":"...","claimIds":["u1:1"],"rewrite":"paste-ready text or null"}]}'
@@ -34,10 +42,11 @@ export function buildReportPrompt(outcome: NormalizedOutcome): { system: string;
   return { system, user };
 }
 
-export function normaliseReport(outcome: NormalizedOutcome, raw: unknown, now: () => Date = () => new Date()): Report {
+export function normaliseReport(outcome: NormalizedOutcome, raw: unknown, ctx: ReportContext, now: () => Date = () => new Date()): Report {
   const validIds = new Set(allClaims(outcome).keys());
   const generatedAt = now().toISOString();
-  const empty = (): Report => ({ headline: '', findings: [], recommendations: [], disclaimer: DISCLAIMER, generatedAt });
+  const { conversationAttempted } = ctx;
+  const empty = (): Report => ({ headline: '', findings: [], recommendations: [], conversationAttempted, disclaimer: DISCLAIMER, generatedAt });
   if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) return empty();
   const r = raw as Record<string, unknown>;
 
@@ -59,11 +68,11 @@ export function normaliseReport(outcome: NormalizedOutcome, raw: unknown, now: (
     .filter((rec): rec is ReportRecommendation => !!rec && rec.text.length > 0 && rec.claimIds.length > 0)
     .slice(0, 6);
 
-  return { headline: clip(r.headline, 200), findings, recommendations, disclaimer: DISCLAIMER, generatedAt };
+  return { headline: clip(r.headline, 200), findings, recommendations, conversationAttempted, disclaimer: DISCLAIMER, generatedAt };
 }
 
-export async function generateReport(outcome: NormalizedOutcome, llm: BuyerLlm): Promise<{ report: Report; model: string }> {
-  const prompt = buildReportPrompt(outcome);
+export async function generateReport(outcome: NormalizedOutcome, llm: BuyerLlm, ctx: ReportContext): Promise<{ report: Report; model: string }> {
+  const prompt = buildReportPrompt(outcome, ctx);
   const res = await llm({ system: prompt.system, user: prompt.user, maxTokens: 3000 });
-  return { report: normaliseReport(outcome, parseJsonObject(res.content)), model: res.model };
+  return { report: normaliseReport(outcome, parseJsonObject(res.content), ctx), model: res.model };
 }

@@ -126,6 +126,17 @@ describe('/api/buyerlab: self_test, report, chat, retest', () => {
     expect(second.body.report).toEqual(first.body.report);
   });
 
+  it('GET .../report is behind the write rate limiter, like the other billable routes', async () => {
+    let allowed = true;
+    const { app } = build({ writeLimiter: { allow: () => allowed } as any });
+    const id = await readyProject(app);
+    const run = await finishedRun(app, id);
+    allowed = false;
+    await request(app).get(`/api/buyerlab/runs/${run.id}/report`).set(A).expect(429);
+    allowed = true;
+    await request(app).get(`/api/buyerlab/runs/${run.id}/report`).set(A).expect(200);
+  });
+
   it('GET .../report 409s while the run has not finished', async () => {
     const { app } = build();
     const id = await readyProject(app);

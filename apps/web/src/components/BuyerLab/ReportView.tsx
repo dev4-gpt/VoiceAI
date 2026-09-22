@@ -47,6 +47,9 @@ export const ReportView: React.FC<Props> = ({ report, outcome, busy, onGenerate 
             ))}
           </ul>
         </div>
+        {report.conversationAttempted === false && (
+          <p className="text-xs opacity-70">Stage 4 (buyer-to-agent conversation) was not run for this project, so nothing here comes from a live conversation.</p>
+        )}
         <p className="text-xs opacity-70">{report.disclaimer}</p>
       </div>
     )}

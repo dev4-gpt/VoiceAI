@@ -9,6 +9,7 @@ const report: Report = {
   headline: 'Buyers want a price before they will talk to sales.',
   findings: [{ text: 'No price is shown anywhere.', claimIds: ['u1:1'] }],
   recommendations: [{ text: 'Publish a starting price.', claimIds: ['u1:1'], rewrite: 'Starting at $X/mo.' }],
+  conversationAttempted: true,
   disclaimer: 'Simulated buyers, not measured customers.',
   generatedAt: '2026-09-21T00:00:00.000Z'
 };
