@@ -51,18 +51,37 @@ describe('runConversation', () => {
 
   it('never uses the production CRM: creating a lead in one conversation is invisible to the next', async () => {
     let capturedArgs: any;
-    const dispatchingAgent: AgentLLM = async (req) => {
+    const creatingAgent: AgentLLM = async (req) => {
       const last = req.messages[req.messages.length - 1];
       if (last.role === 'user' && !capturedArgs) {
         return { content: '', isFallback: false, model: 'a', tool_calls: [{ id: '1', type: 'function', function: { name: 'create_or_update_lead', arguments: JSON.stringify({ fullName: 'Sam Skeptic', email: 'sam@example.com', source: 'web_callback' }) } }] };
       }
       return { content: 'Got it, thanks.', isFallback: false, model: 'a' };
     };
-    const first = await runConversation(persona, buyerReply('My email is sam@example.com'), dispatchingAgent);
+    const first = await runConversation(persona, buyerReply('My email is sam@example.com'), creatingAgent);
     expect(first.some((t) => t.role === 'agent')).toBe(true);
-    // A second, independent conversation must not see the first's lead (each call constructs its own MemoryCrm).
-    const second = await runConversation(persona, buyerReply('Different question entirely'), agentReply('Sure, ask away.'));
-    expect(second[1].text).toBe('Sure, ask away.');
+
+    // A second, independent conversation must not see the first's lead: it asks a tool
+    // (qualify_lead, which fails when the CRM has no matching lead) to look up the same
+    // email the first conversation registered, then reports what the tool actually found.
+    // If runConversation ever shared a MemoryCrm across calls (e.g. hoisted to module scope),
+    // the lookup would succeed here and this assertion would catch it.
+    const lookupAgent: AgentLLM = async (req) => {
+      const last = req.messages[req.messages.length - 1];
+      if (last.role === 'user') {
+        return {
+          content: '',
+          isFallback: false,
+          model: 'a',
+          tool_calls: [{ id: '1', type: 'function', function: { name: 'qualify_lead', arguments: JSON.stringify({ email: 'sam@example.com', budgetRange: 'above_15k', coreNeed: 'cut tool sprawl' }) } }]
+        };
+      }
+      const toolResult = req.messages.filter((m) => m.role === 'tool').map((m) => JSON.parse((m as { content: string }).content));
+      const found = toolResult.some((r) => r.status === 'success');
+      return { content: found ? 'Found existing lead on file.' : 'No lead on file for that email.', isFallback: false, model: 'a' };
+    };
+    const second = await runConversation(persona, buyerReply('Different question entirely'), lookupAgent);
+    expect(second[1].text).toBe('No lead on file for that email.');
   });
 });
 
