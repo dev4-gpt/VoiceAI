@@ -42,7 +42,8 @@ import {
   Timer,
   Activity,
   CheckCircle2,
-  Key
+  Key,
+  FlaskConical
 } from 'lucide-react';
 import { speechSynth } from './utils/speechSynth';
 import { AudioWaveform } from './components/AudioWaveform';
@@ -51,6 +52,7 @@ import { AmbientVercelShader } from './components/AmbientVercelShader';
 import { LiveTranscriptHUD, MessageItem, ActiveToolItem } from './components/LiveTranscriptHUD';
 import { CrmKanban } from './components/CrmKanban';
 import { EvalsDashboard } from './components/EvalsDashboard';
+import { BuyerLab } from './components/BuyerLab/BuyerLab';
 import { ContentFactoryStudio } from './components/ContentFactoryStudio';
 import { KeysPanel } from './components/KeysPanel';
 import { AccountMenu } from './components/AccountMenu';
@@ -78,7 +80,7 @@ export { BUILT_IN_PRESETS, PACING_OPTIONS };
 const SYNTH_NOMINAL_LEVEL = 0.55;
 
 export const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'console' | 'crm' | 'evals' | 'content' | 'graph'>('console');
+  const [activeTab, setActiveTab] = useState<'console' | 'crm' | 'evals' | 'content' | 'graph' | 'buyerlab'>('console');
   const [viewMode, setViewMode] = useState<'odyssey' | 'tactical'>('odyssey');
   const [theme, setTheme] = useState<'glass' | 'cyber'>('glass');
   const isGlass = theme === 'glass';
@@ -2749,6 +2751,17 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
               <GitFork className="w-3.5 h-3.5 text-emerald-500" />
               <span>Knowledge Graph & Vault</span>
             </button>
+            <button
+              onClick={() => setActiveTab('buyerlab')}
+              className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                activeTab === 'buyerlab'
+                  ? (isGlass ? 'bg-[#fdfcf9] text-cyan-950 border border-cyan-200 font-semibold shadow-xs' : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm')
+                  : (isGlass ? 'text-slate-600 hover:text-slate-900' : 'text-slate-400 hover:text-slate-200')
+              }`}
+            >
+              <FlaskConical className="w-3.5 h-3.5 text-cyan-500" />
+              <span>Buyer Lab</span>
+            </button>
           </div>
         </div>
       </header>
@@ -2836,6 +2849,13 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
           )}
           {activeTab === 'evals' && <EvalsDashboard theme={theme} />}
           {activeTab === 'graph' && <GraphViewHUD theme={theme} />}
+          {activeTab === 'buyerlab' && (
+            <BuyerLab
+              signedIn={session.state.status === 'signed-in'}
+              isGlass={isGlass}
+              onOpenKeys={() => setIsCredentialsModalOpen(true)}
+            />
+          )}
         </main>
       )}
 
