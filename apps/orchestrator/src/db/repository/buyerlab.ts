@@ -7,7 +7,7 @@ import type { Archetype, NewPersona, NormalizedOutcome, Persona, PersonaSpec, Pr
 const iso = (d: Date | null) => (d ? d.toISOString() : null);
 
 const toProject = (r: typeof buyerProjects.$inferSelect): Project => ({
-  id: r.id, tenantId: r.tenantId, name: r.name, targetUrl: r.targetUrl, brief: r.brief, createdAt: r.createdAt.toISOString()
+  id: r.id, tenantId: r.tenantId, name: r.name, targetUrl: r.targetUrl, brief: r.brief, selfTest: r.selfTest, createdAt: r.createdAt.toISOString()
 });
 const toSource = (r: typeof buyerSources.$inferSelect): Source => ({
   id: r.id, projectId: r.projectId, kind: r.kind as SourceKind, surface: r.surface as Surface, label: r.label, url: r.url,

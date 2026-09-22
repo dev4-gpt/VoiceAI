@@ -16,7 +16,15 @@ export interface Project {
   name: string;
   targetUrl: string | null;
   brief: string | null;
+  selfTest: boolean;
   createdAt: string;
+}
+
+export interface NewProjectInput {
+  name: string;
+  targetUrl: string | null;
+  brief: string | null;
+  selfTest: boolean;
 }
 
 export interface Source {
@@ -77,6 +85,7 @@ export interface PersonaOutcome {
   intent: { score: number; rationale: string };
   sentiment: 'negative' | 'mixed' | 'positive';
   claims: Claim[];
+  conversation: Claim[];
   dropped: DroppedClaim[];
 }
 
@@ -152,4 +161,28 @@ export interface SimulationProvider {
   outcome(handle: ProviderHandle): Promise<NormalizedOutcome>;
   /** Ask one persona a follow-up question after the run (sub-project 2). */
   chat(handle: ProviderHandle, personaId: string, message: string): Promise<string>;
+}
+
+export interface ReportFinding {
+  text: string;
+  /** Claim.id values (from claims[] or conversation[] of any persona in this run's outcome). */
+  claimIds: string[];
+}
+export interface ReportRecommendation {
+  text: string;
+  claimIds: string[];
+  rewrite: string | null;
+}
+export interface Report {
+  headline: string;
+  findings: ReportFinding[];
+  recommendations: ReportRecommendation[];
+  disclaimer: string;
+  generatedAt: string;
+}
+
+export interface ChatTurn {
+  role: 'user' | 'persona';
+  text: string;
+  createdAt: string;
 }
