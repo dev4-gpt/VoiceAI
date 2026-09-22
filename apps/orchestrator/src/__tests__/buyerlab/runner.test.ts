@@ -1,4 +1,4 @@
-import { startRun, advanceRun, ProviderUnavailableError, MAX_CALL_BUDGET, ADVANCE_WINDOW_MS, RunnerDeps } from '../../buyerlab/runner';
+import { startRun, advanceRun, retestRun, ProviderUnavailableError, MAX_CALL_BUDGET, ADVANCE_WINDOW_MS, RunnerDeps } from '../../buyerlab/runner';
 import { BuyerLabNotFoundError } from '../../buyerlab/store';
 import { NativeProvider } from '../../buyerlab/nativeProvider';
 import { MemoryBuyerLabStore, mkPersona, reply } from './helpers';
@@ -162,5 +162,53 @@ describe('startRun + advanceRun with the real NativeProvider and a stub model', 
     expect(outcome.personas).toHaveLength(3);
     expect(outcome.verification).toEqual({ kept: 3, dropped: 0 });
     expect(outcome.partial).toBeNull();
+  });
+});
+
+describe('retestRun', () => {
+  beforeEach(() => {
+    now = 9_000_000;
+  });
+
+  async function baseline() {
+    const { store, project } = await seed();
+    const d = deps(store, fakeProvider({ done: true, completedSteps: 3 }));
+    const baseRun = await startRun(d, { tenantId: T, projectId: project.id, provider: 'native', fundedBy: 'byok' });
+    return { store, project, d, baseRun };
+  }
+
+  it('reuses the base run\'s persona ids, without re-inferring the panel', async () => {
+    const { store, project, d, baseRun } = await baseline();
+    const run = await retestRun(d, { tenantId: T, projectId: project.id, baseRunId: baseRun.id, provider: 'native', fundedBy: 'byok' });
+    expect(run.config.personaIds).toEqual(baseRun.config.personaIds);
+    expect(run.id).not.toBe(baseRun.id);
+    expect(await store.getRun(T, run.id)).not.toBeNull();
+  });
+
+  it('defaults to the project\'s current non-agent sources, or accepts an explicit subset', async () => {
+    const { store, project, d, baseRun } = await baseline();
+    const all = (await store.listSources(T, project.id)).map((s) => s.id);
+    const runAll = await retestRun(d, { tenantId: T, projectId: project.id, baseRunId: baseRun.id, provider: 'native', fundedBy: 'byok' });
+    expect(runAll.config.sourceIds).toEqual(all);
+    const runSubset = await retestRun(d, { tenantId: T, projectId: project.id, baseRunId: baseRun.id, provider: 'native', fundedBy: 'byok', sourceIds: [all[0]] });
+    expect(runSubset.config.sourceIds).toEqual([all[0]]);
+  });
+
+  it('ignores a source id that is not this project\'s', async () => {
+    const { store, project, d, baseRun } = await baseline();
+    const run = await retestRun(d, { tenantId: T, projectId: project.id, baseRunId: baseRun.id, provider: 'native', fundedBy: 'byok', sourceIds: ['not-a-real-id'] });
+    // Falls back to the project's current sources when the requested subset resolves to nothing usable.
+    expect(run.config.sourceIds.length).toBeGreaterThan(0);
+  });
+
+  it('answers not-found for a base run from another tenant or project', async () => {
+    const { project, d, baseRun } = await baseline();
+    await expect(retestRun(d, { tenantId: 'tenant-b', projectId: project.id, baseRunId: baseRun.id, provider: 'native', fundedBy: 'byok' })).rejects.toBeInstanceOf(BuyerLabNotFoundError);
+  });
+
+  it('clamps an explicit budget the same way startRun does', async () => {
+    const { project, d, baseRun } = await baseline();
+    const run = await retestRun(d, { tenantId: T, projectId: project.id, baseRunId: baseRun.id, provider: 'native', fundedBy: 'byok', callBudget: 9999 });
+    expect(run.callBudget).toBe(MAX_CALL_BUDGET);
   });
 });

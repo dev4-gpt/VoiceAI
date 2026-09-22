@@ -96,3 +96,45 @@ export async function advanceRun(deps: RunnerDeps, tenantId: string, runId: stri
   if (!updated) throw new BuyerLabNotFoundError('run');
   return { run: updated, progress };
 }
+
+/**
+ * Re-runs a prior run's SAME persona panel against a possibly-changed source set. Deliberately
+ * duplicates a small amount of startRun's body (project/provider lookup, budget clamping, the
+ * create-then-provider.start try/catch) rather than sharing a private helper, keeping startRun's
+ * heavily-reviewed code untouched and this function's risk isolated.
+ */
+export async function retestRun(
+  deps: RunnerDeps,
+  input: { tenantId: string; projectId: string; baseRunId: string; provider: ProviderId; fundedBy: 'byok' | 'server_grant'; sourceIds?: string[]; callBudget?: number }
+): Promise<Run> {
+  const { store } = deps;
+  const project = await store.getProject(input.tenantId, input.projectId);
+  if (!project) throw new BuyerLabNotFoundError('project');
+  const baseRun = await store.getRun(input.tenantId, input.baseRunId);
+  if (!baseRun || baseRun.projectId !== input.projectId) throw new BuyerLabNotFoundError('run');
+  const provider = deps.provider(input.provider);
+  if (!provider) throw new ProviderUnavailableError(input.provider);
+
+  const currentSources = (await store.listSources(input.tenantId, input.projectId)).filter((s) => s.kind !== 'agent');
+  const requested = input.sourceIds?.filter((id) => currentSources.some((s) => s.id === id)) ?? [];
+  const sourceIds = requested.length > 0 ? requested : currentSources.map((s) => s.id);
+  if (sourceIds.length === 0) throw new RunNotReadyError('NO_SOURCES');
+  // Re-test reuses the SAME persona ids the base run used; the panel is not re-inferred.
+  const personaIds = baseRun.config.personaIds;
+  if (personaIds.length === 0) throw new RunNotReadyError('NO_PANEL');
+
+  let callBudget = personaIds.length + 2;
+  if (input.callBudget !== undefined) {
+    if (!Number.isInteger(input.callBudget) || input.callBudget < 1) throw new RunNotReadyError('BAD_BUDGET');
+    callBudget = Math.min(MAX_CALL_BUDGET, input.callBudget);
+  }
+
+  const run = await store.createRun(input.tenantId, { projectId: input.projectId, provider: input.provider, config: { personaIds, sourceIds }, callBudget, fundedBy: input.fundedBy });
+  try {
+    await provider.start({ runId: run.id, tenantId: input.tenantId, projectId: input.projectId, personaIds, sourceIds, callBudget });
+  } catch (err) {
+    await store.updateRun(input.tenantId, run.id, { status: 'failed', errorCode: 'START_FAILED', finishedAt: new Date((deps.now ?? Date.now)()).toISOString() });
+    throw err;
+  }
+  return run;
+}
