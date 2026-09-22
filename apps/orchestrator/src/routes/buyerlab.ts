@@ -119,7 +119,8 @@ export function createBuyerLabRouter(deps: BuyerLabRouterDeps): Router {
       brief = briefText;
     }
     if ((await store.listProjects(tenantOf(req))).length >= MAX_PROJECTS) return res.status(409).json({ error: `A workspace can hold ${MAX_PROJECTS} projects.`, code: 'PROJECT_LIMIT' });
-    res.status(201).json({ project: await store.createProject(tenantOf(req), { name, targetUrl, brief }) });
+    // Self-test projects are provisioned internally, never through this public endpoint.
+    res.status(201).json({ project: await store.createProject(tenantOf(req), { name, targetUrl, brief, selfTest: false }) });
   }));
 
   router.get('/projects/:id', wrap(async (req, res) => {
