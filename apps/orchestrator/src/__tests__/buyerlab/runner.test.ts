@@ -1,4 +1,4 @@
-import { startRun, advanceRun, retestRun, ProviderUnavailableError, MAX_CALL_BUDGET, ADVANCE_WINDOW_MS, RunnerDeps } from '../../buyerlab/runner';
+import { startRun, advanceRun, retestRun, defaultCallBudget, ProviderUnavailableError, MAX_CALL_BUDGET, ADVANCE_WINDOW_MS, RunnerDeps } from '../../buyerlab/runner';
 import { BuyerLabNotFoundError } from '../../buyerlab/store';
 import { NativeProvider } from '../../buyerlab/nativeProvider';
 import { MemoryBuyerLabStore, mkPersona, reply } from './helpers';
@@ -47,6 +47,17 @@ describe('startRun', () => {
     expect(run.config.sourceIds).toHaveLength(1);
     expect(provider.start).toHaveBeenCalledTimes(1);
     expect(provider.start.mock.calls[0][0]).toMatchObject({ runId: run.id, tenantId: T, projectId: project.id, callBudget: 5 });
+  });
+
+  it("sizes a self_test project's default budget for the converse reservation each persona makes", async () => {
+    const store = new MemoryBuyerLabStore(clock);
+    const project = await store.createProject(T, { name: 'Anna self-test', targetUrl: null, brief: null, selfTest: true });
+    await store.addSources(T, project.id, [src()]);
+    await store.replacePanel(T, project.id, Array.from({ length: 3 }, (_, i) => person(`P${i}`)));
+    const run = await startRun(deps(store, fakeProvider()), input(project.id));
+    // Without this, every converse step is denied BUDGET before it makes a single model call.
+    expect(run.callBudget).toBe(defaultCallBudget(3, true));
+    expect(run.callBudget).toBeGreaterThan(defaultCallBudget(3, false));
   });
 
   it('clamps an explicit budget to 1..MAX_CALL_BUDGET', async () => {
@@ -210,5 +221,16 @@ describe('retestRun', () => {
     const { project, d, baseRun } = await baseline();
     const run = await retestRun(d, { tenantId: T, projectId: project.id, baseRunId: baseRun.id, provider: 'native', fundedBy: 'byok', callBudget: 9999 });
     expect(run.callBudget).toBe(MAX_CALL_BUDGET);
+  });
+
+  it("defaults the budget the same way startRun does, including a self_test project's converse reservation", async () => {
+    const store = new MemoryBuyerLabStore(clock);
+    const project = await store.createProject(T, { name: 'Anna self-test', targetUrl: null, brief: null, selfTest: true });
+    await store.addSources(T, project.id, [src()]);
+    await store.replacePanel(T, project.id, Array.from({ length: 3 }, (_, i) => person(`P${i}`)));
+    const d = deps(store, fakeProvider({ done: true, completedSteps: 3 }));
+    const baseRun = await startRun(d, { tenantId: T, projectId: project.id, provider: 'native', fundedBy: 'byok' });
+    const run = await retestRun(d, { tenantId: T, projectId: project.id, baseRunId: baseRun.id, provider: 'native', fundedBy: 'byok' });
+    expect(run.callBudget).toBe(defaultCallBudget(3, true));
   });
 });

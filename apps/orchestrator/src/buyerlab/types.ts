@@ -10,6 +10,14 @@ export type SourceKind = (typeof SOURCE_KINDS)[number];
 
 export const DISCLAIMER = 'Simulated buyers, not measured customers. These are hypotheses to test with real buyers.';
 
+/**
+ * Calls a converse step reserves up front for one persona (buyer turns + agent turns + the
+ * claims call). Lives here, not in nativeProvider, so the runner can size a self-test run's
+ * default budget by it without importing the provider (and its model clients).
+ * The unused part of the reservation is refunded once the conversation ends.
+ */
+export const CONVERSE_CALL_RESERVE = 10;
+
 export interface Project {
   id: string;
   tenantId: string;
@@ -177,6 +185,12 @@ export interface Report {
   headline: string;
   findings: ReportFinding[];
   recommendations: ReportRecommendation[];
+  /**
+   * False when stage 4 (buyer-to-agent conversation) was never attempted for this project —
+   * true only for a self_test project, the only kind whose runs converse at all (spec 6.2.1).
+   * A reader must be able to tell "not run" from "run and found nothing".
+   */
+  conversationAttempted: boolean;
   disclaimer: string;
   generatedAt: string;
 }

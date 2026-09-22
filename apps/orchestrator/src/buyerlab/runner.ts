@@ -1,7 +1,21 @@
 import { BuyerLabNotFoundError, BuyerLabStore } from './store';
-import type { Progress, ProviderId, Run, SimulationProvider } from './types';
+import { CONVERSE_CALL_RESERVE, type Progress, type ProviderId, type Run, type SimulationProvider } from './types';
 
 export const MAX_CALL_BUDGET = 60;
+/** Room for retries on top of the one react call each persona costs. */
+const REACT_OVERHEAD = 2;
+
+/**
+ * The budget a run gets when the caller names none. A self-test project is the only one whose
+ * runs attempt the converse step, and each converse step reserves CONVERSE_CALL_RESERVE calls
+ * before it starts, so a self-test run must be able to afford that reservation — otherwise every
+ * converse step is denied before it makes a single call. Non-self-test runs never attempt
+ * converse and keep the original, cheaper formula.
+ */
+export function defaultCallBudget(personaCount: number, selfTest: boolean): number {
+  const perPersona = selfTest ? 1 + CONVERSE_CALL_RESERVE : 1;
+  return Math.min(MAX_CALL_BUDGET, personaCount * perPersona + REACT_OVERHEAD);
+}
 /** How long one poll may work. Vercel's function limit in vercel.json is 60 s. */
 export const ADVANCE_WINDOW_MS = 45_000;
 
@@ -46,7 +60,7 @@ export async function startRun(
   if (sources.length === 0) throw new RunNotReadyError('NO_SOURCES');
   if (personas.length === 0) throw new RunNotReadyError('NO_PANEL');
 
-  let callBudget = personas.length + 2; // one call per persona, with room for retries
+  let callBudget = defaultCallBudget(personas.length, project.selfTest);
   if (input.callBudget !== undefined) {
     if (!Number.isInteger(input.callBudget) || input.callBudget < 1) throw new RunNotReadyError('BAD_BUDGET');
     callBudget = Math.min(MAX_CALL_BUDGET, input.callBudget);
@@ -123,7 +137,7 @@ export async function retestRun(
   const personaIds = baseRun.config.personaIds;
   if (personaIds.length === 0) throw new RunNotReadyError('NO_PANEL');
 
-  let callBudget = personaIds.length + 2;
+  let callBudget = defaultCallBudget(personaIds.length, project.selfTest);
   if (input.callBudget !== undefined) {
     if (!Number.isInteger(input.callBudget) || input.callBudget < 1) throw new RunNotReadyError('BAD_BUDGET');
     callBudget = Math.min(MAX_CALL_BUDGET, input.callBudget);

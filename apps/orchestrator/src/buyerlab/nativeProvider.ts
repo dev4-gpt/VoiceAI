@@ -6,7 +6,8 @@ import { buildConversationClaimsPrompt, buildReactPrompt, renderSources, selectS
 import { createConverseAgentLlm, runConversation, transcriptText } from './converse';
 import { generateChatReply } from './chat';
 import type { AgentLLM } from '../services/agentLoop';
-import type { CallBudget, Claim, NormalizedOutcome, Persona, PersonaOutcome, Progress, Project, ProviderHandle, RunSpec, SimulationProvider, Source } from './types';
+import { CONVERSE_CALL_RESERVE } from './types';
+import type { CallBudget, Claim, DroppedClaim, NormalizedOutcome, Persona, PersonaOutcome, Progress, Project, ProviderHandle, RunSpec, SimulationProvider, Source } from './types';
 
 export interface NativeDeps {
   store: BuyerLabStore;
@@ -47,8 +48,6 @@ class StepTimeoutError extends Error {
 export const personaStepKey = (personaId: string) => `react:${personaId}`;
 /** Do not start a model call with less than this left before the deadline. */
 const MIN_WINDOW_MS = 12_000;
-/** Generous, non-refunded reservation for one persona's converse step (buyer + agent + claims calls). */
-const CONVERSE_CALL_RESERVE = 10;
 
 function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
   let timer: NodeJS.Timeout;
@@ -195,18 +194,27 @@ export class NativeProvider implements SimulationProvider {
     return `converse:${personaId}`;
   }
 
-  /** Best-effort, self-test-only enrichment. Never affects react-step accounting or run completion. */
+  /**
+   * Best-effort, self-test-only enrichment. Never affects react-step accounting or run completion.
+   * Loops like react's own while-loop so a panel larger than `concurrency` is covered instead of
+   * only its first `concurrency` personas: converse does not gate `progress.done`, so a persona
+   * skipped here would never be picked up by a later poll.
+   */
   private async advanceConverse(handle: ProviderHandle, project: Project, personas: Persona[], budget: CallBudget): Promise<void> {
-    if (this.budgetLeftMs(budget) < MIN_WINDOW_MS) return;
     const { store } = this.deps;
-    const steps = new Map((await store.listSteps(handle.tenantId, handle.runId)).map((s) => [s.stepKey, s.status]));
-    const ready = personas.filter((p) => {
-      const react = steps.get(personaStepKey(p.id));
-      const converse = steps.get(this.converseStepKey(p.id));
-      return react === 'done' && converse !== 'done' && converse !== 'failed';
-    });
-    const batch = ready.slice(0, this.concurrency);
-    await Promise.all(batch.map((p) => (this.budgetLeftMs(budget) < MIN_WINDOW_MS ? Promise.resolve() : this.runConverseStep(handle, project, p, budget))));
+    const attempted = new Set<string>();
+    while (this.budgetLeftMs(budget) >= MIN_WINDOW_MS) {
+      const steps = new Map((await store.listSteps(handle.tenantId, handle.runId)).map((s) => [s.stepKey, s.status]));
+      const ready = personas.filter((p) => {
+        const react = steps.get(personaStepKey(p.id));
+        const converse = steps.get(this.converseStepKey(p.id));
+        return react === 'done' && converse !== 'done' && converse !== 'failed' && !attempted.has(p.id);
+      });
+      if (ready.length === 0) return;
+      const batch = ready.slice(0, this.concurrency);
+      batch.forEach((p) => attempted.add(p.id));
+      await Promise.all(batch.map((p) => (this.budgetLeftMs(budget) < MIN_WINDOW_MS ? Promise.resolve() : this.runConverseStep(handle, project, p, budget))));
+    }
   }
 
   private async runConverseStep(handle: ProviderHandle, project: Project, persona: Persona, budget: CallBudget): Promise<void> {
@@ -215,17 +223,31 @@ export class NativeProvider implements SimulationProvider {
     const claim = await store.claimStep(handle.tenantId, handle.runId, key, { staleAfterMs: this.staleAfterMs, maxAttempts: this.maxAttempts });
     if (!claim.claimed) return;
 
-    // Reserve a generous, non-refunded block: a conversation's call count is variable (see plan Task 5).
+    // Reserve a generous block up front: a conversation's call count is only known once it ends.
     const fresh = await store.getRun(handle.tenantId, handle.runId);
     const total = fresh ? await store.addCalls(handle.tenantId, handle.runId, CONVERSE_CALL_RESERVE) : 0;
     if (!fresh || total > fresh.callBudget) {
+      // Refund the whole reservation: this best-effort step made no call, and leaving callsUsed
+      // above callBudget would push the next react-step poll into budget_exhausted.
+      if (fresh) await this.refund(handle, CONVERSE_CALL_RESERVE);
       await store.finishStep(handle.tenantId, handle.runId, key, 'failed', { error: 'BUDGET' }, claim.attempt);
       return;
     }
 
+    // Counted through wrappers so the unused part of the reservation is refunded exactly, on
+    // every path — an early exit (empty buyer message, agent fallback) costs far fewer than 10.
+    let calls = 0;
+    const countedBuyer: BuyerLlm = (req) => {
+      calls += 1;
+      return llm(req);
+    };
     try {
       const agentLlm = this.agentLlmFactory(this.deps.apiKey);
-      const turns = await withTimeout(runConversation(persona, llm, agentLlm), Math.min(this.stepTimeoutMs, Math.max(this.budgetLeftMs(budget), 1000)));
+      const countedAgent: AgentLLM = (req) => {
+        calls += 1;
+        return agentLlm(req);
+      };
+      const turns = await withTimeout(runConversation(persona, countedBuyer, countedAgent), Math.min(this.stepTimeoutMs, Math.max(this.budgetLeftMs(budget), 1000)));
       if (turns.length === 0) {
         await store.finishStep(handle.tenantId, handle.runId, key, 'failed', { error: 'NO_CONVERSATION' }, claim.attempt);
         return;
@@ -237,14 +259,25 @@ export class NativeProvider implements SimulationProvider {
       ]);
       const sourceId = added[0]?.id ?? hash;
       const claimsPrompt = buildConversationClaimsPrompt(persona, transcript);
-      const res = await llm({ system: claimsPrompt.system, user: claimsPrompt.user, maxTokens: 1200 });
-      const { claims } = normaliseConversation({ personaId: persona.id, sourceId, transcript, raw: parseJsonObject(res.content) });
-      await store.finishStep(handle.tenantId, handle.runId, key, 'done', { claims }, claim.attempt);
+      const res = await countedBuyer({ system: claimsPrompt.system, user: claimsPrompt.user, maxTokens: 1200 });
+      const { claims, dropped } = normaliseConversation({ personaId: persona.id, sourceId, transcript, raw: parseJsonObject(res.content) });
+      await store.finishStep(handle.tenantId, handle.runId, key, 'done', { claims, dropped }, claim.attempt);
     } catch (err) {
       // Only the error's name is recorded: never a message, which may echo model or key material.
       const name = (err as { name?: string })?.name ?? 'Error';
       await store.finishStep(handle.tenantId, handle.runId, key, 'failed', { error: name }, claim.attempt);
+    } finally {
+      await this.refund(handle, CONVERSE_CALL_RESERVE - calls);
     }
+  }
+
+  /**
+   * Gives `n` reserved-but-unspent calls back to the run. Never throws: converse is best effort
+   * and a failed refund must not break the react-side advance that called it.
+   */
+  private async refund(handle: ProviderHandle, n: number): Promise<void> {
+    if (n === 0) return;
+    await this.deps.store.addCalls(handle.tenantId, handle.runId, -n).catch(() => undefined);
   }
 
   private async progress(handle: ProviderHandle, personas: Persona[], budgetExhausted: boolean): Promise<Progress> {
@@ -284,8 +317,12 @@ export class NativeProvider implements SimulationProvider {
       if (step?.status !== 'done' || !step.output) continue;
       const stepOutput = step.output as StepOutput;
       const converseStep = steps.find((s) => s.stepKey === this.converseStepKey(p.id));
-      const conversation = converseStep?.status === 'done' && converseStep.output ? (converseStep.output as { claims: Claim[] }).claims : [];
-      done.push({ outcome: { ...stepOutput.outcome, conversation }, model: stepOutput.model });
+      const converseOut = converseStep?.status === 'done' && converseStep.output ? (converseStep.output as { claims?: Claim[]; dropped?: DroppedClaim[] }) : null;
+      const conversation = converseOut?.claims ?? [];
+      // A conversation claim that failed verification is counted with the persona's other drops,
+      // never silently discarded (buildOutcome's verification.dropped sums p.dropped).
+      const dropped = [...stepOutput.outcome.dropped, ...(converseOut?.dropped ?? [])];
+      done.push({ outcome: { ...stepOutput.outcome, conversation, dropped }, model: stepOutput.model });
     }
     if (done.length === 0) throw new OutcomeNotReadyError();
     const seen = new Set(personas.flatMap((p) => selectSourcesFor(sources, p.surfaces).map((s) => s.id)));
