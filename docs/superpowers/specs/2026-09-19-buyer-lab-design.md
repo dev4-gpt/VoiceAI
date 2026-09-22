@@ -1,6 +1,7 @@
 # Buyer Lab — simulated buyer panels for testing a client's go-to-market
 
-Status: draft for review, 2026-09-19. Not implemented.
+Status: sub-project 1 (Core) implemented, reviewed and deployed to production, 2026-09-21.
+Sub-project 2 (Depth) design updated 2026-09-21 (section 6.2); not yet implemented.
 
 ## 1. Goal
 
@@ -45,8 +46,9 @@ parallel with them once the interface in section 5 is merged.
 
 1. **Core.** Provider interface, run store, SSRF-safe crawler, panel inference, Native provider
    (page reactions), thin Buyer Lab tab: URL in, verdicts and objections out.
-2. **Depth.** Buyer-to-agent conversations, the report agent with GTM/marketing/branding
-   recommendations, chat with a persona, before/after re-test.
+2. **Depth.** Buyer-to-agent conversations (self-test projects only — section 6.2), the report
+   agent with GTM/marketing/branding recommendations and claim-id citations, chat with a persona,
+   before/after re-test.
 3. **MiroFish provider.** Starts with a **spike** (section 9). Container, adapter, normalisation,
    side-by-side comparison view.
 4. **Inputs.** Written brief, PDF/deck upload and text extraction.
@@ -92,9 +94,12 @@ worker later changes `advance()` callers, not the UI or the report agent.
 ### 5.2 NormalizedOutcome (what both engines must produce)
 
 Per persona: `intent` (0-10 with a rationale, never shown as a probability), `sentiment`,
-`objections[]` (`text`, `severity`, `trigger: { pageUrl, quote }`), `confusions[]`, `delights[]`,
-and `transcript` (turns). Per run: `agreement` (where personas and, later, providers agree or
-split), `coverage` (pages and inputs actually seen), `provider`, `model`, `callsUsed`.
+`claims[]` (objection/confusion/delight, each with a quote verified against a page or upload the
+persona was shown), and, from sub-project 2, a separate `conversation[]`: claims about the
+**advice and help** stage 4 produced, verified against the conversation transcript instead (section
+6.2 — a different, and for now narrower, trust boundary than `claims[]`). Per run: `agreement`
+(where personas agree or split, computed from the outcome, never asked of a model), `coverage`
+(pages and inputs actually seen), `provider`, `model`, `callsUsed`.
 
 **A claim without a `quote` from the ingested material is rejected by the normaliser.** This is the
 main defence against a confident report that nobody can trace to anything. Verification is exact
@@ -114,19 +119,23 @@ the report).
    visitor); the model fills the rest to the requested size (default 6, max 12). The user edits
    the panel before the run. Personas carry goals, constraints, budget authority, prior tools
    and a stated reason they might not buy.
-3. **React.** Each persona reads each key page and reports intent, confusions, objections and
-   delights, each with a quote. Small calls, parallel within the step budget.
+3. **React.** Each persona reads each key page and reports intent and `claims[]` (objection,
+   confusion or delight, each with a quote). Small calls, parallel within the step budget.
 4. **Converse.** Each persona, played by a persona-simulator model, has a short conversation
    (2-4 exchanges) with the client's agent, run through the existing
    `services/agentLoop.ts` `runAgentTurn` with the real dispatcher over an in-memory store (same
    isolation the eval harness uses). This is what measures "advice and help" against real
-   tool-using behaviour rather than a described one.
+   tool-using behaviour rather than a described one. **This automated stage only runs for a
+   project flagged `self_test` — today, only our own Anna agent has a dispatcher this codebase can
+   call.** For every other project (Veloce included), converse is skipped automatically, and
+   `conversation[]` is empty. Section 6.2 covers the manual alternative.
 5. **Crowd round.** Personas see the panel's top objections and may revise their stance once.
    This is the native stand-in for the social interaction MiroFish simulates, and it exposes
    herd effects rather than hiding them.
 6. **Report.** The report agent reads the `NormalizedOutcome` and writes ranked findings and
    recommendations (positioning, messaging, pricing presentation, channels, brand voice) with
-   paste-ready rewrites. Each recommendation cites the objections it addresses.
+   paste-ready rewrites. Each finding and recommendation cites the claims it addresses (section
+   6.2).
 7. **Chat / re-test.** Chat asks a persona a question with its full context. Re-test reruns the
    same panel against a changed source (a new URL snapshot or edited brief) and reports the
    per-persona intent delta, with the same caveat that this is a simulation.
@@ -165,12 +174,54 @@ findings that change this spec.
 6. **One sample of six personas is a set of hypotheses.** The report already says so (section 11);
    the UI must not present the panel's average intent as a result.
 
+### 6.2 Sub-project 2 decisions
+
+Sub-project 2 adds stages 4, 6 and 7 (converse, report, chat/re-test). Four decisions, made after
+finding that stage 4 as originally written only has a real dispatcher to call for our own Anna
+agent, and that driving a live browser through a client's signed-in app is a different, heavier
+capability with its own consent and architecture questions:
+
+1. **Converse is self-service only for a `self_test` project.** `buyer_projects.self_test`
+   (boolean, default false) marks a project as GrowthVoice OS itself. Only a `self_test` project's
+   runs attempt the `converse:<personaId>` step; every other project's `conversation[]` stays
+   empty, and the report says stage 4 was not run rather than implying it was. The isolated CRM is
+   a fresh in-memory store per run (the eval harness's `MemoryCrm`, reused as-is, not the
+   production `crmStore` singleton), so a simulated buyer can never create a real lead.
+2. **A conversation transcript is its own, narrower trust boundary.** The transcript itself
+   (persona and agent turns) is stored as a `buyer_sources` row, `kind: 'agent'`, `surface:
+   'public'`. Quoting what the agent actually said in that transcript is legitimate grounding for
+   a claim about **that conversation** — unlike section 6.1's rule, which exists to stop a
+   capture agent's own narration being cited as if it were the client's copy. So `conversation[]`
+   claims verify the same way `claims[]` do (verbatim quote, `verifyQuote`), but against the
+   transcript as the only allowed source; `claims[]` continues to reject any `agent`-kind source,
+   unchanged from section 6.1.
+3. **Assisted research needs no new engineering.** For a project that is not `self_test` (Veloce
+   and, later, real clients), a person — in an interactive agent session, signed in themselves,
+   watching — can hold a live conversation with the target's own agent (through its UI, since
+   there is no API to call) and paste the transcript in through the ingest endpoint sub-project 1
+   already built (`kind: 'upload'`, `surface: 'signed_in'`). A human-supplied transcript is
+   already "text the user supplied and labelled as theirs" under section 6.1's rule 1, so it needs
+   no new `kind` or API: personas react to it like any other signed-in source during stage 3, and
+   its claims land in the normal `claims[]`, not `conversation[]`. This path is explicitly manual,
+   is never triggered by `advance()`, and is not something the product does unattended: it is the
+   same kind of assisted capture already used for this project during sub-project 1's validation,
+   just extended to a conversation.
+4. **Report grounding, chat and re-test follow section 6.1's already-decided rules exactly**:
+   claim-id citations only (a report line whose claim id does not resolve to a real claim in the
+   outcome is dropped before rendering, never shown as a bare quote); splits are the outcome's
+   computed `agreement`, never invented by the report call; the reaction and report prompts both
+   forbid stating a probability, percentage, conversion rate or revenue figure. Chat and re-test
+   add no new grounding rule of their own — chat's reply is free text from the persona (not a
+   claim, so not quote-verified — it is a live answer, not evidence), and re-test's output is a
+   second `NormalizedOutcome` compared to the first on `intent` only.
+
 ## 7. Data model (additive, Drizzle)
 
 All tables carry `tenant_id` referencing `organizations`, cascade on delete, and are only read or
 written with the caller's tenant.
 
-- `buyer_projects`: id, tenant_id, name, target_url, brief, created_at.
+- `buyer_projects`: id, tenant_id, name, target_url, brief, self_test boolean (default false;
+  section 6.2 — only a self-test project's runs attempt the converse stage), created_at.
 - `buyer_sources`: id, project_id, kind (`crawl|brief|upload|agent`), surface
   (`public|signed_in`), url, content_hash, text, meta jsonb, fetched_at. `text` is raw extracted
   text only (section 6.1); `agent` rows are conversation transcripts. Snapshots are immutable, so a
@@ -185,13 +236,22 @@ written with the caller's tenant.
   attempts, output jsonb, started_at, finished_at. **Unique (run_id, step_key)**: the insert is
   the claim lock, so a retried or concurrent step cannot run twice or double-charge, and a
   `running` row older than 90 s is treated as crashed and taken over.
-- `buyer_outcomes`: run_id unique, outcome jsonb (NormalizedOutcome), built_at.
-- `buyer_reports`: id, run_id, body jsonb, model, created_at.
-- `buyer_chats`: id, run_id, persona_id, role, text, created_at.
+- `buyer_outcomes`: run_id unique, outcome jsonb (NormalizedOutcome, now including
+  `personas[].conversation[]`), built_at.
+- `buyer_reports`: id, tenant_id, run_id, body jsonb, model, created_at. `body` is
+  `{ headline: string, findings: Array<{ text, claimIds: string[] }>, recommendations:
+  Array<{ text, claimIds: string[], rewrite: string | null }>, disclaimer: string,
+  generatedAt: string }`. `claimIds` reference `Claim.id` (`${personaId}:${n}`) inside this run's
+  own `buyer_outcomes.outcome`; a finding or recommendation whose every `claimIds` entry fails to
+  resolve is dropped by the normaliser before the row is written, not filtered at render time.
+- `buyer_chats`: id, tenant_id, run_id, persona_id, role (`user|persona`), text, created_at. One
+  row per turn; a chat call reads the run's prior rows for that persona as its history.
 
 ## 8. API (all `requireUser`, all tenant-scoped)
 
-- `POST /api/buyerlab/projects` create; `GET /api/buyerlab/projects` list.
+- `POST /api/buyerlab/projects` create (`{ name, targetUrl?, brief?, selfTest? }`; `selfTest`
+  defaults false and, in sub-project 2, is accepted only for the owner's own workspace); `GET
+  /api/buyerlab/projects` list.
 - `POST /api/buyerlab/projects/:id/ingest` add a URL/brief/upload; returns coverage.
 - `POST /api/buyerlab/projects/:id/panel` infer a panel; `PUT` to save edits.
 - `POST /api/buyerlab/runs` start `{ projectId, provider, panelId, budget }`; 402
@@ -199,8 +259,17 @@ written with the caller's tenant.
   unsafe URL.
 - `GET /api/buyerlab/runs/:id` status and progress; each call also **advances** the run one step
   (the poll drives the job, so no queue is needed).
-- `GET /api/buyerlab/runs/:id/report`, `POST /api/buyerlab/runs/:id/chat`,
-  `POST /api/buyerlab/runs/:id/retest`.
+- `GET /api/buyerlab/runs/:id/report` runs the report agent once (idempotent: a second call
+  returns the stored `buyer_reports` row rather than regenerating), 409 if the run is not `done`
+  or `budget_exhausted`. Returns `{ report, outcome }` so the UI can render each finding's quote
+  from `outcome` without a second round trip.
+- `POST /api/buyerlab/runs/:id/chat` `{ personaId, message }` → `{ reply }`; 404 if `personaId`
+  is not in the run's panel; 402 `KEY_REQUIRED` under the same no-free-credits rule as starting a
+  run.
+- `POST /api/buyerlab/runs/:id/retest` `{ sourceIds? }` (defaults to the project's current
+  sources) → `{ run }`, a **new** `buyer_runs` row reusing the same `buyer_personas` ids; once it
+  finishes, `GET .../report` (or a `GET .../retest/:newRunId/delta`) returns the per-persona
+  `intent` delta between the two runs' outcomes.
 
 ## 9. MiroFish provider
 
@@ -299,6 +368,13 @@ UI, and a stub-LLM **offline mode** so CI needs no API key.
 - **Tenant isolation tests** on every route.
 - **Real-model check** (needs a key, recorded as `measured`): one run against `veloceos.cloud`,
   reviewed by a person for whether the objections are traceable and sensible.
+- **Sub-project 2 additions:** converse is skipped (not faked) for a non-`self_test` project, and
+  a `conversation[]` claim whose quote is only in `claims[]`'s sources (not the transcript) is
+  rejected — the two arrays' sources must not cross. A report finding/recommendation whose
+  `claimIds` do not resolve to the run's own outcome is dropped before the row is persisted. Chat
+  is tenant- and run-scoped (another tenant's `runId` or an unknown `personaId` is 404). Re-test
+  produces a second run whose personas are identical ids to the first, and the delta is computed,
+  never asked of a model.
 
 ## 13. UI
 
@@ -307,6 +383,13 @@ Target, Panel (editable cards), Run (progress, cost estimate, cancel), Report (v
 objections with quotes, recommendations, provider agreement), Chat and Re-test. The provider
 choice is a control, and with both engines run the report shows them side by side. `App.tsx` gets
 only the tab registration; the feature lives in `apps/web/src/components/BuyerLab/`.
+
+**Sub-project 2 additions.** Target gains a `self_test` toggle, shown but only ever usable on the
+owner's own workspace, with copy explaining converse only runs for that project. Report renders
+each finding/recommendation followed by the verified quote(s) its `claimIds` resolve to, never the
+report agent's own words as if they were evidence. Chat is a simple per-persona thread. Re-test
+shows the two runs' per-persona intent side by side with the delta, and repeats the "simulated,
+not measured" disclaimer — a positive delta is still a hypothesis, not a result.
 
 ## 14. Files (for parallel ownership)
 
