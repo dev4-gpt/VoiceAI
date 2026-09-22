@@ -131,6 +131,7 @@ describe('buildOutcome', () => {
   const outcomeFor = (id: string, score: number, kept = 1, dropped = 0) => ({
     personaId: id, name: id, archetype: 'skeptic' as const, surfaces: ['public' as const], intent: { score, rationale: 'r' }, sentiment: 'mixed' as const,
     claims: Array.from({ length: kept }, (_, i) => ({ id: `${id}:${i}`, kind: 'objection' as const, text: 't', severity: 'low' as const, sourceId: 'pub', surface: 'public' as const, quote: 'q'.repeat(12) })),
+    conversation: [],
     dropped: Array.from({ length: dropped }, () => ({ text: 't', reason: 'quote_not_found' as const }))
   });
   const base = { provider: 'native' as const, model: 'm', sources: [pub, app], callsUsed: 3, now: () => new Date('2026-09-21T10:00:00Z') };

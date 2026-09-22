@@ -85,6 +85,7 @@ export function normaliseReaction(i: { persona: Persona; raw: unknown; refs: Map
     intent: { score: Math.min(10, Math.max(0, Math.round(score))), rationale: clip(intentRaw.rationale, 500) },
     sentiment: SENTIMENTS.includes(raw.sentiment as (typeof SENTIMENTS)[number]) ? (raw.sentiment as PersonaOutcome['sentiment']) : 'mixed',
     claims,
+    conversation: [],
     dropped
   };
 }

@@ -10,7 +10,7 @@ const outcome = { provider: 'native', panelSize: 0 } as unknown as NormalizedOut
 
 async function seed() {
   const store = new MemoryBuyerLabStore(clock);
-  const project = await store.createProject(A, { name: 'Veloce', targetUrl: 'https://veloceos.cloud', brief: null });
+  const project = await store.createProject(A, { name: 'Veloce', targetUrl: 'https://veloceos.cloud', brief: null, selfTest: false });
   return { store, project };
 }
 

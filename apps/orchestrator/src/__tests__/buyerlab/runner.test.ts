@@ -13,7 +13,7 @@ const person = (name: string) => { const { id, projectId, ...rest } = mkPersona(
 
 async function seed(opts: { sources?: any[]; personas?: number } = {}) {
   const store = new MemoryBuyerLabStore(clock);
-  const project = await store.createProject(T, { name: 'Veloce', targetUrl: null, brief: null });
+  const project = await store.createProject(T, { name: 'Veloce', targetUrl: null, brief: null, selfTest: false });
   await store.addSources(T, project.id, opts.sources ?? [src()]);
   await store.replacePanel(T, project.id, Array.from({ length: opts.personas ?? 3 }, (_, i) => person(`P${i}`)));
   return { store, project };

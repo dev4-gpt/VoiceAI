@@ -1,6 +1,6 @@
 import { BuyerLabNotFoundError, BuyerLabStore, ClaimResult, StepRow } from '../../buyerlab/store';
 import type { BuyerLlmResult } from '../../buyerlab/llm';
-import type { NewPersona, NewSource, NormalizedOutcome, Persona, Project, Run, Source } from '../../buyerlab/types';
+import type { ChatTurn, NewPersona, NewProjectInput, NewSource, NormalizedOutcome, Persona, Project, Report, Run, Source } from '../../buyerlab/types';
 
 type Owned<T> = T & { tenantId: string };
 const clean = <T extends { tenantId: string }>(row: T): Omit<T, 'tenantId'> => {
@@ -16,6 +16,8 @@ export class MemoryBuyerLabStore implements BuyerLabStore {
   private runs = new Map<string, Run>();
   private steps = new Map<string, Owned<StepRow>>();
   private outcomes = new Map<string, { tenantId: string; outcome: NormalizedOutcome }>();
+  private reports = new Map<string, { tenantId: string; report: Report }>();
+  private chats: Array<{ tenantId: string; runId: string; personaId: string; role: 'user' | 'persona'; text: string; createdAt: string }> = [];
 
   constructor(private readonly now: () => number = () => Date.now()) {}
 
@@ -35,8 +37,8 @@ export class MemoryBuyerLabStore implements BuyerLabStore {
     return `${runId}::${key}`;
   }
 
-  async createProject(tenantId: string, input: { name: string; targetUrl: string | null; brief: string | null }) {
-    const p: Project = { id: this.id('proj'), tenantId, name: input.name, targetUrl: input.targetUrl, brief: input.brief, createdAt: this.iso() };
+  async createProject(tenantId: string, input: NewProjectInput) {
+    const p: Project = { id: this.id('proj'), tenantId, name: input.name, targetUrl: input.targetUrl, brief: input.brief, selfTest: input.selfTest, createdAt: this.iso() };
     this.projects.set(p.id, p);
     return p;
   }
@@ -55,6 +57,8 @@ export class MemoryBuyerLabStore implements BuyerLabStore {
       if (r.projectId !== projectId) continue;
       this.runs.delete(runId);
       this.outcomes.delete(runId);
+      this.reports.delete(runId);
+      this.chats = this.chats.filter((c) => c.runId !== runId);
       for (const [k, s] of this.steps) if (s.runId === runId) this.steps.delete(k);
     }
     return true;
@@ -171,6 +175,26 @@ export class MemoryBuyerLabStore implements BuyerLabStore {
   async getOutcome(tenantId: string, runId: string) {
     const o = this.outcomes.get(runId);
     return o && o.tenantId === tenantId ? o.outcome : null;
+  }
+
+  async saveReport(tenantId: string, runId: string, report: Report, _model: string | null) {
+    if (!this.ownsRun(tenantId, runId)) throw new BuyerLabNotFoundError('run');
+    this.reports.set(runId, { tenantId, report });
+  }
+  async getReport(tenantId: string, runId: string) {
+    const row = this.reports.get(runId);
+    return row && row.tenantId === tenantId ? row.report : null;
+  }
+  async appendChatTurn(tenantId: string, runId: string, personaId: string, turn: { role: 'user' | 'persona'; text: string }): Promise<ChatTurn> {
+    if (!this.ownsRun(tenantId, runId)) throw new BuyerLabNotFoundError('run');
+    const row = { tenantId, runId, personaId, role: turn.role, text: turn.text, createdAt: this.iso() };
+    this.chats.push(row);
+    return { role: row.role, text: row.text, createdAt: row.createdAt };
+  }
+  async listChatTurns(tenantId: string, runId: string, personaId: string) {
+    return this.chats
+      .filter((c) => c.tenantId === tenantId && c.runId === runId && c.personaId === personaId)
+      .map((c) => ({ role: c.role, text: c.text, createdAt: c.createdAt }));
   }
 }
 

@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS buyer_projects (
   name text NOT NULL,
   target_url text,
   brief text,
+  self_test boolean NOT NULL DEFAULT false,
   created_at timestamptz NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS buyer_projects_tenant_idx ON buyer_projects (tenant_id, created_at);

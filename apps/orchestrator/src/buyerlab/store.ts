@@ -1,4 +1,4 @@
-import type { NewPersona, NewSource, NormalizedOutcome, Persona, Project, ProviderId, Run, RunConfig, Source } from './types';
+import type { ChatTurn, NewPersona, NewProjectInput, NewSource, NormalizedOutcome, Persona, Project, ProviderId, Report, Run, RunConfig, Source } from './types';
 
 export class BuyerLabNotFoundError extends Error {
   constructor(what = 'resource') {
@@ -26,7 +26,7 @@ export interface ClaimResult {
  * tenant's rows; another tenant's id behaves exactly like a missing one.
  */
 export interface BuyerLabStore {
-  createProject(tenantId: string, input: { name: string; targetUrl: string | null; brief: string | null }): Promise<Project>;
+  createProject(tenantId: string, input: NewProjectInput): Promise<Project>;
   listProjects(tenantId: string): Promise<Project[]>;
   getProject(tenantId: string, projectId: string): Promise<Project | null>;
   /** True if a project was deleted (with its sources, personas, runs, steps and outcomes). */
@@ -67,4 +67,12 @@ export interface BuyerLabStore {
 
   saveOutcome(tenantId: string, runId: string, outcome: NormalizedOutcome): Promise<void>;
   getOutcome(tenantId: string, runId: string): Promise<NormalizedOutcome | null>;
+
+  /** Upserts the run's report (one per run). Throws BuyerLabNotFoundError if the run is not the tenant's. */
+  saveReport(tenantId: string, runId: string, report: Report, model: string | null): Promise<void>;
+  getReport(tenantId: string, runId: string): Promise<Report | null>;
+
+  /** Throws BuyerLabNotFoundError if the run is not the tenant's. */
+  appendChatTurn(tenantId: string, runId: string, personaId: string, turn: { role: 'user' | 'persona'; text: string }): Promise<ChatTurn>;
+  listChatTurns(tenantId: string, runId: string, personaId: string): Promise<ChatTurn[]>;
 }

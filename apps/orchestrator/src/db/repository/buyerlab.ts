@@ -1,8 +1,8 @@
 import { and, desc, eq, notInArray, sql } from 'drizzle-orm';
 import { getDb } from '../client';
-import { buyerOutcomes, buyerPersonas, buyerProjects, buyerRuns, buyerRunSteps, buyerSources } from '../schemaBuyerLab';
+import { buyerChats, buyerOutcomes, buyerPersonas, buyerProjects, buyerReports, buyerRuns, buyerRunSteps, buyerSources } from '../schemaBuyerLab';
 import { BuyerLabNotFoundError, BuyerLabStore, ClaimResult, StepRow, StepStatus } from '../../buyerlab/store';
-import type { Archetype, NewPersona, NormalizedOutcome, Persona, PersonaSpec, Project, ProviderId, Run, RunConfig, RunStatus, Source, SourceKind, Surface } from '../../buyerlab/types';
+import type { Archetype, ChatTurn, NewPersona, NewProjectInput, NormalizedOutcome, Persona, PersonaSpec, Project, ProviderId, Report, Run, RunConfig, RunStatus, Source, SourceKind, Surface } from '../../buyerlab/types';
 
 const iso = (d: Date | null) => (d ? d.toISOString() : null);
 
@@ -37,8 +37,8 @@ async function requireRun(tenantId: string, runId: string) {
 
 /** Drizzle-backed store. Every query is filtered by tenant_id. */
 export const drizzleBuyerLabStore: BuyerLabStore = {
-  async createProject(tenantId, input) {
-    const [row] = await getDb().insert(buyerProjects).values({ tenantId, name: input.name, targetUrl: input.targetUrl, brief: input.brief }).returning();
+  async createProject(tenantId, input: NewProjectInput) {
+    const [row] = await getDb().insert(buyerProjects).values({ tenantId, name: input.name, targetUrl: input.targetUrl, brief: input.brief, selfTest: input.selfTest }).returning();
     return toProject(row);
   },
   async listProjects(tenantId) {
@@ -172,5 +172,26 @@ export const drizzleBuyerLabStore: BuyerLabStore = {
   async getOutcome(tenantId, runId) {
     const [row] = await getDb().select().from(buyerOutcomes).where(and(eq(buyerOutcomes.runId, runId), eq(buyerOutcomes.tenantId, tenantId))).limit(1);
     return row ? (row.outcome as NormalizedOutcome) : null;
+  },
+
+  async saveReport(tenantId, runId, report: Report, model) {
+    await requireRun(tenantId, runId);
+    await getDb()
+      .insert(buyerReports)
+      .values({ tenantId, runId, body: report as any, model })
+      .onConflictDoUpdate({ target: buyerReports.runId, set: { body: report as any, model }, setWhere: eq(buyerReports.tenantId, tenantId) });
+  },
+  async getReport(tenantId, runId) {
+    const [row] = await getDb().select().from(buyerReports).where(and(eq(buyerReports.runId, runId), eq(buyerReports.tenantId, tenantId))).limit(1);
+    return row ? (row.body as Report) : null;
+  },
+  async appendChatTurn(tenantId, runId, personaId, turn) {
+    await requireRun(tenantId, runId);
+    const [row] = await getDb().insert(buyerChats).values({ tenantId, runId, personaId, role: turn.role, text: turn.text }).returning();
+    return { role: row.role as ChatTurn['role'], text: row.text, createdAt: row.createdAt.toISOString() };
+  },
+  async listChatTurns(tenantId, runId, personaId) {
+    const rows = await getDb().select().from(buyerChats).where(and(eq(buyerChats.runId, runId), eq(buyerChats.tenantId, tenantId), eq(buyerChats.personaId, personaId))).orderBy(buyerChats.createdAt);
+    return rows.map((r) => ({ role: r.role as ChatTurn['role'], text: r.text, createdAt: r.createdAt.toISOString() }));
   }
 };

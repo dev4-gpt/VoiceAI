@@ -15,7 +15,7 @@ const clock = () => now;
 
 async function setup(opts: { personas?: Array<{ archetype?: any; surfaces?: Surface[]; name: string }>; callBudget?: number; sources?: Array<{ surface: Surface; text: string; hash: string }> } = {}) {
   const store = new MemoryBuyerLabStore(clock);
-  const project = await store.createProject(T, { name: 'Veloce', targetUrl: null, brief: null });
+  const project = await store.createProject(T, { name: 'Veloce', targetUrl: null, brief: null, selfTest: false });
   const srcs = opts.sources ?? [{ surface: 'public' as Surface, text: PUBLIC_TEXT, hash: 'h1' }, { surface: 'signed_in' as Surface, text: APP_TEXT, hash: 'h2' }];
   const { added } = await store.addSources(T, project.id, srcs.map((s) => ({ kind: 'crawl' as const, surface: s.surface, label: s.surface, url: null, contentHash: s.hash, text: s.text, meta: {} })));
   const specs = opts.personas ?? [{ name: 'One' }, { name: 'Two' }, { name: 'Three' }];
