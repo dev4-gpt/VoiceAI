@@ -125,3 +125,48 @@ export function buildOutcome(i: {
     disclaimer: DISCLAIMER
   };
 }
+
+/**
+ * Grounds conversation claims against the transcript text itself (the only allowed source for
+ * this array), instead of a react-stage refs map. IDs are namespaced `${personaId}:c:${n}` so
+ * they never collide with claims[]'s `${personaId}:${n}` ids — the report cites both by id.
+ * Never throws: malformed model output yields an empty result, which the caller treats as "no
+ * conversation claims" rather than retrying the whole persona.
+ */
+export function normaliseConversation(i: { personaId: string; sourceId: string; transcript: string; raw: unknown }): { claims: Claim[]; dropped: DroppedClaim[] } {
+  const claims: Claim[] = [];
+  const dropped: DroppedClaim[] = [];
+  if (i.raw === null || typeof i.raw !== 'object' || Array.isArray(i.raw)) return { claims, dropped };
+  const raw = i.raw as Record<string, unknown>;
+  const items = Array.isArray(raw.claims) ? raw.claims.slice(0, MAX_CLAIMS_CONSIDERED) : [];
+
+  for (const item of items) {
+    const c = (item !== null && typeof item === 'object' ? item : {}) as Record<string, unknown>;
+    const text = clip(c.text, 400);
+    const drop = (reason: DroppedClaim['reason']) => dropped.push({ text, reason });
+    if (!text || !KINDS.includes(c.kind as ClaimKind)) {
+      drop('malformed');
+      continue;
+    }
+    const quote = clip(c.quote, 600);
+    if (!quote) {
+      drop('no_quote');
+      continue;
+    }
+    if (!verifyQuote(quote, i.transcript)) {
+      drop('quote_not_found');
+      continue;
+    }
+    const kind = c.kind as ClaimKind;
+    claims.push({
+      id: `${i.personaId}:c:${claims.length + 1}`,
+      kind,
+      text,
+      severity: kind === 'objection' && SEVERITIES.includes(c.severity as (typeof SEVERITIES)[number]) ? (c.severity as Claim['severity']) : null,
+      sourceId: i.sourceId,
+      surface: 'public',
+      quote
+    });
+  }
+  return { claims, dropped };
+}
