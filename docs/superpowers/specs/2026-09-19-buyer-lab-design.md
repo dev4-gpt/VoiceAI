@@ -107,7 +107,8 @@ the report).
 
 1. **Ingest.** URL crawl (max 12 pages, same-origin, respects robots.txt), extracted text and
    headings, screenshots of key pages, plus brief and uploaded text. Everything becomes an
-   `IngestedSource[]` with a stable id per chunk so quotes can be verified against it.
+   `IngestedSource[]` with a stable id per source, so quotes can be verified against the source
+   they name. Screenshots of key pages are not part of sub-project 1.
 2. **Panel.** One structured call infers the ICP and proposes personas. Five archetypes are
    always present (skeptic, budget-holder, champion, technical evaluator, distracted first-time
    visitor); the model fills the rest to the requested size (default 6, max 12). The user edits
@@ -174,13 +175,16 @@ written with the caller's tenant.
   (`public|signed_in`), url, content_hash, text, meta jsonb, fetched_at. `text` is raw extracted
   text only (section 6.1); `agent` rows are conversation transcripts. Snapshots are immutable, so a
   re-test compares like with like.
-- `buyer_personas`: id, project_id, run_id nullable, archetype, surfaces (`public|signed_in`
-  values this persona is shown), spec jsonb, edited boolean.
+- `buyer_personas`: id, tenant_id, project_id, archetype, surfaces (`public|signed_in` values
+  this persona is shown), spec jsonb, edited boolean. A run snapshots persona ids in its
+  `config`; a persona has no `run_id`.
 - `buyer_runs`: id, project_id, provider (`native|mirofish`), status
-  (`queued|running|done|failed|budget_exhausted`), config jsonb, cursor jsonb, calls_used,
-  call_budget, funded_by (`byok|free_allowance`), started_at, finished_at, error_code.
-- `buyer_run_steps`: run_id, step_key, status, output jsonb. **Unique (run_id, step_key)**, so
-  a retried step is a no-op rather than a double charge.
+  (`queued|running|done|failed|budget_exhausted`), config jsonb, calls_used,
+  call_budget, funded_by (`byok|server_grant`), started_at, finished_at, error_code.
+- `buyer_run_steps`: tenant_id, run_id, step_key, status (`running|retry|done|failed`),
+  attempts, output jsonb, started_at, finished_at. **Unique (run_id, step_key)**: the insert is
+  the claim lock, so a retried or concurrent step cannot run twice or double-charge, and a
+  `running` row older than 90 s is treated as crashed and taken over.
 - `buyer_outcomes`: run_id unique, outcome jsonb (NormalizedOutcome), built_at.
 - `buyer_reports`: id, run_id, body jsonb, model, created_at.
 - `buyer_chats`: id, run_id, persona_id, role, text, created_at.
