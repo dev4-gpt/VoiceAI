@@ -231,8 +231,11 @@ describe('BuyerLab: self-test, report, chat, retest', () => {
     });
     renderTab(fetcher);
     expect(await screen.findByText('No price shown anywhere.')).toBeInTheDocument();
-    expect(screen.getByText('Buyers cannot find a price.')).toBeInTheDocument();
-    expect(screen.getAllByText('Pricing is by signed proposal only').length).toBeGreaterThan(0); // the claim's quote, pulled from outcome via claimIds (also shown by OutcomeView above)
+    const finding = screen.getByText('Buyers cannot find a price.');
+    expect(finding).toBeInTheDocument();
+    // Scoped to the finding's own <li> so this proves ReportView's quotesFor() pulled the quote via claimIds,
+    // not merely that OutcomeView (rendered above) happens to show the same quote string elsewhere on the page.
+    expect(within(finding.closest('li') as HTMLElement).getByText('Pricing is by signed proposal only')).toBeInTheDocument();
     expect(screen.getByText('Starting at $X.')).toBeInTheDocument();
   });
 

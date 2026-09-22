@@ -9,7 +9,9 @@ interface Turn { role: 'user' | 'persona'; text: string }
 interface Props {
   outcome: Outcome;
   busy: boolean;
-  onSend: (personaId: string, message: string) => Promise<string>;
+  // Resolves to null (never rejects) when the send failed — the caller is expected to have
+  // already surfaced the error (e.g. via a shared `guard()`/notice mechanism) before resolving.
+  onSend: (personaId: string, message: string) => Promise<string | null>;
 }
 
 export const ChatView: React.FC<Props> = ({ outcome, busy, onSend }) => {
@@ -23,7 +25,7 @@ export const ChatView: React.FC<Props> = ({ outcome, busy, onSend }) => {
     setMessage('');
     setThreads((t) => ({ ...t, [personaId]: [...(t[personaId] ?? []), { role: 'user', text }] }));
     const reply = await onSend(personaId, text);
-    setThreads((t) => ({ ...t, [personaId]: [...(t[personaId] ?? []), { role: 'persona', text: reply }] }));
+    if (reply) setThreads((t) => ({ ...t, [personaId]: [...(t[personaId] ?? []), { role: 'persona', text: reply }] }));
   };
 
   return (

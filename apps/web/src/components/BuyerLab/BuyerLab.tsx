@@ -125,6 +125,10 @@ export const BuyerLab: React.FC<Props> = ({ signedIn, isGlass, onOpenKeys, fetch
   }
 
   const reload = () => (selected ? loadDetail(selected) : Promise.resolve());
+  const sendChat = (personaId: string, message: string): Promise<string | null> => {
+    let reply: string | null = null;
+    return guard(async () => { reply = (await api.chat(run!.id, personaId, message)).reply; }).then(() => reply);
+  };
   const runActive = run != null && (run.status === 'queued' || run.status === 'running');
   return (
     <div className={`mx-auto max-w-3xl space-y-6 p-4 ${isGlass ? 'text-slate-900' : 'text-slate-100'}`}>
@@ -182,7 +186,7 @@ export const BuyerLab: React.FC<Props> = ({ signedIn, isGlass, onOpenKeys, fetch
           {outcome && (
             <>
               <ReportView report={report} outcome={outcome} busy={busy} onGenerate={() => guard(async () => setReport((await api.getReport(run!.id)).report))} />
-              <ChatView outcome={outcome} busy={busy} onSend={(personaId, message) => api.chat(run!.id, personaId, message).then((r) => r.reply)} />
+              <ChatView outcome={outcome} busy={busy} onSend={sendChat} />
               <RetestView
                 outcome={outcome}
                 previous={previousOutcome}
