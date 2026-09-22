@@ -8,7 +8,7 @@ const surfaceLabel = (s: Surface) => (s === 'signed_in' ? 'signed in' : 'public'
 interface Props {
   detail: ProjectDetail | null;
   busy: boolean;
-  onCreate: (name: string, url: string) => void;
+  onCreate: (name: string, url: string, selfTest: boolean) => void;
   onIngestUrl: (url: string) => void;
   onIngestText: (i: { text: string; label: string; surface: Surface }) => void;
 }
@@ -16,6 +16,7 @@ interface Props {
 export const TargetStep: React.FC<Props> = ({ detail, busy, onCreate, onIngestUrl, onIngestText }) => {
   const [name, setName] = useState('');
   const [site, setSite] = useState('');
+  const [selfTest, setSelfTest] = useState(false);
   const [pageUrl, setPageUrl] = useState('');
   const [text, setText] = useState('');
   const [label, setLabel] = useState('');
@@ -23,11 +24,15 @@ export const TargetStep: React.FC<Props> = ({ detail, busy, onCreate, onIngestUr
 
   if (!detail) {
     return (
-      <form className="space-y-2" onSubmit={(e) => { e.preventDefault(); if (name.trim()) onCreate(name.trim(), site.trim()); }}>
+      <form className="space-y-2" onSubmit={(e) => { e.preventDefault(); if (name.trim()) onCreate(name.trim(), site.trim(), selfTest); }}>
         <label className="block text-sm" htmlFor="bl-name">Project name</label>
         <input id="bl-name" className={field} value={name} onChange={(e) => setName(e.target.value)} maxLength={120} />
         <label className="block text-sm" htmlFor="bl-site">Website address (optional)</label>
         <input id="bl-site" className={field} value={site} onChange={(e) => setSite(e.target.value)} placeholder="https://" />
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={selfTest} onChange={(e) => setSelfTest(e.target.checked)} />
+          Self-test (this is GrowthVoice OS itself — only ever usable on a granted workspace)
+        </label>
         <button className={button} disabled={busy || !name.trim()}>Create project</button>
       </form>
     );

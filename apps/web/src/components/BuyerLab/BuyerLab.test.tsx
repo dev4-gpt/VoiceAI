@@ -6,7 +6,7 @@ import { OutcomeView } from './OutcomeView';
 import type { Outcome } from './types';
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
-const project = { id: 'p1', name: 'Veloce', targetUrl: 'https://veloceos.cloud', brief: null, createdAt: '2026-09-21T00:00:00.000Z' };
+const project = { id: 'p1', name: 'Veloce', targetUrl: 'https://veloceos.cloud', brief: null, createdAt: '2026-09-21T00:00:00.000Z', selfTest: false };
 const source = { id: 's1', kind: 'upload', surface: 'signed_in', label: 'Approvals page', url: null, words: 120, fetchedAt: '2026-09-21T00:00:00.000Z' };
 const persona = (id: string, archetype: string, name: string) => ({ id, archetype, surfaces: ['public'], edited: false, spec: { name, role: 'Head of Ops', goals: [], constraints: [], budgetAuthority: 'none', priorTools: [], reasonNotToBuy: 'No price.' } });
 const detail = (over: Record<string, unknown> = {}) => ({
@@ -19,8 +19,8 @@ const outcome = (over: Partial<Outcome> = {}): Outcome => ({
   personas: [
     { personaId: 'u1', name: 'Sam Skeptic', archetype: 'skeptic', surfaces: ['public'], intent: { score: 2, rationale: 'No price is shown.' }, sentiment: 'negative',
       claims: [{ id: 'u1:1', kind: 'objection', text: 'I cannot tell what it costs', severity: 'high', sourceId: 's1', surface: 'signed_in', quote: 'Pricing is by signed proposal only' }],
-      dropped: [{ text: 'It is cheap', reason: 'quote_not_found' }] },
-    { personaId: 'u2', name: 'Cha Champion', archetype: 'champion', surfaces: ['public'], intent: { score: 7, rationale: 'Saves time.' }, sentiment: 'positive', claims: [], dropped: [] }
+      dropped: [{ text: 'It is cheap', reason: 'quote_not_found' }], conversation: [] },
+    { personaId: 'u2', name: 'Cha Champion', archetype: 'champion', surfaces: ['public'], intent: { score: 7, rationale: 'Saves time.' }, sentiment: 'positive', claims: [], dropped: [], conversation: [] }
   ],
   agreement: { intentMin: 2, intentMax: 7, split: true }, verification: { kept: 1, dropped: 1 }, partial: null, callsUsed: 2,
   generatedAt: '2026-09-21T10:00:00.000Z', disclaimer: 'Simulated buyers, not measured customers. These are hypotheses to test with real buyers.', ...over
@@ -196,5 +196,78 @@ describe('OutcomeView', () => {
   it('says so when the outcome is partial', () => {
     render(<OutcomeView outcome={outcome({ partial: { missingPersonaIds: ['u3'] } })} />);
     expect(screen.getByText(/1 of 2 buyers did not finish/i)).toBeInTheDocument();
+  });
+});
+
+describe('BuyerLab: self-test, report, chat, retest', () => {
+  it('shows a self-test checkbox on the create-project form', async () => {
+    const fetcher = scripted({ 'GET /api/buyerlab/projects': () => json({ projects: [] }) });
+    renderTab(fetcher);
+    expect(await screen.findByLabelText(/self-test/i)).toBeInTheDocument();
+  });
+
+  it('sends selfTest with project creation', async () => {
+    let sent: any;
+    const fetcher = scripted({
+      'GET /api/buyerlab/projects': () => json({ projects: [] }),
+      'POST /api/buyerlab/projects': (init) => { sent = JSON.parse(String(init?.body)); return json({ project }, 201); },
+      'GET /api/buyerlab/projects/p1': () => json(detail({ sources: [], personas: [], estimate: null }))
+    });
+    renderTab(fetcher);
+    fireEvent.change(await screen.findByLabelText('Project name'), { target: { value: 'Anna' } });
+    fireEvent.click(screen.getByLabelText(/self-test/i));
+    fireEvent.click(screen.getByRole('button', { name: 'Create project' }));
+    await waitFor(() => expect(sent).toBeDefined());
+    expect(sent.selfTest).toBe(true);
+  });
+
+  it('shows the report, with each finding\'s quote pulled from the outcome, once a run finishes', async () => {
+    const run = { id: 'r1', status: 'done', provider: 'native', callsUsed: 2, callBudget: 4, fundedBy: 'byok', errorCode: null };
+    const report = { headline: 'No price shown anywhere.', findings: [{ text: 'Buyers cannot find a price.', claimIds: ['u1:1'] }], recommendations: [{ text: 'Publish a price.', claimIds: ['u1:1'], rewrite: 'Starting at $X.' }], disclaimer: 'Simulated buyers, not measured customers.', generatedAt: 'x' };
+    const fetcher = base({
+      'GET /api/buyerlab/projects/p1': () => json(detail({ latestRun: run })),
+      'GET /api/buyerlab/runs/r1/outcome': () => json({ run, outcome: outcome() }),
+      'GET /api/buyerlab/runs/r1/report': () => json({ report, outcome: outcome() })
+    });
+    renderTab(fetcher);
+    expect(await screen.findByText('No price shown anywhere.')).toBeInTheDocument();
+    expect(screen.getByText('Buyers cannot find a price.')).toBeInTheDocument();
+    expect(screen.getAllByText('Pricing is by signed proposal only').length).toBeGreaterThan(0); // the claim's quote, pulled from outcome via claimIds (also shown by OutcomeView above)
+    expect(screen.getByText('Starting at $X.')).toBeInTheDocument();
+  });
+
+  it('sends a chat message and shows the reply in a thread', async () => {
+    const run = { id: 'r1', status: 'done', provider: 'native', callsUsed: 2, callBudget: 4, fundedBy: 'byok', errorCode: null };
+    let sent: any;
+    const fetcher = base({
+      'GET /api/buyerlab/projects/p1': () => json(detail({ latestRun: run })),
+      'GET /api/buyerlab/runs/r1/outcome': () => json({ run, outcome: outcome() }),
+      'GET /api/buyerlab/runs/r1/report': () => json({ error: 'not ready', code: 'RUN_NOT_DONE' }, 409),
+      'POST /api/buyerlab/runs/r1/chat': (init) => { sent = JSON.parse(String(init?.body)); return json({ reply: 'Still no price, honestly.' }); }
+    });
+    renderTab(fetcher);
+    await screen.findByText(/simulated buyers, not measured customers/i);
+    fireEvent.change(screen.getByLabelText('Ask a buyer'), { target: { value: 'Why no price?' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send' }));
+    await waitFor(() => expect(sent).toEqual({ personaId: 'u1', message: 'Why no price?' }));
+    expect(await screen.findByText('Still no price, honestly.')).toBeInTheDocument();
+  });
+
+  it('starts a re-test and shows the intent delta once the new run finishes', async () => {
+    const run = { id: 'r1', status: 'done', provider: 'native', callsUsed: 2, callBudget: 4, fundedBy: 'byok', errorCode: null };
+    const run2 = { ...run, id: 'r2' };
+    const outcome2 = { ...outcome(), personas: outcome().personas.map((p) => ({ ...p, intent: { score: p.intent.score + 2, rationale: 'Better now.' } })) };
+    const fetcher = base({
+      'GET /api/buyerlab/projects/p1': () => json(detail({ latestRun: run })),
+      'GET /api/buyerlab/runs/r1/outcome': () => json({ run, outcome: outcome() }),
+      'GET /api/buyerlab/runs/r1/report': () => json({ error: 'not ready', code: 'RUN_NOT_DONE' }, 409),
+      'POST /api/buyerlab/runs/r1/retest': () => json({ run: run2 }, 201),
+      'GET /api/buyerlab/runs/r2': () => json({ run: run2, progress: { done: true, completedSteps: 2, failedSteps: 0, totalSteps: 2, callsUsed: 2, budgetExhausted: false } }),
+      'GET /api/buyerlab/runs/r2/outcome': () => json({ run: run2, outcome: outcome2 })
+    });
+    renderTab(fetcher);
+    await screen.findByText(/simulated buyers, not measured customers/i);
+    fireEvent.click(screen.getByRole('button', { name: 'Re-test' }));
+    await waitFor(() => expect(screen.getAllByText(/\+2/).length).toBeGreaterThan(0));
   });
 });

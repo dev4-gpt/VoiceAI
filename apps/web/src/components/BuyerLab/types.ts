@@ -1,7 +1,7 @@
 export type Surface = 'public' | 'signed_in';
 export type Archetype = 'skeptic' | 'budget_holder' | 'champion' | 'technical_evaluator' | 'distracted_visitor' | 'other';
 
-export interface Project { id: string; name: string; targetUrl: string | null; brief: string | null; createdAt: string }
+export interface Project { id: string; name: string; targetUrl: string | null; brief: string | null; createdAt: string; selfTest: boolean }
 export interface SourceSummary { id: string; kind: string; surface: Surface; label: string; url: string | null; words: number; fetchedAt: string }
 export interface PersonaSpec { name: string; role: string; goals: string[]; constraints: string[]; budgetAuthority: 'none' | 'influencer' | 'holder'; priorTools: string[]; reasonNotToBuy: string }
 export interface Persona { id: string; archetype: Archetype; surfaces: Surface[]; spec: PersonaSpec; edited: boolean }
@@ -15,7 +15,7 @@ export interface Claim { id: string; kind: 'objection' | 'confusion' | 'delight'
 export interface DroppedClaim { text: string; reason: string }
 export interface PersonaOutcome {
   personaId: string; name: string; archetype: Archetype; surfaces: Surface[];
-  intent: { score: number; rationale: string }; sentiment: 'negative' | 'mixed' | 'positive'; claims: Claim[]; dropped: DroppedClaim[];
+  intent: { score: number; rationale: string }; sentiment: 'negative' | 'mixed' | 'positive'; claims: Claim[]; dropped: DroppedClaim[]; conversation: Claim[];
 }
 export interface Outcome {
   provider: 'native' | 'mirofish'; model: string | null; panelSize: number;
@@ -26,3 +26,8 @@ export interface Outcome {
   partial: { missingPersonaIds: string[] } | null;
   callsUsed: number; generatedAt: string; disclaimer: string;
 }
+
+export interface ReportFinding { text: string; claimIds: string[] }
+export interface ReportRecommendation { text: string; claimIds: string[]; rewrite: string | null }
+export interface Report { headline: string; findings: ReportFinding[]; recommendations: ReportRecommendation[]; disclaimer: string; generatedAt: string }
+export interface ChatTurn { role: 'user' | 'persona'; text: string; createdAt: string }

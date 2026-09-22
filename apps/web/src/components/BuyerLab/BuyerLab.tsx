@@ -1,11 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { authorizedFetch, SignedOutError } from '../../auth/authorizedFetch';
 import { BuyerLabApiError, createBuyerLabApi, Fetcher } from './api';
+import { ChatView } from './ChatView';
 import { OutcomeView } from './OutcomeView';
 import { PanelPayload, PanelStep } from './PanelStep';
+import { ReportView } from './ReportView';
+import { RetestView } from './RetestView';
 import { RunStep } from './RunStep';
 import { TargetStep } from './TargetStep';
-import type { Outcome, Progress, Project, ProjectDetail, Run, Surface } from './types';
+import type { Outcome, Progress, Project, ProjectDetail, Report, Run, Surface } from './types';
 
 interface Props {
   signedIn: boolean;
@@ -30,6 +33,8 @@ export const BuyerLab: React.FC<Props> = ({ signedIn, isGlass, onOpenKeys, fetch
   const [run, setRun] = useState<Run | null>(null);
   const [progress, setProgress] = useState<Progress | null>(null);
   const [outcome, setOutcome] = useState<Outcome | null>(null);
+  const [report, setReport] = useState<Report | null>(null);
+  const [previousOutcome, setPreviousOutcome] = useState<Outcome | null>(null);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
 
@@ -50,6 +55,15 @@ export const BuyerLab: React.FC<Props> = ({ signedIn, isGlass, onOpenKeys, fetch
     }
   };
 
+  const loadReport = useCallback(async (runId: string) => {
+    try {
+      setReport((await api.getReport(runId)).report);
+    } catch (err) {
+      if (err instanceof BuyerLabApiError && (err.status === 409 || err.status === 404 || err.code === 'NO_OUTCOME')) setReport(null);
+      else throw err;
+    }
+  }, [api]);
+
   const loadDetail = useCallback(async (id: string) => {
     const d = await api.getProject(id);
     setSelected(id);
@@ -57,8 +71,13 @@ export const BuyerLab: React.FC<Props> = ({ signedIn, isGlass, onOpenKeys, fetch
     setRun(d.latestRun);
     setProgress(null);
     setOutcome(null);
-    if (d.latestRun && finished(d.latestRun)) setOutcome((await api.getOutcome(d.latestRun.id)).outcome);
-  }, [api]);
+    setReport(null);
+    setPreviousOutcome(null);
+    if (d.latestRun && finished(d.latestRun)) {
+      setOutcome((await api.getOutcome(d.latestRun.id)).outcome);
+      await loadReport(d.latestRun.id);
+    }
+  }, [api, loadReport]);
 
   useEffect(() => {
     if (!signedIn) return;
@@ -88,8 +107,10 @@ export const BuyerLab: React.FC<Props> = ({ signedIn, isGlass, onOpenKeys, fetch
         if (cancelled) return;
         setRun(r.run);
         setProgress(r.progress);
-        if (finished(r.run)) setOutcome((await api.getOutcome(r.run.id)).outcome);
-        else if (r.run.status === 'queued' || r.run.status === 'running') timer = setTimeout(tick, POLL_MS);
+        if (finished(r.run)) {
+          setOutcome((await api.getOutcome(r.run.id)).outcome);
+          await loadReport(r.run.id);
+        } else if (r.run.status === 'queued' || r.run.status === 'running') timer = setTimeout(tick, POLL_MS);
       } catch (err) {
         if (!cancelled) setNotice(explain(err));
       }
@@ -116,7 +137,7 @@ export const BuyerLab: React.FC<Props> = ({ signedIn, isGlass, onOpenKeys, fetch
               {projects.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
             </select>
           )}
-          {detail && <button className="text-xs underline" onClick={() => { setSelected(null); setDetail(null); setRun(null); setOutcome(null); }}>New project</button>}
+          {detail && <button className="text-xs underline" onClick={() => { setSelected(null); setDetail(null); setRun(null); setOutcome(null); setReport(null); setPreviousOutcome(null); }}>New project</button>}
         </div>
       </header>
 
@@ -130,8 +151,8 @@ export const BuyerLab: React.FC<Props> = ({ signedIn, isGlass, onOpenKeys, fetch
       <TargetStep
         detail={detail}
         busy={busy}
-        onCreate={(name, url) => guard(async () => {
-          const { project } = await api.createProject({ name, ...(url ? { targetUrl: url } : {}) });
+        onCreate={(name, url, selfTest) => guard(async () => {
+          const { project } = await api.createProject({ name, ...(url ? { targetUrl: url } : {}), ...(selfTest ? { selfTest: true } : {}) });
           setProjects((p) => [project, ...p]);
           await loadDetail(project.id);
         })}
@@ -158,6 +179,29 @@ export const BuyerLab: React.FC<Props> = ({ signedIn, isGlass, onOpenKeys, fetch
             onStart={() => guard(async () => { setOutcome(null); setProgress(null); setRun((await api.startRun(selected as string)).run); })}
           />
           {outcome && <OutcomeView outcome={outcome} />}
+          {outcome && (
+            <>
+              <ReportView report={report} outcome={outcome} busy={busy} onGenerate={() => guard(async () => setReport((await api.getReport(run!.id)).report))} />
+              <ChatView outcome={outcome} busy={busy} onSend={(personaId, message) => api.chat(run!.id, personaId, message).then((r) => r.reply)} />
+              <RetestView
+                outcome={outcome}
+                previous={previousOutcome}
+                busy={busy}
+                onRetest={() => guard(async () => {
+                  setPreviousOutcome(outcome);
+                  setReport(null);
+                  setProgress(null);
+                  const { run: newRun } = await api.retest(run!.id);
+                  setRun(newRun);
+                  setOutcome(null);
+                  if (finished(newRun)) {
+                    setOutcome((await api.getOutcome(newRun.id)).outcome);
+                    await loadReport(newRun.id);
+                  }
+                })}
+              />
+            </>
+          )}
         </>
       )}
     </div>
