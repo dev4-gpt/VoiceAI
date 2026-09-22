@@ -10,11 +10,12 @@ interface Props {
   personas: Persona[];
   hasSources: boolean;
   busy: boolean;
+  runActive: boolean;
   onGenerate: (force: boolean) => void;
   onSave: (payload: PanelPayload) => void;
 }
 
-export const PanelStep: React.FC<Props> = ({ personas, hasSources, busy, onGenerate, onSave }) => {
+export const PanelStep: React.FC<Props> = ({ personas, hasSources, busy, runActive, onGenerate, onSave }) => {
   const [drafts, setDrafts] = useState<Persona[]>(personas);
   const [dirty, setDirty] = useState(false);
   useEffect(() => {
@@ -33,10 +34,10 @@ export const PanelStep: React.FC<Props> = ({ personas, hasSources, busy, onGener
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
         <h2 className="text-base font-semibold">Panel of buyers</h2>
-        <button className={button} disabled={busy || !hasSources} onClick={() => onGenerate(anyEdited)}>{generateLabel}</button>
+        <button className={button} disabled={busy || !hasSources || runActive} onClick={() => onGenerate(anyEdited)}>{generateLabel}</button>
         <button
           className={button}
-          disabled={busy || !dirty || drafts.length === 0}
+          disabled={busy || !dirty || drafts.length === 0 || runActive}
           onClick={() =>
             onSave(drafts.map((p) => ({ name: p.spec.name, archetype: p.archetype, surfaces: p.surfaces, role: p.spec.role, goals: p.spec.goals, constraints: p.spec.constraints, budgetAuthority: p.spec.budgetAuthority, priorTools: p.spec.priorTools, reasonNotToBuy: p.spec.reasonNotToBuy })))
           }

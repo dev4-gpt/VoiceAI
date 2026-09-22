@@ -98,6 +98,7 @@ export function buildReactPrompt(i: { persona: Persona; rendered: RenderedSource
     '- Every claim must cite the source it comes from by ref (for example "S2") and include a quote copied VERBATIM from that source, at least 12 characters, exactly as written. Do not paraphrase, merge or shorten with an ellipsis. If you cannot quote it, do not claim it.',
     '- Do not invent features, prices, customers or numbers that the material does not state.',
     '- "intent" is a 0-10 score of how likely you are to take the next step, with a one-sentence rationale. It is not a probability.',
+    '- Never state a probability, percentage, conversion rate or revenue/dollar figure as if it were a fact about real buyers; describe your reaction in qualitative terms only.',
     '- Give at most 8 claims. kind is one of: objection, confusion, delight. severity (objections only) is low, medium or high.',
     'Return JSON: {"intent":{"score":0,"rationale":""},"sentiment":"negative|mixed|positive","claims":[{"kind":"objection","text":"what you think or feel","severity":"medium","source":"S1","quote":"verbatim text from S1"}]}'
   ].join('\n');

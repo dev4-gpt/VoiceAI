@@ -86,6 +86,11 @@ describe('prompts', () => {
     expect(p.user).toContain('Sam Skeptic');
   });
 
+  it('the reaction prompt forbids stating a probability, percentage, conversion rate or revenue figure as fact', () => {
+    const p = buildReactPrompt({ persona: mkPersona(), rendered });
+    expect(p.user).toContain('Never state a probability, percentage, conversion rate or revenue/dollar figure as if it were a fact about real buyers; describe your reaction in qualitative terms only.');
+  });
+
   it('the panel prompt names any archetypes a previous attempt missed', () => {
     const p = buildPanelPrompt({ projectName: 'V', targetUrl: null, rendered, size: 6, availableSurfaces: ['public'], missingArchetypes: ['champion', 'skeptic'] });
     expect(p.user).toMatch(/missing/i);

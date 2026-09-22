@@ -104,6 +104,7 @@ export const BuyerLab: React.FC<Props> = ({ signedIn, isGlass, onOpenKeys, fetch
   }
 
   const reload = () => (selected ? loadDetail(selected) : Promise.resolve());
+  const runActive = run != null && (run.status === 'queued' || run.status === 'running');
   return (
     <div className={`mx-auto max-w-3xl space-y-6 p-4 ${isGlass ? 'text-slate-900' : 'text-slate-100'}`}>
       <header className="space-y-1">
@@ -144,6 +145,7 @@ export const BuyerLab: React.FC<Props> = ({ signedIn, isGlass, onOpenKeys, fetch
             personas={detail.personas}
             hasSources={detail.sources.length > 0}
             busy={busy}
+            runActive={runActive}
             onGenerate={(force) => guard(async () => { await api.inferPanel(selected as string, force); await reload(); })}
             onSave={(payload: PanelPayload) => guard(async () => { await api.savePanel(selected as string, payload); await reload(); })}
           />

@@ -147,6 +147,23 @@ describe('BuyerLab', () => {
     expect(screen.getByText('Intent 2/10')).toBeInTheDocument();
   });
 
+  it('disables regenerate and save while a run is queued or running, and never calls the panel API', async () => {
+    const run = { id: 'r1', status: 'running', provider: 'native', callsUsed: 1, callBudget: 4, fundedBy: 'byok', errorCode: null };
+    const fetcher = scripted({
+      'GET /api/buyerlab/projects': () => json({ projects: [project] }),
+      'GET /api/buyerlab/projects/p1': () => json(detail({ latestRun: run })),
+      'GET /api/buyerlab/runs/r1': () => json({ run, progress: { done: false, completedSteps: 1, failedSteps: 0, totalSteps: 2, callsUsed: 1, budgetExhausted: false } })
+    });
+    renderTab(fetcher);
+    const regenerate = await screen.findByRole('button', { name: 'Regenerate panel' });
+    const save = screen.getByRole('button', { name: 'Save edits' });
+    expect(regenerate).toBeDisabled();
+    expect(save).toBeDisabled();
+    fireEvent.click(regenerate);
+    fireEvent.click(save);
+    expect(fetcher.mock.calls.some(([path]) => path.endsWith('/panel'))).toBe(false);
+  });
+
   it('reopens the latest finished run after a reload', async () => {
     const run = { id: 'r9', status: 'done', provider: 'native', callsUsed: 2, callBudget: 4, fundedBy: 'byok', errorCode: null };
     const fetcher = scripted({

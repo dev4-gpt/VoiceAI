@@ -346,6 +346,30 @@ describe('/api/buyerlab', () => {
       const runId = (await request(app).post('/api/buyerlab/runs').set(A).send({ projectId: id }).expect(201)).body.run.id;
       expect((await request(app).get(`/api/buyerlab/runs/${runId}/outcome`).set(A).expect(404)).body.code).toBe('NO_OUTCOME');
     });
+
+    it('blocks both panel routes while a run is queued or running, and unblocks once it reaches a terminal status', async () => {
+      const { app, store } = build();
+      const id = await readyProject(app);
+      const runId = (await request(app).post('/api/buyerlab/runs').set(A).send({ projectId: id }).expect(201)).body.run.id as string;
+
+      const postBlocked = await request(app).post(`/api/buyerlab/projects/${id}/panel`).set(A).send({}).expect(409);
+      expect(postBlocked.body.code).toBe('RUN_ACTIVE');
+      const putBlocked = await request(app)
+        .put(`/api/buyerlab/projects/${id}/panel`)
+        .set(A)
+        .send({ personas: [{ name: 'My buyer', archetype: 'champion', surfaces: ['public'], reasonNotToBuy: 'Too pricey.' }] })
+        .expect(409);
+      expect(putBlocked.body.code).toBe('RUN_ACTIVE');
+
+      await store.updateRun('A', runId, { status: 'done' });
+
+      await request(app).post(`/api/buyerlab/projects/${id}/panel`).set(A).send({ force: true }).expect(200);
+      await request(app)
+        .put(`/api/buyerlab/projects/${id}/panel`)
+        .set(A)
+        .send({ personas: [{ name: 'My buyer', archetype: 'champion', surfaces: ['public'], reasonNotToBuy: 'Too pricey.' }] })
+        .expect(200);
+    });
   });
 
   describe('tenant isolation: another workspace\'s ids are simply not found', () => {

@@ -208,6 +208,10 @@ export function createBuyerLabRouter(deps: BuyerLabRouterDeps): Router {
     const t = tenantOf(req);
     const project = await store.getProject(t, id);
     if (!project) return notFound(res);
+    const activeRun = await store.latestRun(t, id);
+    if (activeRun && !isTerminal(activeRun)) {
+      return res.status(409).json({ error: 'A run is in progress for this project. Wait for it to finish first.', code: 'RUN_ACTIVE' });
+    }
     const body = (req.body ?? {}) as Record<string, unknown>;
     const sources = usable(await store.listSources(t, id));
     if (sources.length === 0) return res.status(409).json({ error: 'Add at least one source first.', code: 'NO_SOURCES' });
@@ -227,6 +231,10 @@ export function createBuyerLabRouter(deps: BuyerLabRouterDeps): Router {
     if (!id) return;
     const t = tenantOf(req);
     if (!(await store.getProject(t, id))) return notFound(res);
+    const activeRun = await store.latestRun(t, id);
+    if (activeRun && !isTerminal(activeRun)) {
+      return res.status(409).json({ error: 'A run is in progress for this project. Wait for it to finish first.', code: 'RUN_ACTIVE' });
+    }
     const raw = (req.body ?? {}).personas;
     if (!Array.isArray(raw) || raw.length === 0 || raw.length > 12) return bad(res, 'Send between 1 and 12 personas.', 'INVALID_PERSONA');
     const cleaned = sanitizePersonas(raw, availableSurfacesOf(usable(await store.listSources(t, id))), 12);
