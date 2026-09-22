@@ -8,22 +8,25 @@ import type { crawl as crawlFn } from '../buyerlab/crawler';
 import { estimateRun } from '../buyerlab/estimate';
 import { BuyerLlm, LlmOutputError, LlmUnavailableError } from '../buyerlab/llm';
 import { availableSurfacesOf, inferPanel, PanelIncompleteError, sanitizePersonas } from '../buyerlab/panel';
-import { advanceRun, ProviderUnavailableError, RunNotReadyError, startRun } from '../buyerlab/runner';
+import { advanceRun, ProviderUnavailableError, retestRun, RunNotReadyError, startRun } from '../buyerlab/runner';
 import { FetchFailedError } from '../buyerlab/safeFetch';
 import { UnsafeUrlError } from '../buyerlab/ssrf';
 import { BuyerLabNotFoundError, BuyerLabStore } from '../buyerlab/store';
 import { clip, cleanText } from '../buyerlab/text';
 import { NewSource, ProviderId, Run, Source, SURFACES, Surface } from '../buyerlab/types';
+import { generateReport } from '../buyerlab/report';
+import { hasServerKeyAccess } from '../services/usageService';
 
 export interface BuyerLabRouterDeps {
   requireUser: RequestHandler;
   store: BuyerLabStore;
   access: (tenantId: string) => Promise<BuyerAccess>;
   makeLlm: (apiKey?: string) => BuyerLlm;
-  makeProvider: (id: ProviderId, ctx: { llm: BuyerLlm }) => import('../buyerlab/types').SimulationProvider | null;
+  makeProvider: (id: ProviderId, ctx: { llm: BuyerLlm; apiKey?: string }) => import('../buyerlab/types').SimulationProvider | null;
   crawl: typeof crawlFn;
   writeLimiter: PerUserRateLimiter;
   pollLimiter: PerUserRateLimiter;
+  hasServerKeyAccess?: (tenantId: string) => Promise<boolean>;
 }
 
 const ID = /^[A-Za-z0-9_-]{1,64}$/;
@@ -118,9 +121,12 @@ export function createBuyerLabRouter(deps: BuyerLabRouterDeps): Router {
       if (briefText.length > 5000) return bad(res, 'The brief is limited to 5,000 characters.');
       brief = briefText;
     }
+    let selfTest = false;
+    if (body.selfTest === true) {
+      selfTest = await (deps.hasServerKeyAccess ?? hasServerKeyAccess)(tenantOf(req)).catch(() => false);
+    }
     if ((await store.listProjects(tenantOf(req))).length >= MAX_PROJECTS) return res.status(409).json({ error: `A workspace can hold ${MAX_PROJECTS} projects.`, code: 'PROJECT_LIMIT' });
-    // Self-test projects are provisioned internally, never through this public endpoint.
-    res.status(201).json({ project: await store.createProject(tenantOf(req), { name, targetUrl, brief, selfTest: false }) });
+    res.status(201).json({ project: await store.createProject(tenantOf(req), { name, targetUrl, brief, selfTest }) });
   }));
 
   router.get('/projects/:id', wrap(async (req, res) => {
@@ -254,7 +260,7 @@ export function createBuyerLabRouter(deps: BuyerLabRouterDeps): Router {
 
     const { access, llm } = await withLlm(t);
     const run = await startRun(
-      { store, provider: (pid) => deps.makeProvider(pid, { llm }) },
+      { store, provider: (pid) => deps.makeProvider(pid, { llm, apiKey: access.apiKey }) },
       { tenantId: t, projectId: body.projectId, provider, fundedBy: access.fundedBy, callBudget: body.budget as number | undefined }
     );
     const [sources, personas] = await Promise.all([store.listSources(t, body.projectId), store.listPersonas(t, body.projectId)]);
@@ -269,8 +275,8 @@ export function createBuyerLabRouter(deps: BuyerLabRouterDeps): Router {
     if (!run) return notFound(res);
     if (isTerminal(run)) return res.json({ run, progress: null });
     // Advancing spends model calls, so the caller must still be entitled to them.
-    const { llm } = await withLlm(t);
-    res.json(await advanceRun({ store, provider: (pid) => deps.makeProvider(pid, { llm }) }, t, id));
+    const { access, llm } = await withLlm(t);
+    res.json(await advanceRun({ store, provider: (pid) => deps.makeProvider(pid, { llm, apiKey: access.apiKey }) }, t, id));
   }));
 
   router.get('/runs/:id/outcome', wrap(async (req, res) => {
@@ -282,6 +288,59 @@ export function createBuyerLabRouter(deps: BuyerLabRouterDeps): Router {
     const outcome = await store.getOutcome(t, id);
     if (!outcome) return res.status(404).json({ error: 'This run has no outcome yet.', code: 'NO_OUTCOME' });
     res.json({ run, outcome });
+  }));
+
+  router.get('/runs/:id/report', wrap(async (req, res) => {
+    const id = idOf(req, res);
+    if (!id) return;
+    const t = tenantOf(req);
+    const run = await store.getRun(t, id);
+    if (!run) return notFound(res);
+    const existing = await store.getReport(t, id);
+    if (existing) return res.json({ report: existing, outcome: await store.getOutcome(t, id) });
+    if (run.status !== 'done' && run.status !== 'budget_exhausted') {
+      return res.status(409).json({ error: 'The run has not finished yet.', code: 'RUN_NOT_DONE' });
+    }
+    const outcome = await store.getOutcome(t, id);
+    if (!outcome) return res.status(404).json({ error: 'This run has no outcome yet.', code: 'NO_OUTCOME' });
+    const { llm } = await withLlm(t);
+    const { report, model } = await generateReport(outcome, llm);
+    await store.saveReport(t, id, report, model);
+    res.json({ report, outcome });
+  }));
+
+  router.post('/runs/:id/chat', write, wrap(async (req, res) => {
+    const id = idOf(req, res);
+    if (!id) return;
+    const t = tenantOf(req);
+    const run = await store.getRun(t, id);
+    if (!run) return notFound(res);
+    const body = (req.body ?? {}) as Record<string, unknown>;
+    const personaId = typeof body.personaId === 'string' ? body.personaId : '';
+    if (!ID.test(personaId)) return notFound(res);
+    const message = typeof body.message === 'string' ? cleanText(body.message).trim() : '';
+    if (!message || message.length > 1000) return bad(res, 'Send a message of 1 to 1000 characters.');
+    const { access, llm } = await withLlm(t);
+    const provider = deps.makeProvider(run.provider, { llm, apiKey: access.apiKey });
+    if (!provider) return res.status(501).json({ error: `The ${run.provider} engine is not available.`, code: 'PROVIDER_UNAVAILABLE' });
+    const replyText = await provider.chat({ runId: id, tenantId: t }, personaId, message);
+    res.json({ reply: replyText });
+  }));
+
+  router.post('/runs/:id/retest', write, wrap(async (req, res) => {
+    const id = idOf(req, res);
+    if (!id) return;
+    const t = tenantOf(req);
+    const base = await store.getRun(t, id);
+    if (!base) return notFound(res);
+    const body = (req.body ?? {}) as Record<string, unknown>;
+    const sourceIds = Array.isArray(body.sourceIds) ? body.sourceIds.filter((x): x is string => typeof x === 'string') : undefined;
+    const { access, llm } = await withLlm(t);
+    const run = await retestRun(
+      { store, provider: (pid) => deps.makeProvider(pid, { llm, apiKey: access.apiKey }) },
+      { tenantId: t, projectId: base.projectId, baseRunId: id, provider: base.provider, fundedBy: access.fundedBy, sourceIds }
+    );
+    res.status(201).json({ run });
   }));
 
   return router;

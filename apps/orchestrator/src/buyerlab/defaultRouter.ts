@@ -3,6 +3,7 @@ import { createRequireUser } from '../middleware/requireUser';
 import { isDatabaseConfigured } from '../db/client';
 import { drizzleBuyerLabStore } from '../db/repository/buyerlab';
 import { PerUserRateLimiter } from '../services/keyTesters';
+import { hasServerKeyAccess } from '../services/usageService';
 import { workspaceService } from '../services/workspaceService';
 import { createBuyerLabRouter } from '../routes/buyerlab';
 import { resolveBuyerAccess } from './access';
@@ -25,9 +26,10 @@ export function createDefaultBuyerLabRouter() {
     access: (tenantId) => resolveBuyerAccess(tenantId),
     makeLlm: (apiKey) => createBuyerLlm(apiKey),
     // MiroFish arrives in sub-project 3; until then only Native exists and runs return 501 for it.
-    makeProvider: (id, ctx) => (id === 'native' ? new NativeProvider({ store: drizzleBuyerLabStore, llm: ctx.llm }) : null),
+    makeProvider: (id, ctx) => (id === 'native' ? new NativeProvider({ store: drizzleBuyerLabStore, llm: ctx.llm, apiKey: ctx.apiKey }) : null),
     crawl,
     writeLimiter: new PerUserRateLimiter(10),
-    pollLimiter: new PerUserRateLimiter(120)
+    pollLimiter: new PerUserRateLimiter(120),
+    hasServerKeyAccess
   });
 }

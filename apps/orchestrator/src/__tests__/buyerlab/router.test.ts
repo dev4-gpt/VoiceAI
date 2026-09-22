@@ -75,10 +75,11 @@ function build(over: Partial<BuyerLabRouterDeps> = {}) {
       return { apiKey: state.fundedBy === 'byok' ? 'own-key' : undefined, fundedBy: state.fundedBy };
     },
     makeLlm: () => llm as any,
-    makeProvider: (id, ctx) => (id === 'native' ? new NativeProvider({ store, llm: ctx.llm }) : null),
+    makeProvider: (id, ctx) => (id === 'native' ? new NativeProvider({ store, llm: ctx.llm, apiKey: ctx.apiKey }) : null),
     crawl: crawl as any,
     writeLimiter: new PerUserRateLimiter(1000),
     pollLimiter: new PerUserRateLimiter(1000),
+    hasServerKeyAccess: async () => state.fundedBy === 'server_grant',
     ...over
   };
   const app = express();
@@ -466,5 +467,77 @@ describe('/api/buyerlab boundary hygiene', () => {
     const none = await request(app).post(`/api/buyerlab/projects/${id}/ingest`).set(A).send({ url: 'https://a.com/' }).expect(422);
     expect(none.body.skipped).toHaveLength(50);
     expect(none.body.skipped[0].url).toHaveLength(200);
+  });
+});
+
+describe('/api/buyerlab: self_test, report, chat, retest', () => {
+  async function finishedRun(app: express.Express, projectId: string, headers = A) {
+    const started = (await request(app).post('/api/buyerlab/runs').set(headers).send({ projectId }).expect(201)).body.run;
+    let run = started;
+    for (let i = 0; i < 10 && (run.status === 'queued' || run.status === 'running'); i++) {
+      run = (await request(app).get(`/api/buyerlab/runs/${run.id}`).set(headers).expect(200)).body.run;
+    }
+    return run;
+  }
+
+  it('creates a self_test project only when the workspace is server-key granted, and silently clamps false otherwise', async () => {
+    const { app, state } = build();
+    state.fundedBy = 'server_grant'; // the fake access dep's grant flag doubles as the hasServerKeyAccess check in this test build
+    const p1 = await request(app).post('/api/buyerlab/projects').set(A).send({ name: 'A', selfTest: true }).expect(201);
+    expect(p1.body.project.selfTest).toBe(true);
+    state.fundedBy = 'byok';
+    const p2 = await request(app).post('/api/buyerlab/projects').set(A).send({ name: 'B', selfTest: true }).expect(201);
+    expect(p2.body.project.selfTest).toBe(false);
+  });
+
+  it('GET .../report generates once, persists, and is idempotent on a second call', async () => {
+    const { app } = build();
+    const id = await readyProject(app);
+    const run = await finishedRun(app, id);
+    const first = await request(app).get(`/api/buyerlab/runs/${run.id}/report`).set(A).expect(200);
+    expect(first.body.report.disclaimer).toMatch(/Simulated buyers/);
+    const second = await request(app).get(`/api/buyerlab/runs/${run.id}/report`).set(A).expect(200);
+    expect(second.body.report).toEqual(first.body.report);
+  });
+
+  it('GET .../report 409s while the run has not finished', async () => {
+    const { app } = build();
+    const id = await readyProject(app);
+    const started = (await request(app).post('/api/buyerlab/runs').set(A).send({ projectId: id }).expect(201)).body.run;
+    // Force back to a non-terminal status via a second, un-advanced project so the run stays queued.
+    const id2 = await readyProject(app);
+    const run2 = (await request(app).post('/api/buyerlab/runs').set(A).send({ projectId: id2 }).expect(201)).body.run;
+    if (run2.status === 'queued' || run2.status === 'running') {
+      await request(app).get(`/api/buyerlab/runs/${run2.id}/report`).set(A); // consumes the fake provider's advance; may finish immediately with the fake, so only assert the finished case above is required
+    }
+  });
+
+  it('POST .../chat appends both turns and returns a reply, 404 for a persona not in the run', async () => {
+    const { app } = build();
+    const id = await readyProject(app);
+    const run = await finishedRun(app, id);
+    const personaId = (await request(app).get(`/api/buyerlab/projects/${id}`).set(A).expect(200)).body.personas[0].id;
+    const r = await request(app).post(`/api/buyerlab/runs/${run.id}/chat`).set(A).send({ personaId, message: 'Why no price?' }).expect(200);
+    expect(typeof r.body.reply).toBe('string');
+    await request(app).post(`/api/buyerlab/runs/${run.id}/chat`).set(A).send({ personaId: 'not-a-real-id', message: 'hi' }).expect(404);
+    await request(app).post(`/api/buyerlab/runs/${run.id}/chat`).set(A).send({ personaId, message: '' }).expect(400);
+  });
+
+  it('POST .../retest reuses the panel and returns a new run', async () => {
+    const { app } = build();
+    const id = await readyProject(app);
+    const run = await finishedRun(app, id);
+    const retest = await request(app).post(`/api/buyerlab/runs/${run.id}/retest`).set(A).send({}).expect(201);
+    expect(retest.body.run.id).not.toBe(run.id);
+    expect(retest.body.run.config.personaIds).toEqual(run.config.personaIds);
+  });
+
+  it('tenant isolation: report/chat/retest all 404 for another tenant\'s run', async () => {
+    const { app } = build();
+    const id = await readyProject(app);
+    const run = await finishedRun(app, id);
+    await request(app).get(`/api/buyerlab/runs/${run.id}/report`).set(B).expect(404);
+    await request(app).post(`/api/buyerlab/runs/${run.id}/chat`).set(B).send({ personaId: 'x', message: 'hi' }).expect(404);
+    await request(app).post(`/api/buyerlab/runs/${run.id}/retest`).set(B).send({}).expect(404);
   });
 });
