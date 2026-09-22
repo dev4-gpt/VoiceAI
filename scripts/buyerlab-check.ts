@@ -117,6 +117,6 @@ async function main() {
 }
 
 main().catch((e) => {
-  console.error('Check failed:', (e as Error).name, (e as Error).message);
+  console.error('Check failed:', (e as Error).name, (e as { cause?: { code?: string } }).cause?.code ?? '');
   process.exit(1);
 });
