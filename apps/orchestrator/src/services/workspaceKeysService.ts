@@ -8,7 +8,9 @@ export const BYOK_PLATFORMS = {
   assemblyai: ['apiKey'],
   devto: ['apiKey'],
   linkedin: ['accessToken'],
-  twitter: ['apiKey', 'apiSecret', 'accessToken', 'accessTokenSecret']
+  twitter: ['apiKey', 'apiSecret', 'accessToken', 'accessTokenSecret'],
+  // Workspace-scoped TryPost API token; the instance URL is TRYPOST_BASE_URL.
+  trypost: ['apiToken']
 } as const;
 
 export type ByokPlatform = keyof typeof BYOK_PLATFORMS;

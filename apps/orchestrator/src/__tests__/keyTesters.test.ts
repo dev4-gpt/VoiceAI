@@ -46,6 +46,40 @@ describe('testKey', () => {
     expect(result).toEqual({ ok: false, message: 'Could not reach dev.to. Try again.' });
   });
 
+  describe('trypost', () => {
+    const saved = process.env.TRYPOST_BASE_URL;
+    afterEach(() => {
+      if (saved === undefined) delete process.env.TRYPOST_BASE_URL;
+      else process.env.TRYPOST_BASE_URL = saved;
+    });
+
+    it('calls GET /api/workspace on the configured base URL with the bearer token', async () => {
+      process.env.TRYPOST_BASE_URL = 'https://tp.example.com/';
+      const f = fakeFetch(200);
+      const result = await testKey('trypost', { apiToken: 'tp-1' }, f as unknown as typeof fetch);
+      expect(result.ok).toBe(true);
+      expect(f).toHaveBeenCalledWith(
+        'https://tp.example.com/api/workspace',
+        expect.objectContaining({ headers: expect.objectContaining({ Authorization: 'Bearer tp-1' }) })
+      );
+    });
+
+    it('is ok only on 2xx', async () => {
+      process.env.TRYPOST_BASE_URL = 'https://tp.example.com';
+      const result = await testKey('trypost', { apiToken: 'bad' }, fakeFetch(401) as unknown as typeof fetch);
+      expect(result).toEqual({ ok: false, message: 'TryPost rejected this key (HTTP 401).' });
+    });
+
+    it('reports unconfigured without any call when TRYPOST_BASE_URL is unset', async () => {
+      delete process.env.TRYPOST_BASE_URL;
+      const f = fakeFetch(200);
+      const result = await testKey('trypost', { apiToken: 'tp-1' }, f as unknown as typeof fetch);
+      expect(f).not.toHaveBeenCalled();
+      expect(result.ok).toBe(false);
+      expect(result.message).toMatch(/not configured/i);
+    });
+  });
+
   it('never calls X', async () => {
     const f = fakeFetch(200);
     const result = await testKey(

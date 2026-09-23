@@ -115,11 +115,20 @@ describe('/api/me', () => {
   it('400 for unknown platforms and bad shapes', async () => {
     const unknown = await call('a', 'PUT', '/credentials/substack', { apiKey: 'x' });
     expect(unknown.status).toBe(400);
-    expect((await json(unknown)).allowedPlatforms).toEqual(['deepseek', 'assemblyai', 'devto', 'linkedin', 'twitter']);
+    expect((await json(unknown)).allowedPlatforms).toEqual(['deepseek', 'assemblyai', 'devto', 'linkedin', 'twitter', 'trypost']);
 
     const bad = await call('a', 'PUT', '/credentials/linkedin', { apiKey: 'x' });
     expect(bad.status).toBe(400);
     expect((await json(bad)).allowedFields).toEqual(['accessToken']);
+  });
+
+  it('saves a TryPost token masked, isolated per tenant', async () => {
+    const put = await call('a', 'PUT', '/credentials/trypost', { apiToken: 'tp_secret_token_1234' });
+    expect(put.status).toBe(200);
+    expect((await json(put)).last4).toBe('••••1234');
+    expect(JSON.stringify(await json(await call('a', 'GET', '/credentials')))).not.toContain('tp_secret');
+    expect((await json(await call('b', 'GET', '/credentials'))).credentials).toEqual([]);
+    expect((await call('a', 'PUT', '/credentials/trypost', { token: 'x' })).status).toBe(400);
   });
 
   it('tests a saved key and rate limits per user', async () => {
