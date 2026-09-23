@@ -165,7 +165,7 @@ describe('BillingService — pricing, usage and ROI', () => {
 
   describe('subscription activation', () => {
     // The previous test here asserted that simulateCheckout returned a
-    // `cs_`-prefixed id and a checkout.growthvoice.os URL with status 'active' —
+    // `cs_`-prefixed id and a checkout.omnivox.os URL with status 'active' —
     // it locked in a fabricated payment. Activation now requires a
     // signature-verified Stripe webhook, which is the only thing that knows
     // whether money actually moved.

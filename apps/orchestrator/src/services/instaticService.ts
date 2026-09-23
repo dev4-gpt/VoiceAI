@@ -166,7 +166,7 @@ export class InstaticService {
           type: 'text',
           name: 'Category Badge',
           semanticTag: 'span',
-          props: { text: `GROWTHVOICE OS • ${companyName.toUpperCase()}` },
+          props: { text: `OMNIVOX • ${companyName.toUpperCase()}` },
           styles: {
             base: {
               typography: { fontSize: '12px', fontWeight: '700', color: '#d4af37' },
@@ -232,7 +232,7 @@ export class InstaticService {
               id: `${pageId}_cta_voice`,
               type: 'button',
               name: 'Spoken Voice Demo Button',
-              props: { text: '🎙️ Speak with Anna (Voice Operator)', href: 'javascript:window.__GrowthVoiceOS && window.__GrowthVoiceOS.open()' },
+              props: { text: '🎙️ Speak with Anna (Voice Operator)', href: 'javascript:window.__OmniVox && window.__OmniVox.open()' },
               styles: {
                 base: {
                   typography: { fontSize: '15px', fontWeight: '600', color: '#ffffff' },
@@ -279,7 +279,7 @@ export class InstaticService {
           name: 'Voice Section Description',
           semanticTag: 'p',
           props: {
-            text: 'This static page is connected to GrowthVoice OS. Prospective clients can speak to Anna directly via the floating orb in the bottom-right.'
+            text: 'This static page is connected to OmniVox. Prospective clients can speak to Anna directly via the floating orb in the bottom-right.'
           },
           styles: {
             base: {
@@ -290,7 +290,7 @@ export class InstaticService {
         {
           id: `${pageId}_voice_embed`,
           type: 'embed',
-          name: 'GrowthVoice OS Script Embed',
+          name: 'OmniVox Script Embed',
           props: {
             company: companyName,
             clientId: 'lead_jm_901',
@@ -522,7 +522,7 @@ Refinement Request: "${prompt}"`;
         // A rejected scriptUrl falls back to the first-party widget rather than
         // emitting an attacker-supplied <script src>.
         const scriptUrl = escapeUrl(node.props.scriptUrl || '/embed.js') || '/embed.js';
-        return `<!-- Embedded GrowthVoice OS Widget -->\n<script src="${scriptUrl}" data-company="${company}" data-client-id="${clientId}" data-accent="${accent}"></script>`;
+        return `<!-- Embedded OmniVox Widget -->\n<script src="${scriptUrl}" data-company="${company}" data-client-id="${clientId}" data-accent="${accent}"></script>`;
       }
 
       const baseStyles = node.styles.base || {};

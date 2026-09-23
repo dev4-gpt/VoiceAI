@@ -5,7 +5,7 @@ import type { SubscriptionTierId } from '@voice-os/shared';
  * Real Stripe Checkout.
  *
  * This replaces `simulateCheckout`, which fabricated a `cs_`-prefixed session id
- * and a checkout.growthvoice.os URL, returned status 'active', and self-activated
+ * and a checkout.omnivox.os URL, returned status 'active', and self-activated
  * the plan — a response shape indistinguishable from a real one to any caller,
  * for the one operation where "did money actually move?" matters most.
  *
@@ -88,7 +88,7 @@ export class StripeService {
             unit_amount: unitAmount,
             recurring: { interval: isAnnual ? 'year' : 'month' },
             product_data: {
-              name: `GrowthVoice OS — ${plan.name}`,
+              name: `OmniVox — ${plan.name}`,
               description: `${plan.minutesLimit.toLocaleString()} voice minutes per month`
             }
           }

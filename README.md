@@ -1,4 +1,4 @@
-# GrowthVoice OS
+# OmniVox
 
 **A voice agent that answers your website around the clock, qualifies the visitor out loud, and writes the lead into your CRM — with US AI-disclosure and recording-consent rules built in.**
 
@@ -14,7 +14,7 @@ Built on the [AssemblyAI Voice Agent API](https://www.assemblyai.com/products/vo
 
 Inbound interest arrives whenever the visitor has time — evenings, weekends, other time zones. Most B2B sites meet it with a static contact form and a reply the next business day, by which point the visitor has moved on. A human SDR on nights and weekends is expensive; a text chatbot is easy to ignore.
 
-## What GrowthVoice OS does
+## What OmniVox does
 
 1. **Answers in voice, in the browser.** A visitor clicks, speaks, and is heard. No phone number, no download.
 2. **Takes real actions mid-conversation.** The agent calls tools as it talks — creating the lead, recording budget, authority, need and timeline, capturing a consultation request — and those land in a Postgres-backed CRM while the call is still going.

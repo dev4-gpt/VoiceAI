@@ -12,7 +12,7 @@ import {
 import { sql } from 'drizzle-orm';
 
 /**
- * Postgres schema for GrowthVoice OS.
+ * Postgres schema for OmniVox.
  *
  * Two rules this schema holds to:
  *

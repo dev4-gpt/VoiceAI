@@ -1,5 +1,5 @@
 {
-  "name": "voice-ai-hackathon-monorepo",
+  "name": "omnivox-monorepo",
   "version": "1.0.0",
   "private": true,
   "description": "AI Growth Operator Voice OS for the AssemblyAI Voice Agent Hackathon on lablab.ai",
@@ -23,7 +23,7 @@
     "evals",
     "docker"
   ],
-  "author": "GrowthVoice OS Team",
+  "author": "OmniVox Team",
   "license": "MIT",
   "devDependencies": {
     "drizzle-orm": "^0.45.2"

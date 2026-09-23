@@ -107,7 +107,7 @@ export class ContentFactoryEngine {
         webinarScript: {
           hook: 'What if your sales funnel worked while you were asleep, answering every objection in fluent spoken voice?',
           coreProblem: 'Creators spend endless hours answering repetitive pricing questions instead of producing content.',
-          valueProposition: 'The GrowthVoice OS qualifies leads, books meetings, and handles objections 24/7.',
+          valueProposition: 'OmniVox qualifies leads, books meetings, and handles objections 24/7.',
           offerClose: 'Join the Pro Mentorship today backed by our 14-day action-based guarantee.'
         },
         linkedInPost: {
@@ -283,14 +283,14 @@ export class ContentFactoryEngine {
         outreachSequence: {
           coldEmail: {
             subject: 'Quick audit for DesignAcademy: $114k after-hours inbound leakage',
-            bodyMarkdown: `Hi Jason,\n\nSaw you recently launched the $2,997 Pro Career Sprint on Substack and mentioned you are bringing on your first SDR on LinkedIn—huge congrats on the momentum!\n\nWe noticed that roughly 38% of design inquiries land outside US business hours (European and Asian time zones) and sit in your inbox for an average of 14 hours before receiving a response. According to HBR benchmarks, responding within 5 minutes yields 21x higher qualification than waiting even 30 minutes.\n\nWe ran a quick 5-point conversion audit on DesignAcademy's inbound funnel and calculated that delayed response times are leaking approximately $114,000 in pipeline annually.\n\nI put together a 2-page teardown showing how an autonomous voice operator can qualify international leads 24/7 and route them straight to your calendar.\n\nWould it be helpful if I sent the 2-page audit over? No pitch, just actionable data.\n\nBest,\nAlex & The GrowthVoice Team`
+            bodyMarkdown: `Hi Jason,\n\nSaw you recently launched the $2,997 Pro Career Sprint on Substack and mentioned you are bringing on your first SDR on LinkedIn—huge congrats on the momentum!\n\nWe noticed that roughly 38% of design inquiries land outside US business hours (European and Asian time zones) and sit in your inbox for an average of 14 hours before receiving a response. According to HBR benchmarks, responding within 5 minutes yields 21x higher qualification than waiting even 30 minutes.\n\nWe ran a quick 5-point conversion audit on DesignAcademy's inbound funnel and calculated that delayed response times are leaking approximately $114,000 in pipeline annually.\n\nI put together a 2-page teardown showing how an autonomous voice operator can qualify international leads 24/7 and route them straight to your calendar.\n\nWould it be helpful if I sent the 2-page audit over? No pitch, just actionable data.\n\nBest,\nAlex & The OmniVox Team`
           },
           linkedInMessage: {
             hook: 'Congrats on the $2,997 Pro Sprint cohort launch, Jason!',
             body: 'Hey Jason—noticed you are expanding the Pro Career Sprint cohort. We ran a quick 5-point conversion audit on DesignAcademy\'s inbound funnel. Because European designers are waiting ~14 hours for response, you\'re losing an estimated $114k in annual high-ticket pipeline. Created a free 2-page teardown on how to plug it with 24/7 autonomous voice qualification. Want me to send the PDF over?'
           },
           spokenAudioScript: {
-            intro: 'Hey Jason, Anna here from GrowthVoice.',
+            intro: 'Hey Jason, Anna here from OmniVox.',
             triggerHook: 'I was following your Substack post on the $2,997 Pro Career Sprint and saw you are hiring an SDR on LinkedIn—congratulations on scaling the studio!',
             valueDrop: 'I audited your inbound funnel and noticed that about 38% of your designer inquiries land outside US business hours and wait 14 hours for a reply. In creator economics, that delay leaks roughly $114,000 in lost high-ticket enrollments each year.',
             frictionlessCallToAction: 'I recorded a 90-second voice breakdown of how to capture and qualify those leads 24/7 with zero extra SDR headcount. Mind if I send the audio note over?'
@@ -494,7 +494,7 @@ When high-ticket prospects visit https://designacademy.io from Europe or Asia, t
           newsletter: {
             subjectLine: `The Truth About Objections on ${job.topic}`,
             previewText: 'Why discounting destroys your brand and how to win with risk-reversal.',
-            bodyMarkdown: `### Transforming Objections into Lifetime Value\n\nWhen a student asks if the program is worth the investment, standard sales tactics say to push harder.\n\nAt GrowthVoice, we install the opposite strategy: radical transparency, clear milestones, and our verified 14-day action-based refund guarantee...`,
+            bodyMarkdown: `### Transforming Objections into Lifetime Value\n\nWhen a student asks if the program is worth the investment, standard sales tactics say to push harder.\n\nAt OmniVox, we install the opposite strategy: radical transparency, clear milestones, and our verified 14-day action-based refund guarantee...`,
             callToAction: 'Book your 1-on-1 Growth Consultation to audit your community funnels.'
           },
           webinarScript: {
@@ -793,14 +793,14 @@ When high-ticket prospects visit https://designacademy.io from Europe or Asia, t
         outreachSequence: {
           coldEmail: {
             subject: `Quick audit for ${params.companyOrCreator}: $${estimatedAnnualLeakage.toLocaleString()} after-hours inbound leakage`,
-            bodyMarkdown: `Hi ${params.companyOrCreator} team,\n\nNoticed your recent milestone: ${params.triggerEvent}. Congratulations on the momentum!\n\nWe ran a quick 5-point conversion audit on ${params.companyOrCreator}'s inbound channels (${strengths.slice(0, 2).join(', ')}). We identified that delayed response times during international or after-hours inquiry surges are costing approximately $${estimatedAnnualLeakage.toLocaleString()} in annual pipeline.\n\nI put together a 2-page teardown showing how an autonomous voice agent captures and qualifies these leads 24/7.\n\nWould it be helpful if I shared the teardown? No pitch, just actionable data.\n\nBest,\nGrowthVoice Team`
+            bodyMarkdown: `Hi ${params.companyOrCreator} team,\n\nNoticed your recent milestone: ${params.triggerEvent}. Congratulations on the momentum!\n\nWe ran a quick 5-point conversion audit on ${params.companyOrCreator}'s inbound channels (${strengths.slice(0, 2).join(', ')}). We identified that delayed response times during international or after-hours inquiry surges are costing approximately $${estimatedAnnualLeakage.toLocaleString()} in annual pipeline.\n\nI put together a 2-page teardown showing how an autonomous voice agent captures and qualifies these leads 24/7.\n\nWould it be helpful if I shared the teardown? No pitch, just actionable data.\n\nBest,\nOmniVox Team`
           },
           linkedInMessage: {
             hook: `Noticed your milestone: ${params.triggerEvent}!`,
             body: `Hey there—saw ${params.companyOrCreator} is scaling around ${params.triggerEvent}. We audited your inbound funnel and calculated ~$${estimatedAnnualLeakage.toLocaleString()} in after-hours pipeline slipping through. Put together a 2-page teardown showing how 24/7 voice qualification plugs it. Open to checking it out?`
           },
           spokenAudioScript: {
-            intro: `Hey ${params.companyOrCreator}, Anna here from GrowthVoice.`,
+            intro: `Hey ${params.companyOrCreator}, Anna here from OmniVox.`,
             triggerHook: `I was following your updates regarding ${params.triggerEvent}—congratulations on the expansion!`,
             valueDrop: `We ran a 5-point conversion audit on your public channels and found that delayed inquiry response times are costing you roughly $${estimatedAnnualLeakage.toLocaleString()} every year in lost enrollments.`,
             frictionlessCallToAction: `I recorded a 90-second voice walkthrough showing how autonomous 24/7 intake captures those buyers instantly. Mind if I send the audio note over?`

@@ -7,7 +7,7 @@
  */
 interface ImportMetaEnv {
   /**
-   * Public origin of the orchestrator, e.g. https://api.growthvoice.example.
+   * Public origin of the orchestrator, e.g. https://api.omnivox.example.
    * Leave unset in development so requests fall through to the Vite dev proxy.
    */
   readonly VITE_ORCHESTRATOR_URL?: string;

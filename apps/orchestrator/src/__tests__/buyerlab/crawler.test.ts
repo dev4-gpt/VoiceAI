@@ -251,9 +251,9 @@ describe('extractPage', () => {
 });
 
 describe('robots', () => {
-  const txt = 'User-agent: *\nDisallow: /private\nAllow: /private/open\n\nUser-agent: growthvoiceos-buyerlab\nDisallow: /blocked\n';
+  const txt = 'User-agent: *\nDisallow: /private\nAllow: /private/open\n\nUser-agent: omnivox-buyerlab\nDisallow: /blocked\n';
   it('uses the group for our agent when one exists', () => {
-    const rules = parseRobots(txt, 'GrowthVoiceOS-BuyerLab');
+    const rules = parseRobots(txt, 'OmniVox-BuyerLab');
     expect(isAllowedByRobots(rules, '/blocked/x')).toBe(false);
     expect(isAllowedByRobots(rules, '/private')).toBe(true);
   });

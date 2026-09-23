@@ -169,7 +169,7 @@ export const InstaticVisualEditor: React.FC<InstaticVisualEditorProps> = ({
   const pillarsSec = pageDoc?.sections?.find((s: any) => s.id.includes('pillars'));
 
   const compiledHtml = pageDoc
-    ? `<!DOCTYPE html>\n<html lang="en">\n<head>\n  <meta charset="UTF-8" />\n  <title>${pageDoc.title} | ${pageDoc.companyName}</title>\n</head>\n<body>\n  <!-- Built with Instatic & GrowthVoice OS -->\n</body>\n</html>`
+    ? `<!DOCTYPE html>\n<html lang="en">\n<head>\n  <meta charset="UTF-8" />\n  <title>${pageDoc.title} | ${pageDoc.companyName}</title>\n</head>\n<body>\n  <!-- Built with Instatic & OmniVox -->\n</body>\n</html>`
     : '';
 
   return (

@@ -31,7 +31,7 @@ export const TargetStep: React.FC<Props> = ({ detail, busy, onCreate, onIngestUr
         <input id="bl-site" className={field} value={site} onChange={(e) => setSite(e.target.value)} placeholder="https://" />
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" checked={selfTest} onChange={(e) => setSelfTest(e.target.checked)} />
-          Self-test (this is GrowthVoice OS itself — only ever usable on a granted workspace)
+          Self-test (this is OmniVox itself — only ever usable on a granted workspace)
         </label>
         <button className={button} disabled={busy || !name.trim()}>Create project</button>
       </form>

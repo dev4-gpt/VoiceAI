@@ -11,7 +11,7 @@ import { OFFLINE_FIXTURES, type OfflineFixture } from './fixtures';
 import { judgeTone } from './judge';
 import type { EvalMode, EvalTaskSpec, SuiteResult, TaskResult, TrialResult, Verdict } from './types';
 
-export const SUITE_NAME = 'GrowthVoice OS agent eval suite';
+export const SUITE_NAME = 'OmniVox agent eval suite';
 export const PASS_POWER_K_DEFINITION =
   'Product over tasks of (passes/trials)^k: the estimated chance that every task passes on all k attempts. A point estimate; read it with the per-task Wilson intervals.';
 

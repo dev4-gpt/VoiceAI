@@ -1,5 +1,5 @@
 // ============================================================================
-// GrowthVoice OS — Browser-Native Speech Synthesis Controller (Web Speech API)
+// OmniVox — Browser-Native Speech Synthesis Controller (Web Speech API)
 // Provides audible spoken voice for simulation mode, judge tours, & offline evals
 // ============================================================================
 

@@ -31,7 +31,7 @@ export function structuredData(page: PageId): Record<string, unknown> {
     '@graph': [
       {
         '@type': 'SoftwareApplication',
-        name: 'GrowthVoice OS',
+        name: 'OmniVox',
         url: `${SITE_URL}/pricing`,
         applicationCategory: 'BusinessApplication',
         operatingSystem: 'Web',

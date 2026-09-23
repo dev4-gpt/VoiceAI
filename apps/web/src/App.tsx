@@ -215,7 +215,7 @@ export const App: React.FC = () => {
     setJudgeTourBanner('🎬 [1/5 • 0-12s] Stratum 0: Acoustic Surface • Autonomous $10k Inbound BANT Qualification');
     triggerSimulationStep('lead_inbound');
     speakTurnIfEnabled(
-      "Welcome to GrowthVoice OS. I'm Anna, autonomous growth operator for high-ticket creators. Simulating after-hours qualification for a 10,000 dollar cohort lead."
+      "Welcome to OmniVox. I'm Anna, autonomous growth operator for high-ticket creators. Simulating after-hours qualification for a 10,000 dollar cohort lead."
     );
   };
 
@@ -231,7 +231,7 @@ export const App: React.FC = () => {
   const handleExportRevenueDossier = () => {
     const totalPipelineValue = leads.reduce((acc, l) => acc + ((l as any).dealValue || 10000), 0);
     const mdContent = `---
-title: "GrowthVoice OS — Creator Revenue & Voice Dossier"
+title: "OmniVox — Creator Revenue & Voice Dossier"
 client: "${prospectName}"
 company: "${prospectCompany}"
 date: "${new Date().toISOString()}"
@@ -243,7 +243,7 @@ pipeline_deal_value: "$${totalPipelineValue.toLocaleString()}"
 eval_pass_rate: "100%"
 ---
 
-# 🎙️ GrowthVoice OS — Executive Revenue Dossier
+# 🎙️ OmniVox — Executive Revenue Dossier
 **Client**: [[Clients/${prospectName}|${prospectName}]]  
 **Company**: ${prospectCompany} (${prospectWebsite})  
 **Bio**: ${prospectBio}  
@@ -302,7 +302,7 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
     const mdUrl = URL.createObjectURL(mdBlob);
     const mdLink = document.createElement('a');
     mdLink.href = mdUrl;
-    mdLink.download = `growthvoice-dossier-${(prospectCompany || 'client').toLowerCase().replace(/\s+/g, '-')}.md`;
+    mdLink.download = `omnivox-dossier-${(prospectCompany || 'client').toLowerCase().replace(/\s+/g, '-')}.md`;
     document.body.appendChild(mdLink);
     mdLink.click();
     document.body.removeChild(mdLink);
@@ -312,7 +312,7 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
     const jsonUrl = URL.createObjectURL(jsonBlob);
     const jsonLink = document.createElement('a');
     jsonLink.href = jsonUrl;
-    jsonLink.download = `growthvoice-dossier-${(prospectCompany || 'client').toLowerCase().replace(/\s+/g, '-')}.json`;
+    jsonLink.download = `omnivox-dossier-${(prospectCompany || 'client').toLowerCase().replace(/\s+/g, '-')}.json`;
     document.body.appendChild(jsonLink);
     jsonLink.click();
     document.body.removeChild(jsonLink);
@@ -345,7 +345,7 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
   // Saved Dossier Presets State (Browser LocalStorage + Built-in Public Archetypes)
   const [customPresets, setCustomPresets] = useState<DossierPreset[]>(() => {
     try {
-      const saved = localStorage.getItem('growthvoice_custom_dossier_presets');
+      const saved = localStorage.getItem('omnivox_custom_dossier_presets');
       return saved ? JSON.parse(saved) : [];
     } catch {
       return [];
@@ -426,7 +426,7 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
           setJudgeTourActive(false);
           setJudgeTourBanner('✨ Grand Prize Auto-Pilot Verification Complete (100% Scorecard)');
           speakTurnIfEnabled(
-            "Tour complete. GrowthVoice OS is fully calibrated and verified production-ready."
+            "Tour complete. OmniVox is fully calibrated and verified production-ready."
           );
           return 60;
         }
@@ -480,7 +480,7 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
     const updated = customPresets.filter((p) => p.id !== targetId);
     setCustomPresets(updated);
     try {
-      localStorage.setItem('growthvoice_custom_dossier_presets', JSON.stringify(updated));
+      localStorage.setItem('omnivox_custom_dossier_presets', JSON.stringify(updated));
     } catch (e) {
       console.error('Failed to update localStorage', e);
     }
@@ -525,7 +525,7 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
     setCustomPresets(updated);
     setSelectedPresetId(newPreset.id);
     try {
-      localStorage.setItem('growthvoice_custom_dossier_presets', JSON.stringify(updated));
+      localStorage.setItem('omnivox_custom_dossier_presets', JSON.stringify(updated));
       fetch(apiUrl('/api/crm/local-profile'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -825,7 +825,7 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
         ? 'Maintain a structured, consultative executive demeanor focused on ROI and risk mitigation.'
         : 'Be direct, tactical, and relentlessly execution-focused.';
 
-    const brandVoiceInstructions = `You represent GrowthOS advising ${comp}. Tone: ${toneLabel} (${toneRule}). Signature vocabulary to incorporate: ${customLexicon}. Strictly avoid banned terms: ${customBannedTerms}. Positioning: You are Anna, Senior Growth Operating Architect at GrowthOS, an elite sovereign growth operating system and management consultancy. You advise ${comp} on revenue systems, acquisition infrastructure, and unit economics. Never claim to have built ${comp} internally or say "we did this" regarding their products. Markdown & Consultation Briefing Capability: When prospects ask to have the conversation in Markdown or for notes/references to review before their call, inform them enthusiastically that GrowthVoice OS automatically captures and formats this entire strategy session into their local Obsidian vault and that they can click the "Download Briefing (.md)" button on their screen anytime!`;
+    const brandVoiceInstructions = `You represent GrowthOS advising ${comp}. Tone: ${toneLabel} (${toneRule}). Signature vocabulary to incorporate: ${customLexicon}. Strictly avoid banned terms: ${customBannedTerms}. Positioning: You are Anna, Senior Growth Operating Architect at GrowthOS, an elite sovereign growth operating system and management consultancy. You advise ${comp} on revenue systems, acquisition infrastructure, and unit economics. Never claim to have built ${comp} internally or say "we did this" regarding their products. Markdown & Consultation Briefing Capability: When prospects ask to have the conversation in Markdown or for notes/references to review before their call, inform them enthusiastically that OmniVox automatically captures and formats this entire strategy session into their local Obsidian vault and that they can click the "Download Briefing (.md)" button on their screen anytime!`;
 
     switch (persona) {
       case 'inbound':
@@ -2472,7 +2472,7 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
           </div>
           <div>
             <div className="flex items-center space-x-2">
-              <h1 className={`text-lg font-bold tracking-tight ${isGlass ? "text-slate-900" : "text-white"}`}>GrowthVoice OS</h1>
+              <h1 className={`text-lg font-bold tracking-tight ${isGlass ? "text-slate-900" : "text-white"}`}>OmniVox</h1>
               <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-950/80 text-cyan-400 border border-cyan-800/60 font-semibold">
                 AssemblyAI Voice Agent API
               </span>
@@ -3436,7 +3436,7 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
             1-Click Embed Widget (embed.js)
           </button>
         </div>
-        <div>lablab.ai Voice Agent Hackathon Submission • GrowthVoice OS</div>
+        <div>lablab.ai Voice Agent Hackathon Submission • OmniVox</div>
       </footer>
     </div>
   );
