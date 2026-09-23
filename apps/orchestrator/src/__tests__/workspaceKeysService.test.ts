@@ -135,7 +135,7 @@ describe('WorkspaceKeysService', () => {
   });
 
   it('isByokPlatform accepts only the five BYOK platforms', () => {
-    for (const p of ['deepseek', 'assemblyai', 'devto', 'linkedin', 'twitter']) expect(isByokPlatform(p)).toBe(true);
+    for (const p of ['deepseek', 'assemblyai', 'devto', 'linkedin', 'twitter', 'trypost']) expect(isByokPlatform(p)).toBe(true);
     for (const p of ['substack', 'youtube', 'meta', '', null, 42]) expect(isByokPlatform(p)).toBe(false);
   });
 });

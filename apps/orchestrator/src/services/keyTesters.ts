@@ -29,6 +29,14 @@ const CHECKS: Record<
   linkedin: {
     label: 'LinkedIn',
     request: (s) => ['https://api.linkedin.com/v2/userinfo', { headers: { Authorization: `Bearer ${s.accessToken}` } }]
+  },
+  trypost: {
+    label: 'TryPost',
+    // Read-only workspace lookup (GET /api/workspace); the base URL is checked in testKey.
+    request: (s) => [
+      `${(process.env.TRYPOST_BASE_URL || '').replace(/\/+$/, '')}/api/workspace`,
+      { headers: { Authorization: `Bearer ${s.apiToken}`, Accept: 'application/json' } }
+    ]
   }
 };
 
@@ -43,6 +51,9 @@ export async function testKey(
 ): Promise<KeyTestResult> {
   if (platform === 'twitter') {
     return { ok: false, message: 'X keys are stored but not tested — X charges for API reads.' };
+  }
+  if (platform === 'trypost' && !process.env.TRYPOST_BASE_URL) {
+    return { ok: false, message: 'TryPost is not configured on this server (TRYPOST_BASE_URL unset).' };
   }
   const check = CHECKS[platform];
   const [url, init] = check.request(secrets);

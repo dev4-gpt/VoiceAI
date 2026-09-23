@@ -6,7 +6,7 @@ import { crmStore } from './crmStore';
 import { buildOAuth1AuthHeader } from './oauth1Signer';
 
 export interface PlatformPublishReceipt {
-  platform: 'twitter' | 'linkedin' | 'substack' | 'youtube';
+  platform: 'twitter' | 'linkedin' | 'substack' | 'youtube' | 'trypost';
   status: 'published' | 'queued' | 'simulated_live' | 'failed' | 'stub_unsupported';
   postId: string;
   postUrl: string;
@@ -62,8 +62,11 @@ export class SocialPublishingService {
    * The single place `isSimulated` is decided, so every platform — including any
    * added later — inherits the same honesty guarantee instead of re-deriving it.
    * A post is real only if a live call was attempted AND it succeeded.
+   *
+   * Public so the tenant-scoped TryPost path reuses this derivation instead of
+   * re-deciding isSimulated.
    */
-  private deriveReceipt(params: {
+  public deriveReceipt(params: {
     platform: PlatformPublishReceipt['platform'];
     status: PlatformPublishReceipt['status'];
     attemptedRealCall: boolean;
