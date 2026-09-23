@@ -1,5 +1,5 @@
 import { socialPublishingService, PlatformPublishReceipt } from './socialPublishingService';
-import { contentTypeFor, type AccountsResult, type PublishResult, type TryPostAccount } from './tryPostService';
+import { contentTypeFor, safeHttpUrl, type AccountsResult, type PublishResult, type TryPostAccount } from './tryPostService';
 
 export interface TryPostClient {
   listAccounts(token: string): Promise<AccountsResult>;
@@ -19,8 +19,11 @@ export async function publishViaTryPost(
   text: string,
   accountIds: string[],
   realPublishingEnabled: boolean,
-  known: TryPostAccount[]
+  known: TryPostAccount[],
+  budget: { totalMs?: number; now?: () => number } = {}
 ): Promise<PlatformPublishReceipt[]> {
+  const now = budget.now ?? Date.now;
+  const deadline = now() + (budget.totalMs ?? 45_000);
   const excerpt = text.slice(0, 120);
   const receipts: PlatformPublishReceipt[] = [];
 
@@ -53,11 +56,16 @@ export async function publishViaTryPost(
     const handle = account.username || account.displayName;
     const contentType = contentTypeFor(account.platform);
     if (!contentType) {
-      receipts.push(receipt('failed', `Text-only posts to ${account.platform} are not supported here (it needs media).`, { handle }));
+      receipts.push(receipt('failed', `Text-only posts to this account's network are not supported here (it needs media).`, { handle }));
       continue;
     }
     if (!realPublishingEnabled) {
       receipts.push(receipt('simulated_live', `Simulated: real publishing is disabled, nothing was sent to ${account.platform}.`, { handle }));
+      continue;
+    }
+
+    if (now() >= deadline) {
+      receipts.push(receipt('queued', 'Not attempted: this request ran out of time. Nothing was sent; retry this account.', { handle }));
       continue;
     }
 
@@ -68,7 +76,7 @@ export async function publishViaTryPost(
         attempted: result.attemptedRealCall,
         succeeded: result.succeeded,
         postId: result.postId,
-        postUrl: result.postUrl,
+        postUrl: safeHttpUrl(result.postUrl),
         handle
       })
     );

@@ -67,6 +67,17 @@ export function tryPostBaseUrl(): string {
   return (process.env.TRYPOST_BASE_URL || '').trim().replace(/\/+$/, '');
 }
 
+/** A link is only ever http(s); anything else (javascript:, data:, garbage) is treated as absent. */
+export function safeHttpUrl(u: unknown): string | undefined {
+  if (typeof u !== 'string') return undefined;
+  try {
+    const { protocol } = new URL(u);
+    return protocol === 'https:' || protocol === 'http:' ? u : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 const defaultSleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 function errTag(err: unknown): string {
@@ -141,7 +152,7 @@ export async function publish(
     postId = String(created.id);
   } catch (err) {
     console.error('[tryPost] publish failed:', errTag(err));
-    return { attemptedRealCall: true, succeeded: false, state: 'failed', details: 'Could not reach TryPost.' };
+    return { attemptedRealCall: true, succeeded: false, state: 'failed', details: 'Outcome unknown: TryPost may have created the post; check TryPost before retrying.' };
   }
 
   let lastStatus = 'unknown';
@@ -152,7 +163,7 @@ export async function publish(
         const post = unwrap(await res.json());
         lastStatus = typeof post?.status === 'string' ? post.status : 'unknown';
         if (lastStatus === 'published') {
-          const url = Array.isArray(post.platforms) ? post.platforms.find((p: any) => p?.platform_url)?.platform_url : undefined;
+          const url = Array.isArray(post.platforms) ? post.platforms.map((p: any) => safeHttpUrl(p?.platform_url)).find(Boolean) : undefined;
           return { attemptedRealCall: true, succeeded: true, state: 'published', postId, postUrl: url, details: 'TryPost confirmed the post is published.' };
         }
         if (lastStatus === 'failed' || lastStatus === 'partially_published') {

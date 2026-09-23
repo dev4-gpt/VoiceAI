@@ -152,7 +152,7 @@ describe('POST /api/me/publish', () => {
       { text: 'hi', accountIds: [] },
       { text: 'hi', accountIds: [1] },
       { text: 'hi', accountIds: 'x' },
-      { text: 'hi', accountIds: Array.from({ length: 11 }, (_, i) => `a${i}`) }
+      { text: 'hi', accountIds: Array.from({ length: 6 }, (_, i) => `a${i}`) }
     ]) {
       expect((await call('a', 'POST', '/publish', bad)).status).toBe(400);
     }
@@ -223,6 +223,19 @@ describe('POST /api/me/publish', () => {
     const { receipts } = await json(await call('a', 'POST', '/publish', { text: 'hi', accountIds: ['ig'] }));
     expect(receipts[0]).toMatchObject({ status: 'failed', isSimulated: true });
     expect(publish).not.toHaveBeenCalled();
+  });
+
+  it('does not burn a rate-limit slot on 409', async () => {
+    for (let i = 0; i < 5; i++) expect((await call('a', 'POST', '/publish', body)).status).toBe(409);
+    await connect('a', 'tok-a');
+    expect((await call('a', 'POST', '/publish', body)).status).toBe(200);
+  });
+
+  it('drops a non-http(s) postUrl from receipts', async () => {
+    await connect('a', 'tok-a');
+    publish.mockResolvedValueOnce({ attemptedRealCall: true, succeeded: true, state: 'published', postId: 'p', postUrl: 'javascript:alert(1)', details: 'ok' });
+    const { receipts } = await json(await call('a', 'POST', '/publish', body));
+    expect(receipts[0].postUrl).toBe('');
   });
 
   it('rate limits per user', async () => {

@@ -129,6 +129,35 @@ describe('publish', () => {
     spy.mockRestore();
   });
 
+  it('drops a non-http(s) platform_url', async () => {
+    const f = jest
+      .fn()
+      .mockResolvedValueOnce(res(201, { data: { id: 'p5' } }))
+      .mockResolvedValue(res(200, { data: { id: 'p5', status: 'published', platforms: [{ platform_url: 'javascript:alert(1)' }] } }));
+    const out = await publish(TOKEN, input, opts(f));
+    expect(out).toMatchObject({ succeeded: true });
+    expect(out.postUrl).toBeUndefined();
+  });
+
+  it.each(['draft', 'scheduled', 'publishing'])('poll ending at %s is pending, not success', async (status) => {
+    const f = jest
+      .fn()
+      .mockResolvedValueOnce(res(201, { data: { id: 'p6' } }))
+      .mockResolvedValue(res(200, { data: { id: 'p6', status } }));
+    expect(await publish(TOKEN, input, opts(f))).toMatchObject({ succeeded: false, state: 'pending' });
+  });
+
+  it('a POST network error says the outcome is unknown', async () => {
+    const spy = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+    const boom = jest.fn(async () => {
+      throw new TypeError('x');
+    });
+    const out = await publish(TOKEN, input, opts(boom));
+    spy.mockRestore();
+    expect(out.details).toMatch(/Outcome unknown/);
+    expect(out.succeeded).toBe(false);
+  });
+
   it('a 2xx POST with no id is not success', async () => {
     const f = jest.fn(async () => res(201, {}));
     expect(await publish(TOKEN, input, opts(f))).toMatchObject({ succeeded: false, state: 'failed' });

@@ -24,7 +24,7 @@ interface MeRouterDeps {
 }
 
 const MAX_POST_LENGTH = 10000;
-const MAX_ACCOUNTS = 10
+const MAX_ACCOUNTS = 5;
 
 const ALLOWED_PLATFORMS = Object.keys(BYOK_PLATFORMS);
 
@@ -157,12 +157,13 @@ export function createMeRouter(deps: MeRouterDeps): Router {
     ) {
       return res.status(400).json({ error: `"accountIds" must be 1-${MAX_ACCOUNTS} account ids.` });
     }
-    if (!publishLimiter.allow((req as AuthedRequest).user.userId)) {
-      return res.status(429).json({ error: 'Too many publish requests. Wait a minute and try again.' });
-    }
     try {
       const token = await tryPostTokenOr4xx(req, res);
       if (!token) return;
+      // Spend the rate-limit slot only once config/token checks pass.
+      if (!publishLimiter.allow((req as AuthedRequest).user.userId)) {
+        return res.status(429).json({ error: 'Too many publish requests. Wait a minute and try again.' });
+      }
       const accounts = await tryPost.listAccounts(token);
       if (!accounts.ok) {
         return res.status(502).json({ error: 'Could not load accounts from TryPost.', code: 'TRYPOST_UPSTREAM', reason: accounts.reason });
