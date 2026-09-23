@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { X, KeyRound } from 'lucide-react';
 import { authorizedFetch, SignedOutError } from '../auth/authorizedFetch';
+import { TryPostPublish } from './TryPostPublish';
 
-type Platform = 'deepseek' | 'assemblyai' | 'devto' | 'linkedin' | 'twitter';
+type Platform = 'deepseek' | 'assemblyai' | 'devto' | 'linkedin' | 'twitter' | 'trypost';
 
 interface MaskedKey {
   platform: Platform;
@@ -26,7 +27,8 @@ const PLATFORMS: Array<{ id: Platform; label: string; fields: Array<{ name: stri
       { name: 'accessToken', label: 'Access token' },
       { name: 'accessTokenSecret', label: 'Access token secret' }
     ]
-  }
+  },
+  { id: 'trypost', label: 'TryPost', fields: [{ name: 'apiToken', label: 'API token' }] }
 ];
 
 interface KeysPanelProps {
@@ -212,6 +214,7 @@ export const KeysPanel: React.FC<KeysPanelProps> = ({ isOpen, onClose, signedIn,
                 Remove
               </button>
             </div>
+            {active === 'trypost' && saved ? <TryPostPublish fetcher={fetcher} /> : null}
           </>
         )}
       </div>
