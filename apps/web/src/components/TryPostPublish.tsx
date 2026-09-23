@@ -6,6 +6,7 @@ interface Account {
   platform: string;
   displayName: string;
   username: string;
+  active?: boolean;
 }
 
 interface Receipt {
@@ -20,6 +21,15 @@ interface Receipt {
 interface Props {
   fetcher: (path: string, init?: RequestInit) => Promise<Response>;
 }
+
+const safeHref = (u: string): string | null => {
+  try {
+    const { protocol } = new URL(u);
+    return protocol === 'https:' || protocol === 'http:' ? u : null;
+  } catch {
+    return null;
+  }
+};
 
 const MAX_LENGTH = 10000;
 const focus = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500';
@@ -41,7 +51,10 @@ export const TryPostPublish: React.FC<Props> = ({ fetcher }) => {
     try {
       const res = await fetcher('/api/me/trypost/accounts');
       const body = await res.json().catch(() => ({}));
-      if (res.ok) setAccounts(body.accounts);
+      if (res.ok) {
+        setAccounts(body.accounts ?? []);
+        setSelected([]);
+      }
       else setError(body.error || `Could not load TryPost accounts. (HTTP ${res.status})`);
     } catch (err) {
       fail(err);
@@ -79,12 +92,12 @@ export const TryPostPublish: React.FC<Props> = ({ fetcher }) => {
       <h3 className="text-sm font-bold">Publish via TryPost</h3>
       {accounts === null ? (
         <p className="mt-2 text-xs opacity-70">{error ? '' : 'Loading accounts...'}</p>
-      ) : accounts.length === 0 ? (
+      ) : accounts.filter((a) => a.active !== false).length === 0 ? (
         <p className="mt-2 text-xs opacity-70">No accounts connected in your TryPost workspace.</p>
       ) : (
         <fieldset className="mt-2 space-y-1">
           <legend className="sr-only">Accounts</legend>
-          {accounts.map((a) => (
+          {accounts.filter((a) => a.active !== false).map((a) => (
             <label key={a.id} className="flex items-center gap-2 text-xs">
               <input
                 type="checkbox"
@@ -128,10 +141,10 @@ export const TryPostPublish: React.FC<Props> = ({ fetcher }) => {
             <li key={`${r.postId}-${i}`} className="text-xs">
               <span className="font-semibold">{r.isSimulated ? 'Simulated, not published' : 'Published'}</span>
               {r.accountHandle ? ` (${r.accountHandle})` : ''}: {r.status}. {r.details}
-              {r.postUrl ? (
+              {r.postUrl && safeHref(r.postUrl) ? (
                 <>
                   {' '}
-                  <a href={r.postUrl} target="_blank" rel="noopener noreferrer" className="underline">
+                  <a href={safeHref(r.postUrl) ?? undefined} target="_blank" rel="noopener noreferrer" className="underline">
                     View post
                   </a>
                 </>

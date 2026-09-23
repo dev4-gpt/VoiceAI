@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { cleanup, render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { TryPostPublish } from './TryPostPublish';
 import { SignedOutError } from '../auth/authorizedFetch';
 
@@ -63,5 +63,25 @@ describe('TryPostPublish', () => {
     });
     render(<TryPostPublish fetcher={fetcher} />);
     await waitFor(() => expect(screen.getByRole('alert').textContent).toBe('Your session ended. Sign in again.'));
+  });
+
+  it('never renders a non-http(s) postUrl as a link', async () => {
+    setup(() =>
+      json({ receipts: [{ status: 'published', isSimulated: false, details: 'ok', postId: 'p1', postUrl: 'javascript:alert(1)', accountHandle: 'me' }] })
+    );
+    await fill();
+    fireEvent.click(screen.getByRole('button', { name: 'Publish' }));
+    await waitFor(() => expect(screen.getByText(/TryPost|ok/)).toBeInTheDocument());
+    expect(screen.queryByRole('link')).toBeNull();
+  });
+
+  it('hides inactive accounts and tolerates a missing accounts array', async () => {
+    const f = vi.fn(async () => json({ accounts: [{ id: 'x', platform: 'bluesky', displayName: '', username: 'gone', active: false }] }));
+    render(<TryPostPublish fetcher={f} />);
+    await waitFor(() => expect(screen.getByText(/No accounts connected/)).toBeInTheDocument());
+    expect(screen.queryByLabelText(/gone/)).toBeNull();
+    cleanup();
+    render(<TryPostPublish fetcher={vi.fn(async () => json({}))} />);
+    await waitFor(() => expect(screen.getByText(/No accounts connected/)).toBeInTheDocument());
   });
 });
