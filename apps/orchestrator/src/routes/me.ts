@@ -9,13 +9,22 @@ import {
   ByokPlatform
 } from '../services/workspaceKeysService';
 import { testKey as defaultTestKey, PerUserRateLimiter } from '../services/keyTesters';
+import * as defaultTryPost from '../services/tryPostService';
+import { tryPostBaseUrl } from '../services/tryPostService';
+import { publishViaTryPost, TryPostClient } from '../services/tryPostPublishing';
 
 interface MeRouterDeps {
   requireUser: RequestHandler;
   keys: WorkspaceKeysService;
   testKey: typeof defaultTestKey;
   limiter: PerUserRateLimiter;
+  /** Separate budget for publishing; defaults to 10/min per user. */
+  publishLimiter?: PerUserRateLimiter;
+  tryPost?: TryPostClient;
 }
+
+const MAX_POST_LENGTH = 10000;
+const MAX_ACCOUNTS = 10
 
 const ALLOWED_PLATFORMS = Object.keys(BYOK_PLATFORMS);
 
@@ -23,6 +32,22 @@ const ALLOWED_PLATFORMS = Object.keys(BYOK_PLATFORMS);
 export function createMeRouter(deps: MeRouterDeps): Router {
   const router = Router();
   router.use(deps.requireUser);
+  const tryPost: TryPostClient = deps.tryPost ?? defaultTryPost;
+  const publishLimiter = deps.publishLimiter ?? new PerUserRateLimiter();
+
+  /** The caller's own TryPost token, or a response already sent (null). */
+  const tryPostTokenOr4xx = async (req: Request, res: Response): Promise<string | null> => {
+    if (!tryPostBaseUrl()) {
+      res.status(503).json({ error: 'TryPost is not configured on this server.', code: 'TRYPOST_UNCONFIGURED' });
+      return null;
+    }
+    const secrets = await deps.keys.getSecrets((req as AuthedRequest).workspace.tenantId, 'trypost');
+    if (!secrets?.apiToken) {
+      res.status(409).json({ error: 'Save your TryPost API token in Keys first.', code: 'TRYPOST_NOT_CONNECTED' });
+      return null;
+    }
+    return secrets.apiToken;
+  };
 
   const handleError = (res: Response, err: unknown) => {
     if (err instanceof KeyValidationError) {
@@ -99,6 +124,58 @@ export function createMeRouter(deps: MeRouterDeps): Router {
       const removed = await deps.keys.remove((req as AuthedRequest).workspace.tenantId, platform);
       if (!removed) return res.status(404).json({ error: 'No key saved for this platform.' });
       res.json({ status: 'deleted' });
+    } catch (err) {
+      handleError(res, err);
+    }
+  });
+
+  router.get('/trypost/accounts', async (req: Request, res: Response) => {
+    try {
+      const token = await tryPostTokenOr4xx(req, res);
+      if (!token) return;
+      const out = await tryPost.listAccounts(token);
+      if (!out.ok) {
+        return res.status(502).json({ error: 'Could not load accounts from TryPost.', code: 'TRYPOST_UPSTREAM', reason: out.reason });
+      }
+      res.json({ accounts: out.accounts });
+    } catch (err) {
+      handleError(res, err);
+    }
+  });
+
+  router.post('/publish', async (req: Request, res: Response) => {
+    const { text, accountIds } = (req.body ?? {}) as { text?: unknown; accountIds?: unknown };
+    const cleanText = typeof text === 'string' ? text.trim() : '';
+    if (!cleanText || cleanText.length > MAX_POST_LENGTH) {
+      return res.status(400).json({ error: `"text" must be 1-${MAX_POST_LENGTH} characters.` });
+    }
+    if (
+      !Array.isArray(accountIds) ||
+      accountIds.length < 1 ||
+      accountIds.length > MAX_ACCOUNTS ||
+      !accountIds.every((a) => typeof a === 'string' && a.length > 0 && a.length <= 100)
+    ) {
+      return res.status(400).json({ error: `"accountIds" must be 1-${MAX_ACCOUNTS} account ids.` });
+    }
+    if (!publishLimiter.allow((req as AuthedRequest).user.userId)) {
+      return res.status(429).json({ error: 'Too many publish requests. Wait a minute and try again.' });
+    }
+    try {
+      const token = await tryPostTokenOr4xx(req, res);
+      if (!token) return;
+      const accounts = await tryPost.listAccounts(token);
+      if (!accounts.ok) {
+        return res.status(502).json({ error: 'Could not load accounts from TryPost.', code: 'TRYPOST_UPSTREAM', reason: accounts.reason });
+      }
+      const receipts = await publishViaTryPost(
+        tryPost,
+        token,
+        cleanText,
+        [...new Set(accountIds as string[])],
+        process.env.ENABLE_REAL_PUBLISHING === 'true',
+        accounts.accounts
+      );
+      res.json({ receipts });
     } catch (err) {
       handleError(res, err);
     }
