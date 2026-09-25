@@ -4,7 +4,7 @@
 
 Built on the [AssemblyAI Voice Agent API](https://www.assemblyai.com/products/voice-agent-api) for the AssemblyAI Voice Agent Hackathon.
 
-**[Live demo](https://growthvoice-os.vercel.app)** · **[Embeddable widget](https://growthvoice-os.vercel.app/widget-preview)** · [Pitch deck](docs/submission/StratosGTM-Pitch-Deck.pdf) · [Submission notes](docs/submission/SUBMISSION.md)
+**[Live demo](https://stratosgtm.vercel.app)** · **[Embeddable widget](https://stratosgtm.vercel.app/widget-preview)** · [Pitch deck](docs/submission/StratosGTM-Pitch-Deck.pdf) · [Submission notes](docs/submission/SUBMISSION.md)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -22,11 +22,11 @@ Inbound interest arrives whenever the visitor has time — evenings, weekends, o
 
 ## Try it
 
-1. Open **[growthvoice-os.vercel.app](https://growthvoice-os.vercel.app)** and start a voice call. Allow microphone access.
+1. Open **[stratosgtm.vercel.app](https://stratosgtm.vercel.app)** and start a voice call. Allow microphone access.
 2. You will hear the AI disclosure first. Say who you are, your company and what you are looking for.
 3. Watch the CRM: when the agent calls `create_or_update_lead` and `qualify_lead`, the lead appears and its score updates.
 
-To see it as a customer would embed it, open the **[widget preview](https://growthvoice-os.vercel.app/widget-preview)** — a sample third-party page running the one-line `embed.js` snippet.
+To see it as a customer would embed it, open the **[widget preview](https://stratosgtm.vercel.app/widget-preview)** — a sample third-party page running the one-line `embed.js` snippet.
 
 > The public demo runs Stripe in **test mode** and in open demo mode (there is no login yet). Use test card `4242 4242 4242 4242`, and don't store real credentials there.
 

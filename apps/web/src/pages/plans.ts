@@ -5,7 +5,7 @@ import type { SubscriptionPlan } from '@voice-os/shared';
 export const PLANS = catalog.plans as SubscriptionPlan[];
 export const COST_PER_VOICE_MINUTE_USD: number = catalog.costPerVoiceMinuteUsd;
 
-export const SITE_URL = 'https://growthvoice-os.vercel.app';
+export const SITE_URL = 'https://stratosgtm.vercel.app';
 
 export const usd = (n: number) => `$${n.toLocaleString('en-US')}`;
 export const perMinute = (n: number) => `$${n.toFixed(2)}/min`;

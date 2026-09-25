@@ -20,7 +20,7 @@ Welcome, Claude! This file provides the essential context, commands, architectur
 
 Some capabilities are real only when the relevant API key/flag is configured; without it, the code falls back to a clearly-labeled simulation. Don't assume "autonomous" or "live" language elsewhere in this doc means every call hits a real third-party API — check this table first:
 
-**Live deployment:** https://growthvoice-os.vercel.app (frontend + API as one Vercel project; Neon Postgres; Stripe in **test mode**).
+**Live deployment:** https://stratosgtm.vercel.app (the older `growthvoice-os.vercel.app` stays as an alias) (frontend + API as one Vercel project; Neon Postgres; Stripe in **test mode**).
 
 | Capability | Real when... | Otherwise... |
 | :--- | :--- | :--- |
