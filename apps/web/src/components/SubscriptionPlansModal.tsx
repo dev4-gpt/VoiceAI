@@ -308,7 +308,7 @@ export const SubscriptionPlansModal: React.FC<SubscriptionPlansModalProps> = ({
               </div>
 
               <p className="text-[11px] text-slate-500 mt-4">
-                A model, not a measured result. The voice conversion and close rates are your assumptions; OmniVox has not
+                A model, not a measured result. The voice conversion and close rates are your assumptions; StratosGTM has not
                 measured them for your business. Revenue counts closed deals only — pipeline is not revenue.
               </p>
             </>

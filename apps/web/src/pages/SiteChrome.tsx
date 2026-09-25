@@ -15,7 +15,7 @@ export const SiteHeader: React.FC = () => (
         href="/"
         className={`cursor-pointer rounded font-bold tracking-tight text-slate-900 transition-colors duration-200 ${focusRing}`}
       >
-        OmniVox
+        StratosGTM
       </a>
       <div className="flex items-center gap-5 text-sm">
         <a
@@ -44,7 +44,7 @@ export const SiteHeader: React.FC = () => (
 export const SiteFooter: React.FC = () => (
   <footer className="mt-24 border-t border-slate-200">
     <div className="mx-auto flex max-w-6xl flex-col gap-4 px-6 py-8 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
-      <p>OmniVox — built on the AssemblyAI Voice Agent API. MIT licensed.</p>
+      <p>StratosGTM — built on the AssemblyAI Voice Agent API. MIT licensed.</p>
       <nav aria-label="Footer" className="flex flex-wrap gap-5">
         <a
           href="/"

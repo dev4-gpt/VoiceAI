@@ -60,7 +60,7 @@ export const LiveTranscriptHUD: React.FC<LiveTranscriptHUDProps> = ({
     const hasBudget = /\$10|\$5k|budget|fee|platform fee/i.test(allText);
     const hasTimeline = /30 days|timeline|month|launch/i.test(allText);
 
-    const markdown = `# 📋 OmniVox: Strategy Briefing & Consultation Reference Dossier
+    const markdown = `# 📋 StratosGTM: Strategy Briefing & Consultation Reference Dossier
 
 **Client / Brand:** ${company}  
 **Tone Archetype:** ${activeBrandVoice?.toneLabel || 'Tactical Operator'}  
@@ -101,7 +101,7 @@ export const LiveTranscriptHUD: React.FC<LiveTranscriptHUDProps> = ({
 
 ## 🛠️ Key References & Architecture Stack
 * **Operating Layer:** Veloce AgenticOS (local-first layer for Claude Code, Codex, Antigravity, Ollama).
-* **Voice Inbound Engine:** OmniVox with AssemblyAI Voice Agent API (24kHz PCM16).
+* **Voice Inbound Engine:** StratosGTM with AssemblyAI Voice Agent API (24kHz PCM16).
 * **Persistent Memory:** Local Obsidian Knowledge Vault with automated dossier synchronization.
 * **Reasoning Engine:** DeepSeek LLM with multi-turn context retention.
 
@@ -123,7 +123,7 @@ ${messages
   .join('\n')}
 
 ---
-*Generated autonomously by OmniVox • Local-First Sovereign AI Growth Operator*
+*Generated autonomously by StratosGTM • Local-First Sovereign AI Growth Operator*
 `;
 
     // 1. Trigger browser file download

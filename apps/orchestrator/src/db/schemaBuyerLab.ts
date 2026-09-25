@@ -20,7 +20,7 @@ export const buyerProjects = pgTable(
     targetUrl: text('target_url'),
     brief: text('brief'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-    /** Marks OmniVox's own project. Only a self-test project's runs attempt the converse step. */
+    /** Marks StratosGTM's own project. Only a self-test project's runs attempt the converse step. */
     selfTest: boolean('self_test').notNull().default(false)
   },
   (t) => ({ tenantIdx: index('buyer_projects_tenant_idx').on(t.tenantId, t.createdAt) })

@@ -1,4 +1,4 @@
-# GrowthVoice OS
+# StratosGTM
 
 > A browser voice agent that answers a website around the clock, qualifies the visitor out loud, and writes the lead into a CRM while the call is still going — with US AI-disclosure and recording-consent rules built in. Built on the AssemblyAI Voice Agent API.
 

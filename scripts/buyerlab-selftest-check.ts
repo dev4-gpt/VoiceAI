@@ -1,6 +1,6 @@
 // scripts/buyerlab-selftest-check.ts
 /**
- * Real-model check for Buyer Lab sub-project 2: creates a self-test project (OmniVox
+ * Real-model check for Buyer Lab sub-project 2: creates a self-test project (StratosGTM
  * itself), runs the panel including the converse stage, generates a report, asks one chat
  * question, and re-tests. Prints what happened at every stage. Spends the SERVER's DeepSeek key
  * (cents). Writes then deletes a project. Run only with the owner's yes.
@@ -27,10 +27,10 @@ async function main() {
   const tenantId = ws.id;
   console.log(`Workspace "${ws.name}" (server-key grant). Spending the server DeepSeek key.`);
 
-  const project = await store.createProject(tenantId, { name: 'Buyer Lab self-test check', targetUrl: null, brief: 'OmniVox, an autonomous voice-first growth operating system.', selfTest: true });
+  const project = await store.createProject(tenantId, { name: 'Buyer Lab self-test check', targetUrl: null, brief: 'StratosGTM, an autonomous voice-first growth operating system.', selfTest: true });
   try {
     await store.addSources(tenantId, project.id, [
-      { kind: 'brief', surface: 'public', label: 'Product summary', url: null, contentHash: 'selftest-brief', text: 'OmniVox is an autonomous voice-first growth operating system built for founders and agencies, powered by AssemblyAI voice agents and DeepSeek text models. It qualifies leads, books consultations and handles retention over voice, with US AI-disclosure and 13-state all-party consent built in.', meta: {} }
+      { kind: 'brief', surface: 'public', label: 'Product summary', url: null, contentHash: 'selftest-brief', text: 'StratosGTM is an autonomous voice-first growth operating system built for founders and agencies, powered by AssemblyAI voice agents and DeepSeek text models. It qualifies leads, books consultations and handles retention over voice, with US AI-disclosure and 13-state all-party consent built in.', meta: {} }
     ]);
     const llm = createBuyerLlm(undefined);
     const stored = await store.listSources(tenantId, project.id);

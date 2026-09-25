@@ -15,7 +15,7 @@ The platform unites five architectural pillars:
 
 ## 1.1 The 7-Department Autonomous Agency Org Chart
 
-Inspired by the "Build Your Whole Team with Claude" framework, OmniVox doesn't just run simple API scripts; it structures the creator's backend into autonomous departments orchestrated by the Voice Agent API:
+Inspired by the "Build Your Whole Team with Claude" framework, StratosGTM doesn't just run simple API scripts; it structures the creator's backend into autonomous departments orchestrated by the Voice Agent API:
 
 ```mermaid
 graph TD

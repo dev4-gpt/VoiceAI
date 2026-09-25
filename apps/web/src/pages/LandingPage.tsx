@@ -14,29 +14,29 @@ const annualSavingPct = Math.round((1 - recommended.priceAnnualMonthlyUsd / reco
 
 export const PRODUCT_FAQ: FaqItem[] = [
   {
-    question: 'What is OmniVox?',
+    question: 'What is StratosGTM?',
     answer:
-      'OmniVox is a browser voice agent for B2B websites. A visitor clicks, speaks, and is answered in real time, with no phone number and no download. While it talks, the agent calls tools that create the lead, record budget, authority, need and timeline, and capture a consultation request in a Postgres-backed CRM, so the lead exists before the call ends. It runs on the AssemblyAI Voice Agent API and embeds on any site with one script tag.'
+      'StratosGTM is a browser voice agent for B2B websites. A visitor clicks, speaks, and is answered in real time, with no phone number and no download. While it talks, the agent calls tools that create the lead, record budget, authority, need and timeline, and capture a consultation request in a Postgres-backed CRM, so the lead exists before the call ends. It runs on the AssemblyAI Voice Agent API and embeds on any site with one script tag.'
   },
   {
     question: 'Is it legal to have an AI voice agent talk to my website visitors?',
-    answer: `Two US rules matter most. Some states require telling people they are talking to an AI, so OmniVox adds that disclosure to the start of every greeting on the server, where a client cannot skip it. ${CONSENT_STATES.length} states require every party to consent before a conversation is recorded, and real-time transcription can count as recording. In those states, and whenever the visitor's location is unknown, the agent asks permission before it listens and stores a record of that consent. This is an engineering implementation of published statutes, not legal advice; have counsel review the disclosure wording before using it with customers.`
+    answer: `Two US rules matter most. Some states require telling people they are talking to an AI, so StratosGTM adds that disclosure to the start of every greeting on the server, where a client cannot skip it. ${CONSENT_STATES.length} states require every party to consent before a conversation is recorded, and real-time transcription can count as recording. In those states, and whenever the visitor's location is unknown, the agent asks permission before it listens and stores a record of that consent. This is an engineering implementation of published statutes, not legal advice; have counsel review the disclosure wording before using it with customers.`
   },
   {
     question: 'How do I add the voice agent to my website?',
     answer:
-      'Paste one script tag into your site: the embed.js snippet with your company name. It adds a "Talk to Anna" button. When a visitor clicks it, the browser asks for microphone access, fetches a short-lived token from the OmniVox server, and streams audio directly to AssemblyAI. Your API key never reaches the browser, and you can restrict which domains are allowed to load the widget.'
+      'Paste one script tag into your site: the embed.js snippet with your company name. It adds a "Talk to Anna" button. When a visitor clicks it, the browser asks for microphone access, fetches a short-lived token from the StratosGTM server, and streams audio directly to AssemblyAI. Your API key never reaches the browser, and you can restrict which domains are allowed to load the widget.'
   },
   {
-    question: 'How much does OmniVox cost?',
+    question: 'How much does StratosGTM cost?',
     answer: `Plans start at ${usd(cheapest.priceMonthlyUsd)} a month. ${PLANS.map(
       (p) => `${p.name} is ${usd(p.priceMonthlyUsd)} a month with ${p.voiceMinutesMonthly.toLocaleString('en-US')} voice minutes, then ${perMinute(p.overageRatePerMinUsd)}`
     ).join('. ')}. Paying annually lowers each rate by about ${annualSavingPct}%. Full details are on the pricing page.`
   },
   {
-    question: 'What data does OmniVox store?',
+    question: 'What data does StratosGTM store?',
     answer:
-      'For each conversation it stores the lead the agent creates, including company, what the visitor is looking for, and their budget, authority, need and timeline answers, plus consent records showing the region, the rule applied, the disclosure text and timestamps. Audio goes straight from the visitor’s browser to AssemblyAI and never passes through OmniVox servers. Third-party credentials you connect are encrypted with AES-256-GCM before they are stored.'
+      'For each conversation it stores the lead the agent creates, including company, what the visitor is looking for, and their budget, authority, need and timeline answers, plus consent records showing the region, the rule applied, the disclosure text and timestamps. Audio goes straight from the visitor’s browser to AssemblyAI and never passes through StratosGTM servers. Third-party credentials you connect are encrypted with AES-256-GCM before they are stored.'
   }
 ];
 
@@ -58,7 +58,7 @@ const PILLARS = [
 const STEPS = [
   {
     title: 'A short-lived token is issued',
-    body: 'The OmniVox server requests a temporary AssemblyAI token. The API key never reaches the browser.'
+    body: 'The StratosGTM server requests a temporary AssemblyAI token. The API key never reaches the browser.'
   },
   {
     title: 'Audio streams straight to AssemblyAI',
@@ -104,7 +104,7 @@ export const LandingPage: React.FC = () => {
             {LANDING_H1}
           </h1>
           <p data-reveal="text" className="mt-6 text-lg leading-relaxed text-slate-600">
-            OmniVox answers your website around the clock, qualifies the visitor out loud, and writes the lead into
+            StratosGTM answers your website around the clock, qualifies the visitor out loud, and writes the lead into
             your CRM while the call is still going, with US AI-disclosure and recording-consent rules built in.
           </p>
           <div className="mt-10 flex flex-wrap justify-center gap-4">

@@ -251,7 +251,7 @@ console.log(`[Graph Export] Saved JSON database to ${jsonDbPath}`);
 
 // 2. Export Cypher DDL (Neo4j / FalkorDB)
 const cypherLines = [
-  '// GrowthVoice OS Knowledge Graph Cypher DDL/DML Export',
+  '// StratosGTM Knowledge Graph Cypher DDL/DML Export',
   `// Generated at: ${new Date().toISOString()}`,
   ''
 ];
@@ -276,7 +276,7 @@ const graphmlLines = [
   '  <key id="label" for="node" attr.name="label" attr.type="string"/>',
   '  <key id="type" for="node" attr.name="type" attr.type="string"/>',
   '  <key id="edge_type" for="edge" attr.name="edge_type" attr.type="string"/>',
-  '  <graph id="GrowthVoiceOS_KnowledgeGraph" edgedefault="directed">'
+  '  <graph id="StratosGTMOS_KnowledgeGraph" edgedefault="directed">'
 ];
 for (const node of nodes) {
   graphmlLines.push(`    <node id="${node.id}">`);
@@ -303,7 +303,7 @@ subfolders.forEach((f) => {
 
 // Index.md (Map of Content MOC)
 const indexContent = `---
-title: GrowthVoice OS Knowledge Graph Vault
+title: StratosGTM Knowledge Graph Vault
 date: ${new Date().toISOString().split('T')[0]}
 tags:
   - moc
@@ -315,9 +315,9 @@ cssclasses:
   - dashboard
 ---
 
-# 🎙️ GrowthVoice OS — Knowledge & Revenue Graph
+# 🎙️ StratosGTM — Knowledge & Revenue Graph
 
-Welcome to the **GrowthVoice OS** persistent vault. This vault connects real-time **AssemblyAI** voice interactions with autonomous **DeepSeek-R1** content synthesis, CRM lead qualification, and self-healing business guardrails.
+Welcome to the **StratosGTM** persistent vault. This vault connects real-time **AssemblyAI** voice interactions with autonomous **DeepSeek-R1** content synthesis, CRM lead qualification, and self-healing business guardrails.
 
 > [!important] Autonomous Operating System
 > Voice conversations are immediately parsed into **BANT qualifications**, **pricing objections**, and **multi-channel content marketing packs** with deterministic guardrails preventing unauthorized discounting.

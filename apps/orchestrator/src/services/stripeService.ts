@@ -88,7 +88,7 @@ export class StripeService {
             unit_amount: unitAmount,
             recurring: { interval: isAnnual ? 'year' : 'month' },
             product_data: {
-              name: `OmniVox — ${plan.name}`,
+              name: `StratosGTM — ${plan.name}`,
               description: `${plan.minutesLimit.toLocaleString()} voice minutes per month`
             }
           }

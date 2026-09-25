@@ -4,7 +4,7 @@ export interface RobotsRule {
 }
 
 /** Prefix rules only (no * or $ wildcards). Our agent's group wins over `*`. */
-export function parseRobots(text: string, agent = 'omnivox-buyerlab'): RobotsRule[] {
+export function parseRobots(text: string, agent = 'stratosgtm-buyerlab'): RobotsRule[] {
   const groups: Array<{ agents: string[]; rules: RobotsRule[] }> = [];
   let current: { agents: string[]; rules: RobotsRule[] } | null = null;
   let lastWasAgent = false;

@@ -480,7 +480,7 @@ export class SocialPublishingService {
       `2/ First: Eliminate the manual discovery trap.\n\nTraditional forms have a 3.2% completion rate. By deploying Anna (autonomous voice admissions), inbound prospects get their questions answered instantly with zero lag.`,
       `3/ Second: Deterministic objection handling.\n\nInstead of eager startup cheerleading, our consultative engine anchors the value equation in unit economics, ROI, and milestone-based action guarantees.`,
       `4/ Third: Persistent Obsidian memory.\n\nEvery voice call, objection, and budget parameter is automatically synchronized into a private local Obsidian vault with zero cloud telemetry leakage.`,
-      `5/ The result?\n\nA sovereign 24/7 growth machine that turns after-hours inbound curiosity into confirmed $2,997+ strategy consultations.\n\nExplore our autonomous growth infrastructure for ${companyName}: https://omnivox.os/deploy`
+      `5/ The result?\n\nA sovereign 24/7 growth machine that turns after-hours inbound curiosity into confirmed $2,997+ strategy consultations.\n\nExplore our autonomous growth infrastructure for ${companyName}: https://stratosgtm.os/deploy`
     ];
 
     const linkedInPost = `Most B2B operators believe scaling client acquisition requires doubling their SDR team.\n\nThat is an expensive mistake.\n\nWhen we audited the revenue architecture for ${companyName}, the bottleneck was never lead volume—it was response velocity and qualification friction.\n\nBy replacing static calendars with autonomous voice intelligence, we achieved three structural wins:\n\n• Instant 24/7 Qualification: Inbound prospects qualify against BANT criteria in under 90 seconds.\n• Unit-Economics Centered Advisory: Zero generic pitch scripts; every consultation is tailored to margin yield and CAC reduction.\n• Sovereign Vault Synchronization: Full briefing dossiers auto-formatted directly into local Obsidian vaults.\n\nIf you are scaling high-ticket sprints or enterprise advisory, stop trading founder hours for qualification calls.\n\nWhat is your biggest operational bottleneck in inbound pipeline velocity today? Let's discuss below.`;
@@ -501,7 +501,7 @@ Modern enterprise acquisition no longer rewards manual outreach hustle. The high
 3. **Automated Omnichannel Distribution:** Turning every strategic consultation into multi-platform thought leadership.
 
 ---
-*Generated autonomously via OmniVox Cloud Distribution Pipeline.*
+*Generated autonomously via StratosGTM Cloud Distribution Pipeline.*
 `;
 
     // 4. Automate Publishing Step: Dispatch to connected client platforms

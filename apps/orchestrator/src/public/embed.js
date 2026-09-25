@@ -1,7 +1,7 @@
 (function() {
-  // OmniVox — Universal Embeddable Spoken Voice Agent
-  if (window.__OmniVoxEmbedLoaded) return;
-  window.__OmniVoxEmbedLoaded = true;
+  // StratosGTM — Universal Embeddable Spoken Voice Agent
+  if (window.__StratosGTMEmbedLoaded) return;
+  window.__StratosGTMEmbedLoaded = true;
 
   // Locate current script tag to read parameters
   var currentScript = document.currentScript || (function() {
@@ -10,7 +10,7 @@
   })();
 
   var config = {
-    company: (currentScript && currentScript.getAttribute('data-company')) || 'OmniVox',
+    company: (currentScript && currentScript.getAttribute('data-company')) || 'StratosGTM',
     clientId: (currentScript && currentScript.getAttribute('data-client-id')) || 'lead_jm_901',
     apiUrl: (currentScript && currentScript.getAttribute('data-api')) || (function() {
       if (currentScript && currentScript.src) {
@@ -281,7 +281,7 @@
           </div>
 
           <div style="font-size: 10px; color: rgba(255,255,255,0.4);">
-            Powered by OmniVox • AssemblyAI Voice Agent
+            Powered by StratosGTM • AssemblyAI Voice Agent
           </div>
         </div>
       `;
@@ -385,7 +385,7 @@
       src.start(session.scheduledTime);
       session.scheduledTime += buffer.duration;
     } catch (e) {
-      console.error('[OmniVox] playback error', e);
+      console.error('[StratosGTM] playback error', e);
     }
   }
 
@@ -462,7 +462,7 @@
           onGranted();
         })
         .catch(function(e) {
-          console.error('[OmniVox] consent error', e);
+          console.error('[StratosGTM] consent error', e);
           lastError = 'Could not record consent. Please try again.';
           isCallActive = false;
           render();
@@ -488,7 +488,7 @@
         beginTokenExchange();
       })
       .catch(function(e) {
-        console.error('[OmniVox] policy error', e);
+        console.error('[StratosGTM] policy error', e);
         lastError = 'Could not verify call requirements. Please try again.';
         isCallActive = false;
         render();
@@ -509,7 +509,7 @@
         return cachedTools;
       })
       .catch(function(e) {
-        console.error('[OmniVox] could not load tool definitions', e);
+        console.error('[StratosGTM] could not load tool definitions', e);
         return [];
       });
   }
@@ -547,7 +547,7 @@
         });
       })
       .catch(function(e) {
-        console.error('[OmniVox] token error', e);
+        console.error('[StratosGTM] token error', e);
         lastError = 'Could not reach the voice service.';
         isCallActive = false;
         render();
@@ -585,7 +585,7 @@
         }
       })
       .catch(function(e) {
-        console.error('[OmniVox] tool execution failed', e);
+        console.error('[StratosGTM] tool execution failed', e);
         reply({ error: 'Tool execution failed' });
       });
   }
@@ -610,7 +610,7 @@
 
           var registeredTools = tools || [];
           if (registeredTools.length === 0) {
-            console.warn('[OmniVox] No tools registered - the agent cannot capture a lead this session.');
+            console.warn('[StratosGTM] No tools registered - the agent cannot capture a lead this session.');
           }
 
           var sessionConfig = {
@@ -691,7 +691,7 @@
         };
       })
       .catch(function(e) {
-        console.error('[OmniVox] mic error', e);
+        console.error('[StratosGTM] mic error', e);
         lastError =
           e && e.name === 'NotAllowedError'
             ? 'Microphone permission was denied. Allow mic access to talk to Anna.'

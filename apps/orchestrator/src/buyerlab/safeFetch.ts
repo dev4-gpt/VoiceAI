@@ -3,7 +3,7 @@ import https from 'node:https';
 import { isIP } from 'node:net';
 import { assertPublicUrl, Resolver, UnsafeUrlError } from './ssrf';
 
-export const BUYERLAB_USER_AGENT = 'OmniVox-BuyerLab/1.0 (+https://growthvoice-os.vercel.app)';
+export const BUYERLAB_USER_AGENT = 'StratosGTM-BuyerLab/1.0 (+https://growthvoice-os.vercel.app)';
 
 export class FetchFailedError extends Error {
   constructor(message: string, public readonly reason: 'timeout' | 'not_html' | 'too_many_redirects' | 'network') {

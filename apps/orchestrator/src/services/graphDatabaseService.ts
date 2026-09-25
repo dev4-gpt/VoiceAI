@@ -480,11 +480,11 @@ export class GraphDatabaseService {
 
     // 1. Generate Index.md (Map of Content MOC)
     const indexContent = `---
-title: OmniVox Knowledge Graph Vault
+title: StratosGTM Knowledge Graph Vault
 date: ${new Date().toISOString().split('T')[0]}
 tags:
   - moc
-  - omnivox
+  - stratosgtm
   - voice-ai
   - assemblyai
   - deepseek
@@ -492,9 +492,9 @@ cssclasses:
   - dashboard
 ---
 
-# 🎙️ OmniVox — Knowledge & Revenue Graph
+# 🎙️ StratosGTM — Knowledge & Revenue Graph
 
-Welcome to the **OmniVox** persistent vault. This vault connects real-time **AssemblyAI** voice interactions with autonomous **DeepSeek-R1** content synthesis, CRM lead qualification, and self-healing business guardrails.
+Welcome to the **StratosGTM** persistent vault. This vault connects real-time **AssemblyAI** voice interactions with autonomous **DeepSeek-R1** content synthesis, CRM lead qualification, and self-healing business guardrails.
 
 > [!important] Autonomous Operating System
 > Voice conversations are immediately parsed into **BANT qualifications**, **pricing objections**, and **multi-channel content marketing packs** with deterministic guardrails preventing unauthorized discounting.
@@ -560,7 +560,7 @@ graph TD
         `date: "${new Date().toISOString().split('T')[0]}"`,
         'tags:',
         `  - ${node.type.toLowerCase()}`,
-        '  - omnivox'
+        '  - stratosgtm'
       ];
 
       for (const [k, v] of Object.entries(node.properties)) {
@@ -621,7 +621,7 @@ graph TD
   // ==========================================
   public exportToCypher(outputPath: string): string {
     const lines: string[] = [
-      '// OmniVox Knowledge Graph Cypher DDL/DML Export',
+      '// StratosGTM Knowledge Graph Cypher DDL/DML Export',
       `// Generated at: ${new Date().toISOString()}`,
       ''
     ];
@@ -661,7 +661,7 @@ graph TD
       '  <key id="label" for="node" attr.name="label" attr.type="string"/>',
       '  <key id="type" for="node" attr.name="type" attr.type="string"/>',
       '  <key id="edge_type" for="edge" attr.name="edge_type" attr.type="string"/>',
-      '  <graph id="OmniVox_KnowledgeGraph" edgedefault="directed">'
+      '  <graph id="StratosGTM_KnowledgeGraph" edgedefault="directed">'
     ];
 
     for (const node of this.nodes.values()) {

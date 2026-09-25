@@ -30,7 +30,7 @@ export class WebsiteScraperService {
       const res = await fetch(jinaUrl, {
         headers: {
           'Accept': 'text/plain',
-          'User-Agent': 'OmniVox-AgenticScraper/1.0'
+          'User-Agent': 'StratosGTM-AgenticScraper/1.0'
         },
         signal: AbortSignal.timeout(6000)
       });
@@ -95,7 +95,7 @@ source: "jina-ai/reader & crawl4ai pipeline"
 **Ingestion Timestamp:** \`${nowStr}\`  
 
 > [!important] Autonomous Inbound Grounding
-> This intelligence was harvested autonomously by OmniVox. Anna uses these detected offerings, headings, and pricing tiers during after-hours voice qualification calls.
+> This intelligence was harvested autonomously by StratosGTM. Anna uses these detected offerings, headings, and pricing tiers during after-hours voice qualification calls.
 
 ---
 

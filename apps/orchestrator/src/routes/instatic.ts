@@ -161,7 +161,7 @@ instaticRouter.get('/preview/:pageId', (req: Request, res: Response) => {
 instaticRouter.get('/status', (_req: Request, res: Response) => {
   res.json({
     status: 'operational',
-    service: 'OmniVox — Instatic Visual CMS Bridge',
+    service: 'StratosGTM — Instatic Visual CMS Bridge',
     editorPort: 3001,
     standaloneServer: 'http://localhost:3001',
     features: [
@@ -169,7 +169,7 @@ instaticRouter.get('/status', (_req: Request, res: Response) => {
       'RFC-6902-style Surgical Node Patching',
       'Anna AI Co-Pilot Node Rewrites',
       'Zero-Runtime Semantic Static HTML Compiler',
-      'Auto-Injected OmniVox Spoken Widget'
+      'Auto-Injected StratosGTM Spoken Widget'
     ]
   });
 });

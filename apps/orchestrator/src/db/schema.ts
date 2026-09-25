@@ -12,7 +12,7 @@ import {
 import { sql } from 'drizzle-orm';
 
 /**
- * Postgres schema for OmniVox.
+ * Postgres schema for StratosGTM.
  *
  * Two rules this schema holds to:
  *

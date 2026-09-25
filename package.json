@@ -1,5 +1,5 @@
 {
-  "name": "omnivox-monorepo",
+  "name": "stratosgtm-monorepo",
   "version": "1.0.0",
   "private": true,
   "description": "AI Growth Operator Voice OS for the AssemblyAI Voice Agent Hackathon on lablab.ai",
@@ -23,7 +23,7 @@
     "evals",
     "docker"
   ],
-  "author": "OmniVox Team",
+  "author": "StratosGTM Team",
   "license": "MIT",
   "devDependencies": {
     "drizzle-orm": "^0.45.2"

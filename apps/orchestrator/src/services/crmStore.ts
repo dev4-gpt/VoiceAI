@@ -426,7 +426,7 @@ tags:
 **LinkedIn:** [${lead.linkedIn || 'N/A'}](${lead.linkedIn || '#'})  
 
 > [!info] Autonomous Dossier Synchronization
-> This file is automatically maintained by **OmniVox** and synced into active RAG memory for the **AssemblyAI Voice Agent (Anna)**.
+> This file is automatically maintained by **StratosGTM** and synced into active RAG memory for the **AssemblyAI Voice Agent (Anna)**.
 
 ---
 

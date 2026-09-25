@@ -243,7 +243,7 @@ app.use('/api/buyerlab', createDefaultBuyerLabRouter());
 // Root landing info
 app.get('/', (_req, res) => {
   res.json({
-    service: 'OmniVox — Voice Orchestrator API',
+    service: 'StratosGTM — Voice Orchestrator API',
     status: 'operational',
     backendPort: 4000,
     webConsoleUrl: 'http://localhost:3000',
