@@ -52,7 +52,10 @@ No music with claims, no fake counters, no speed numbers.
 **P3: the CRM view (D3)**
 > The part I like watching: the lead card appears on the board while the call is still going. Name, budget, timeline, and a consultation request. It records the request, it does not book a calendar slot yet. We would rather say so.
 
-**P4: the pilot ask**
+**P4: the feedback ask**
+> I'm building this in public and looking for feedback from founders who sell $2k+ offers. StratosGTM is a voice agent that qualifies visitors on your site and logs the lead. Early, rough in places. Try one call and tell me what felt off and what you'd never let it say. https://stratosgtm.vercel.app
+
+**P4-paid: the paid pilot ask (HOLD until your OPT start date; do not post before then)**
 > If you sell a $2k+ offer and lose visitors after hours, I would like to run this on your page for 30 days and show you what it catches. $299 for 30 days, no auto-renew, weekly review with me. Three spots. Reply or DM.
 
 **P5: behind the clip (technical readers)**
@@ -60,14 +63,27 @@ No music with claims, no fake counters, no speed numbers.
 
 ## 5. Longer versions (manual on LinkedIn and X)
 
-**LinkedIn (about 120 words)**
-> A visitor lands on a $4,000 program page at 11pm. Nobody is there. Most of the time that visitor is gone.
+**LinkedIn / newsletter (about 276 words; the feedback ask, no paid offer)**
+> I'm building this in public and looking for feedback from founders who sell $2k+ offers.
 >
-> I have been building StratosGTM: a voice agent that talks with visitors on your site, qualifies them on budget and timeline, and logs the lead to a CRM. Here is one real call, unedited apart from trimming.
+> Here is the problem I keep seeing. Someone lands on your page at 11pm, interested in a program that costs thousands of dollars. Nobody is there to talk to them, so they read a bit, leave, and often never come back. You never learn who they were.
 >
-> What it does not do yet: it does not book a calendar slot (it records a consultation request), and it publishes to Bluesky only, for now.
+> StratosGTM is my attempt at that gap. It is a voice agent that talks with visitors on your site. It asks about their situation and budget, checks timeline and fit, and writes the lead into a simple CRM while the conversation is still going. It also tells every visitor up front that they are speaking with an AI, and it asks for consent where the law requires it.
 >
-> I am looking for three founders or agencies selling $2k+ offers to run a 30-day pilot with me. $299 for 30 days, no auto-renew, a weekly review. If that is you, message me.
+> It is early software, and rough in places.
+>
+> What it does not do yet:
+> - It does not book calendar meetings. It records a consultation request on the lead.
+> - It publishes to Bluesky only, for now.
+> - I have not measured how fast it responds, so I will not claim a speed.
+>
+> What I need from you is honest feedback, not praise. If you sell a $2k+ offer, try one call with the agent and tell me three things: what felt off, what was missing, and what you would never let it say to your visitors. Blunt is welcome. I would rather hear it now.
+>
+> You can try it here, no signup needed for the demo: https://stratosgtm.vercel.app
+>
+> If you would rather talk than type, reply or send me a message and we can compare notes.
+>
+> I will share what I learn, including the parts that do not work.
 
 **X thread (5 posts):** use P1, P2, P3, P5, P4 in that order, one per post.
 
@@ -77,5 +93,5 @@ No music with claims, no fake counters, no speed numbers.
 - [ ] No latency or speed claim in any caption.
 - [ ] No name, email or lead data on screen that is not the fictional visitor.
 - [ ] "Consultation request", not "booked".
-- [ ] "Pilot" post matches the terms: 30 days, $299, no auto-renew, weekly review. Price is $299 for 30 days, first three pilots.
+- [ ] P4 asks for feedback only. No price, no paid offer. P4-paid waits until your OPT start date.
 - [ ] Publish through the app (Publish via TryPost) and confirm the receipt says **published**, then check Bluesky.
