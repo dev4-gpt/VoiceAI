@@ -99,14 +99,7 @@ claim ids only. It never produces a probability, conversion or revenue figure. I
 6 personas produced 45 kept claims and 3 dropped ones, and 6 model calls cost a few cents. These are hypotheses, not
 measurements, and the tool says so.
 
-## 8. Trust, keys and cost
-
-There are no free credits. A workspace uses its own keys, or an owner grants it the server's, or it needs a paid plan.
-Keys are encrypted per workspace and never logged. The plans are Starter at $149 a month (500 voice minutes), Pro at
-$449 (1,500) and Enterprise at $1,497 (5,000), with overage per minute. The voice provider's cost is $0.075 a minute,
-which leaves about 75% gross margin before payment fees on monthly plans.
-
-## 9. What is not built
+## 8. What is not built
 
 - Time to first audio is unmeasured, so no speed claim.
 - No calendar booking.
@@ -118,7 +111,7 @@ which leaves about 75% gross margin before payment fees on monthly plans.
 - Widget calls are not metered.
 - No duplicate protection on Publish yet.
 
-## 10. What we want next
+## 9. What we want next
 
 We are looking for three founders, creators or agencies selling offers of $2,000 and up to run a paid 30-day pilot.
 You get setup help and a weekly review; we get honest feedback. If that is you, reply to the post that links here.

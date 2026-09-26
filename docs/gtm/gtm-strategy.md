@@ -40,7 +40,7 @@ where we have not done a compliance review.
    In a market full of inflated demos, plainness is the differentiator.
 3. **Made for the $2k+ seller.** The persona, discount ceiling and consultation flow are built around high-ticket
    conversations, not generic support.
-4. **Transparent unit economics.** Bring-your-own keys and published per-minute overage.
+4. **Simple, published pricing.** Three plans, per-minute overage stated up front, and bring-your-own keys.
 
 ## 3. Competitive landscape (desk research, September 2026)
 
@@ -63,8 +63,7 @@ with live agents as backup), 11x's inbound agent, ElevenLabs' agents and Interco
 
 **What this suggests:**
 
-- Per-minute voice cost is a commodity. Our catalog assumes a $0.075 per-minute voice cost, in line with that range, so we
-  should not compete on price per minute.
+- Per-minute voice cost is a commodity across these platforms, so we should not compete on price per minute.
 - Most named competitors are phone-first or enterprise-first. A website voice agent for a solo or small seller, tied to
   content and honest reporting, is a narrower lane. Whether that lane is big enough is unproven; the pilots answer it.
 - We cannot claim to be faster, cheaper or more accurate than anyone. We have no measured latency and no comparative
@@ -79,10 +78,6 @@ Plans in `packages/shared/plans.json` (what Stripe charges from):
 | Starter | $149 | $119 | 500 | $0.30 per min | 1 |
 | Pro | $449 | $359 | 1,500 | $0.25 per min | 3 |
 | Enterprise (agencies) | $1,497 | $1,197 | 5,000 | $0.20 per min | unlimited |
-
-Voice-provider cost per catalog: $0.075 per minute. On that cost alone the gross margin is about 75% on monthly plans
-(for example Starter: 500 minutes cost $37.50 against $149) and about 68% on Starter annual. This excludes model, hosting
-and payment costs, so treat it as an upper bound (the README's 72% monthly figure is the same calculation after Stripe fees).
 
 **Proposal: a founding-pilot offer** for the first three customers.
 
