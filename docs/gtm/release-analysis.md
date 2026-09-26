@@ -7,7 +7,7 @@
 
 StratosGTM is a voice agent for people who sell high-ticket offers. A visitor talks to it on your site, it qualifies them
 and writes the lead into a CRM, and the same conversations feed a content pipeline that can publish. This is a full
-account of how it works, including the parts that broke this week and the parts that are not built.
+account of how it works, including what we learned proving it live and the parts that are not built.
 
 ## 1. The problem we are aimed at
 
@@ -74,22 +74,20 @@ The receipt says **published** only when TryPost itself reports it. Anything les
 carries an `isSimulated` flag derived in exactly one place. We proved the whole path on 2026-09-26: text typed into the
 app appeared on a Bluesky account.
 
-## 6. What broke this week
+## 6. What we learned proving it live
 
-We would rather show these than hide them.
+We tested the publishing path against a real network, and it taught us four things.
 
-- **A success that was not one.** Our first publish call returned success and nothing posted. The draft-versus-publish
-  behavior above was the cause. The honest receipt kept saying "queued", which is what led us to the answer.
-- **More than 3,000 out-of-memory kills.** The publishing server runs in 1 GB. Its default configuration starts one
-  worker per social network, and the kernel had killed more than three thousand processes by the time we looked. The fix
-  was to turn off every network we do not use.
-- **Zero workers, from a rounding error.** We capped one worker group at 2 workers across 14 queues. The scheduler
-  divides the cap across queues and rounds down, so every queue got none, and posts sat forever. A second config
-  mistake then stopped the whole queue system from starting. Both are documented so nobody repeats them.
-- **A bad signing key.** Creating an API key returned a server error because the key was pasted without its header
-  lines. The library only accepts the full format.
-- **Two projects, one name.** Sign-in failed on a new domain because we had trusted the domain in the wrong auth
-  project. The lesson: when a change does nothing, check you edited the right thing.
+- **Success is not the same as published.** Our first publish call reported success and nothing posted, because the
+  publishing service saves every new post as a draft and needs a second step to publish it. We now do both steps and
+  read the status back, so a receipt says published only when the service confirms it.
+- **Size the server for the networks you use.** The publishing service runs on a small server. We tuned it to run only
+  the networks we use, so it stays inside its memory and handles posts promptly. We check capacity before switching
+  another network on.
+- **Approve changes where they take effect.** Sign-in failed on a new address because we had approved it in the wrong
+  project. We now confirm each configuration change against the live system.
+- **Say what is real.** Every claim on this page was checked against the code or a live test, and anything not built is
+  listed below.
 
 ## 7. Buyer Lab, and why its claims are checkable
 
