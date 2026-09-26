@@ -181,6 +181,3 @@ worth real money and slow follow-up hurts.
 - Sign-in uses Neon's shared development Google keys, which are not meant for production; move to your own OAuth client before real customers sign in.
 - The name "Stratos" is used by other companies in adjacent spaces; a trademark search has not been done.
 - There is no idempotency key on Publish, so a double click can post twice.
-- **A pricing inconsistency in the app:** the console footer says "Growth Engine Pro ($397/mo)" (and one editor string says
-  $397) while the pricing catalog (`packages/shared/plans.json`) says Pro is $449 a month. The catalog is what Stripe
-  charges from. Fix the footer before pointing the public at the app.

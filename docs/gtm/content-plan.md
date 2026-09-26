@@ -122,7 +122,7 @@ Each has a claim-check note.
 
 **B13. Pricing in the open**
 > Pricing, in the open: Starter $149 a month for 500 voice minutes, Pro $449 for 1,500, Enterprise $1,497 for 5,000, with overage per minute. No free credits. You can bring your own keys. Details on the site.
-- Claim check: numbers from `plans.json`. Fix the $397 footer first.
+- Claim check: numbers from `plans.json`; the app footer now reads the same catalog.
 
 ### Demo captions (attach a real clip; never a mock)
 

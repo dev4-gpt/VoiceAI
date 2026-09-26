@@ -92,8 +92,7 @@ and payment costs, so treat it as an upper bound (the README's 72% monthly figur
 - In return: permission to share anonymized results and a short testimonial only if they choose to give one.
 - No outcome guarantees. Promise the work, not the result.
 
-Fix before pointing the public at pricing: the console footer shows "Growth Engine Pro ($397/mo)" while the catalog says
-Pro is $449. Make them match.
+The console footer used to show a hand-typed $397 for Pro. It now reads the plan name and price from the same catalog, so it can no longer drift from what Stripe charges.
 
 ## 5. The sales motion (founder-led, small and specific)
 
@@ -132,7 +131,7 @@ consumer-scale volume. Set expectations to match.
 
 Do these before a launch post that links to the app:
 
-- [ ] **Fix the price mismatch** ($397 in the footer versus $449 in the catalog).
+- [x] **Fix the price mismatch.** Done 2026-09-26: the footer and the editor's pricing prompt now read from the plan catalog.
 - [ ] **Use your own Google OAuth client.** Sign-in currently uses Neon's shared development keys, which show Neon
       branding and are not meant for production.
 - [ ] **Search the trademark** for "Stratos" (Class 9 and 42). Several companies use it in voice and growth AI.

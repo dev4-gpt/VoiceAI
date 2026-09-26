@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { apiUrl } from '../config/api';
+import { PLANS, usd } from '../pages/plans';
 import {
   Monitor,
   Tablet,
@@ -416,7 +417,7 @@ export const InstaticVisualEditor: React.FC<InstaticVisualEditorProps> = ({
             <div className="flex flex-col gap-1.5">
               {[
                 'Make headline 3x punchier & urgent',
-                'Anchor high-ticket $397/mo Pro pricing',
+                `Anchor high-ticket ${usd((PLANS.find((p) => p.id === 'pro') ?? PLANS[0]).priceMonthlyUsd)}/mo Pro pricing`,
                 'Inject objection reframe: "No complex setup"',
                 'Tone down hype & use elite advisory tone'
               ].map((chip) => (

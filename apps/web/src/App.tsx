@@ -60,6 +60,7 @@ import { useSession } from './auth/useSession';
 import { bestEffortAuthFetch } from './auth/authorizedFetch';
 import { SubscriptionPlansModal } from './components/SubscriptionPlansModal';
 import { parsePlanParam } from './utils/planParam';
+import { PLANS, usd } from './pages/plans';
 import { ownerRequestError } from './utils/ownerRequestError';
 import { EmbedWidgetModal } from './components/EmbedWidgetModal';
 import { GraphViewHUD } from './components/GraphViewHUD';
@@ -78,6 +79,9 @@ export { BUILT_IN_PRESETS, PACING_OPTIONS };
  * this is a declared placeholder, not a measurement.
  */
 const SYNTH_NOMINAL_LEVEL = 0.55;
+
+/** The plan named in the footer. Read from the catalog Stripe charges from, so the label cannot drift from the price. */
+const FOOTER_PLAN = PLANS.find((p) => p.id === 'pro') ?? PLANS[0];
 
 export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'console' | 'crm' | 'evals' | 'content' | 'graph' | 'buyerlab'>('console');
@@ -3426,7 +3430,7 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
             onClick={() => setIsPlansModalOpen(true)}
             className="hover:underline font-semibold text-amber-600 dark:text-amber-400 cursor-pointer"
           >
-            SaaS Plan: Growth Engine Pro ($397/mo)
+            SaaS Plan: {FOOTER_PLAN.name} ({usd(FOOTER_PLAN.priceMonthlyUsd)}/mo)
           </button>
           <span>•</span>
           <button
