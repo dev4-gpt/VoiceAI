@@ -48,23 +48,58 @@ describe('listAccounts', () => {
 });
 
 describe('publish', () => {
-  it('POSTs then confirms via GET /api/posts/{id}: succeeded only when status is published', async () => {
+  it('creates a draft, PUTs status=publishing, then confirms via GET: succeeded only when status is published', async () => {
     const f = jest
       .fn()
-      .mockResolvedValueOnce(res(201, { data: { id: 'p1', status: 'publishing' } }))
+      .mockResolvedValueOnce(res(201, { data: { id: 'p1', status: 'draft' } }))
+      .mockResolvedValueOnce(res(200, { data: { id: 'p1', status: 'publishing' } }))
       .mockResolvedValueOnce(res(200, { data: { id: 'p1', status: 'publishing', platforms: [] } }))
       .mockResolvedValueOnce(res(200, { data: { id: 'p1', status: 'published', platforms: [{ platform_url: 'https://bsky.app/x' }] } }));
-    const out = await publish(TOKEN, input, { ...opts(f), now: () => Date.parse('2026-09-26T02:00:00Z') });
+    const out = await publish(TOKEN, input, opts(f));
     expect(out).toMatchObject({ attemptedRealCall: true, succeeded: true, state: 'published', postId: 'p1', postUrl: 'https://bsky.app/x' });
-    const [url, init] = f.mock.calls[0];
-    expect(url).toBe(`${BASE}/api/posts`);
-    // TryPost stores a post with no schedule as a draft (verified live), so a future time is required to publish.
-    expect(JSON.parse(init.body)).toEqual({
-      content: 'hello',
-      platforms: [{ social_account_id: 'acc-1', content_type: 'bluesky_post' }],
-      scheduled_at: '2026-09-26T02:01:00.000Z'
-    });
-    expect(f.mock.calls[1][0]).toBe(`${BASE}/api/posts/p1`);
+    // Step 1: create. TryPost always stores this as a draft (verified live), so no scheduled_at is sent.
+    const [createUrl, createInit] = f.mock.calls[0];
+    expect(createUrl).toBe(`${BASE}/api/posts`);
+    expect(createInit.method).toBe('POST');
+    expect(JSON.parse(createInit.body)).toEqual({ content: 'hello', platforms: [{ social_account_id: 'acc-1', content_type: 'bluesky_post' }] });
+    // Step 2: publish now. Only `status` is required; UpdatePost dispatches the publish job for 'publishing'.
+    const [publishUrl, publishInit] = f.mock.calls[1];
+    expect(publishUrl).toBe(`${BASE}/api/posts/p1`);
+    expect(publishInit.method).toBe('PUT');
+    expect(JSON.parse(publishInit.body)).toEqual({ status: 'publishing' });
+    // Step 3: read back.
+    expect(f.mock.calls[2][0]).toBe(`${BASE}/api/posts/p1`);
+    expect(f.mock.calls[2][1].method).toBeUndefined();
+  });
+
+  it('a rejected publish step leaves the draft, is not success and never polls', async () => {
+    const f = jest
+      .fn()
+      .mockResolvedValueOnce(res(201, { data: { id: 'p7' } }))
+      .mockResolvedValueOnce(res(422, { message: `secret ${TOKEN}` }));
+    const out = await publish(TOKEN, input, opts(f));
+    expect(out).toMatchObject({ attemptedRealCall: true, succeeded: false, state: 'failed', postId: 'p7' });
+    expect(out.details).toMatch(/draft/i);
+    expect(out.details).toContain('422');
+    expect(JSON.stringify(out)).not.toContain(TOKEN);
+    expect(f).toHaveBeenCalledTimes(2);
+  });
+
+  it('a publish step that throws says the outcome is unknown and never leaks the token', async () => {
+    const spy = jest.spyOn(console, 'error').mockImplementation(() => undefined);
+    const f = jest
+      .fn()
+      .mockResolvedValueOnce(res(201, { data: { id: 'p8' } }))
+      .mockImplementationOnce(async () => {
+        throw Object.assign(new Error(`bad ${TOKEN}`), { name: 'TimeoutError' });
+      });
+    const out = await publish(TOKEN, input, opts(f));
+    expect(out).toMatchObject({ attemptedRealCall: true, succeeded: false, state: 'failed', postId: 'p8' });
+    expect(out.details).toMatch(/Outcome unknown/);
+    expect(JSON.stringify(out)).not.toContain(TOKEN);
+    expect(JSON.stringify(spy.mock.calls)).not.toContain(TOKEN);
+    expect(f).toHaveBeenCalledTimes(2);
+    spy.mockRestore();
   });
 
   it('4xx/5xx from POST -> succeeded:false, no throw, no upstream text', async () => {
@@ -86,7 +121,7 @@ describe('publish', () => {
     const out = await publish(TOKEN, input, opts(f));
     expect(out).toMatchObject({ attemptedRealCall: true, succeeded: false, state: 'pending', postId: 'p2' });
     expect(out.details).toMatch(/not confirmed/i);
-    expect(f).toHaveBeenCalledTimes(1 + 3);
+    expect(f).toHaveBeenCalledTimes(1 + 1 + 3); // create, publish, 3 polls
   });
 
   it('a failed post surfaces as failed and stops polling', async () => {
@@ -97,7 +132,7 @@ describe('publish', () => {
     const out = await publish(TOKEN, input, opts(f));
     expect(out).toMatchObject({ succeeded: false, state: 'failed', postId: 'p3' });
     expect(out.details).not.toContain('nope');
-    expect(f).toHaveBeenCalledTimes(2);
+    expect(f).toHaveBeenCalledTimes(3); // create, publish, one poll that reports failed
   });
 
   it('partially_published is not success', async () => {

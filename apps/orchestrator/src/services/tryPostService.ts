@@ -4,9 +4,10 @@
  * a workspace-scoped API token:
  *   GET  {TRYPOST_BASE_URL}/api/social-accounts  -> {data:[{id, platform, display_name, username, is_active, status}]}
  *   POST {TRYPOST_BASE_URL}/api/posts            -> 201 {data:{id, status, ...}}
- *        body {content, platforms:[{social_account_id, content_type}], scheduled_at}. VERIFIED LIVE:
- *        without scheduled_at the post is stored as a draft and never published, so we send a
- *        time just ahead and TryPost's scheduler publishes it; a 2xx is only "accepted"
+ *        body {content, platforms:[{social_account_id, content_type}]}. VERIFIED LIVE: create always
+ *        stores a DRAFT, even with scheduled_at; a 2xx is only "accepted"
+ *   PUT  {TRYPOST_BASE_URL}/api/posts/{id}       body {status:'publishing'} -> publishes now (UpdatePost
+ *        sets scheduled_at=now and dispatches PublishPost); only `status` is required
  *   GET  {TRYPOST_BASE_URL}/api/posts/{id}       -> {data:{id, status, platforms:[{platform_url, status, ...}]}}
  *        status in draft|scheduled|publishing|published|partially_published|failed
  * (GET /api/workspace is used by keyTesters.) Resources may or may not be wrapped in
@@ -43,9 +44,6 @@ export interface TryPostOptions {
   sleep?: (ms: number) => Promise<unknown>;
   maxPolls?: number;
   pollIntervalMs?: number;
-  /** Clock and lead time for the scheduled_at we send (defaults: Date.now, 60s ahead). */
-  now?: () => number;
-  leadMs?: number;
 }
 
 const TIMEOUT_MS = 8000;
@@ -140,19 +138,12 @@ export async function publish(
   const maxPolls = opts.maxPolls ?? 8;
   const interval = opts.pollIntervalMs ?? 1500;
 
-  // A post with no scheduled_at is stored as a draft (verified live) and never published, and TryPost's API has
-  // no publish-now endpoint, so we ask for a moment just ahead; TryPost's scheduler then publishes it.
-  const scheduledAt = new Date((opts.now ?? Date.now)() + (opts.leadMs ?? 60_000)).toISOString();
-
+  // Step 1: create. TryPost's CreatePost always stores a draft, whatever scheduled_at is sent (verified live).
   let postId: string;
   try {
     const res = await request(`${base}/api/posts`, token, f, {
       method: 'POST',
-      body: JSON.stringify({
-        content: input.text,
-        platforms: [{ social_account_id: input.accountId, content_type: input.contentType }],
-        scheduled_at: scheduledAt
-      })
+      body: JSON.stringify({ content: input.text, platforms: [{ social_account_id: input.accountId, content_type: input.contentType }] })
     });
     if (!res.ok) {
       return { attemptedRealCall: true, succeeded: false, state: 'failed', details: `TryPost rejected the post (HTTP ${res.status}).` };
@@ -165,6 +156,20 @@ export async function publish(
   } catch (err) {
     console.error('[tryPost] publish failed:', errTag(err));
     return { attemptedRealCall: true, succeeded: false, state: 'failed', details: 'Outcome unknown: TryPost may have created the post; check TryPost before retrying.' };
+  }
+
+  // Step 2: publish. PUT status=publishing makes UpdatePost stamp scheduled_at=now and dispatch the publish job.
+  try {
+    const res = await request(`${base}/api/posts/${encodeURIComponent(postId)}`, token, f, {
+      method: 'PUT',
+      body: JSON.stringify({ status: 'publishing' })
+    });
+    if (!res.ok) {
+      return { attemptedRealCall: true, succeeded: false, state: 'failed', postId, details: `TryPost saved the post as a draft but rejected publishing it (HTTP ${res.status}).` };
+    }
+  } catch (err) {
+    console.error('[tryPost] publish request failed:', errTag(err));
+    return { attemptedRealCall: true, succeeded: false, state: 'failed', postId, details: 'Outcome unknown: the post exists as a draft in TryPost and the publish request may have gone through; check TryPost before retrying.' };
   }
 
   let lastStatus = 'unknown';
@@ -195,6 +200,6 @@ export async function publish(
     succeeded: false,
     state: 'pending',
     postId,
-    details: `TryPost accepted the post, scheduled for ${scheduledAt}, but it was not confirmed published yet (last status: ${lastStatus}). Check the account or TryPost shortly.`
+    details: `TryPost accepted the post and started publishing it, but it was not confirmed published yet (last status: ${lastStatus}). Check the account or TryPost shortly.`
   };
 }
