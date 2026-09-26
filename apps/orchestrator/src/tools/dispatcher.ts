@@ -218,7 +218,7 @@ export class ToolDispatcher {
         if (!booking.success) {
           return {
             status: 'error',
-            message: `Unable to book meeting: email ${args.email} not registered in CRM.`
+            message: `Unable to record the consultation request: email ${args.email} not registered in CRM.`
           };
         }
 
@@ -226,7 +226,7 @@ export class ToolDispatcher {
           status: 'success',
           scheduledTime: args.preferredDatetime,
           confirmationCode: booking.confirmationCode,
-          message: `Consultation confirmed for ${args.preferredDatetime}. Confirmation code ${booking.confirmationCode} generated.`
+          message: `Consultation request recorded for ${args.preferredDatetime}. This is a request, not a confirmed slot: a person will follow up to confirm. Reference ${booking.confirmationCode}.`
         };
       }
 

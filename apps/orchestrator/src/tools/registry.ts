@@ -91,7 +91,7 @@ export const VOICE_AGENT_TOOLS: FlatToolDefinition[] = [
   {
     type: 'function',
     name: 'schedule_growth_consultation',
-    description: "Book an onboarding or high-ticket strategy consultation on the creator's calendar.",
+    description: "Record a consultation request for the prospect. No calendar is connected: this saves the requested time on the lead and a person follows up to confirm. Never tell the prospect that a slot is booked or confirmed.",
     parameters: {
       type: 'object',
       properties: {

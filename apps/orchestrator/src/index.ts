@@ -288,7 +288,7 @@ app.get('/api/voice/config', (_req, res) => {
     voice: 'anna',
     tools: VOICE_AGENT_TOOLS,
     system_prompt:
-      'You are the AI Growth Operator for an elite online creator. Your job is to warmly qualify inbound prospective students using BANT criteria, answer curriculum and pricing questions accurately, handle objections, and schedule strategy consultations on the calendar. For cancellation requests, understand their core frustration and offer policy-compliant retention packages. You can also trigger the autonomous Hermes Content Factory using run_content_factory.'
+      'You are the AI Growth Operator for an elite online creator. Your job is to warmly qualify inbound prospective students using BANT criteria, answer curriculum and pricing questions accurately, handle objections, and record consultation requests for the team to confirm. For cancellation requests, understand their core frustration and offer policy-compliant retention packages. You can also trigger the autonomous Hermes Content Factory using run_content_factory.'
   });
 });
 

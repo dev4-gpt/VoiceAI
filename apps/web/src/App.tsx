@@ -1676,7 +1676,7 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
       const data = await res.json();
       if (data.leads) setLeads(data.leads);
 
-      const agentReply = `Fantastic, ${prospectName.split(' ')[0]}! You're an ideal fit for our Pro Mentorship. I've locked in your strategy consultation for tomorrow at 2:00 PM EST. Check your inbox for confirmation code GROWTH-8271.`;
+      const agentReply = `Fantastic, ${prospectName.split(' ')[0]}! You're an ideal fit for our Pro Mentorship. I've recorded a consultation request for tomorrow at 2:00 PM EST. Someone from the team will follow up to confirm it. Your reference is GROWTH-8271.`;
       setMessages((prev) => [
         ...prev,
         {
