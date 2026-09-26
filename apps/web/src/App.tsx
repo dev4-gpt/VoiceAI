@@ -59,6 +59,7 @@ import { AccountMenu } from './components/AccountMenu';
 import { useSession } from './auth/useSession';
 import { bestEffortAuthFetch } from './auth/authorizedFetch';
 import { SubscriptionPlansModal } from './components/SubscriptionPlansModal';
+import { CheckoutBanner } from './components/CheckoutBanner';
 import { parsePlanParam } from './utils/planParam';
 import { PLANS, usd } from './pages/plans';
 import { ownerRequestError } from './utils/ownerRequestError';
@@ -2450,6 +2451,7 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
     >
       {/* Vercel-Grade Ambient GPU Background Shader Canvas */}
       <AmbientVercelShader theme={theme} />
+      <CheckoutBanner />
 
       {/* Top Navigation Bar */}
       <header

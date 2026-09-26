@@ -1,9 +1,10 @@
 import { Router, Request, Response } from 'express';
-import { billingService } from '../services/billingService';
+import { billingService, WORKSPACE_TENANT_PREFIX } from '../services/billingService';
 import { requireOwnerKey } from '../middleware/auth';
 import { stripeService } from '../services/stripeService';
 import { finalizeStaleCalls } from '../services/usageService';
 import { createRequireUser, AuthedRequest } from '../middleware/requireUser';
+import { createOptionalUser, OptionalAuthedRequest } from '../middleware/optionalUser';
 import { workspaceService } from '../services/workspaceService';
 import { isDatabaseConfigured } from '../db/client';
 import type { SubscriptionTierId, ROIParameters } from '@voice-os/shared';
@@ -46,6 +47,14 @@ async function reconcileStaleCalls() {
 }
 
 const requireUser = createRequireUser({
+  authBaseUrl: process.env.NEON_AUTH_BASE_URL,
+  workspaces: workspaceService,
+  storageReady: isDatabaseConfigured
+});
+
+// Best effort: a signed-in buyer's checkout is bound to their own workspace; an
+// anonymous demo visitor still gets the legacy company-name path.
+const optionalUser = createOptionalUser({
   authBaseUrl: process.env.NEON_AUTH_BASE_URL,
   workspaces: workspaceService,
   storageReady: isDatabaseConfigured
@@ -121,12 +130,20 @@ billingRouter.post('/calculate-roi', (req: Request, res: Response) => {
 });
 
 // POST /api/billing/subscribe
-billingRouter.post('/subscribe', async (req: Request, res: Response) => {
+billingRouter.post('/subscribe', optionalUser, async (req: Request, res: Response) => {
   try {
     const { clientId, planId, billingCycle, email } = req.body;
-    if (!clientId || !planId) {
+    const authed = req as OptionalAuthedRequest;
+    const workspace = authed.workspace;
+    if (!planId || (!workspace && !clientId)) {
       return res.status(400).json({ error: 'Missing required fields: clientId, planId' });
     }
+    // The workspace prefix is minted only here, from a verified session. A caller
+    // who is not signed in must never be able to name someone else's workspace.
+    if (!workspace && String(clientId).startsWith(WORKSPACE_TENANT_PREFIX)) {
+      return res.status(400).json({ error: `clientId may not start with '${WORKSPACE_TENANT_PREFIX}'.` });
+    }
+    const checkoutTenant = workspace ? `${WORKSPACE_TENANT_PREFIX}${workspace.tenantId}` : String(clientId);
     if (!isValidPlanId(planId)) {
       return res.status(400).json({
         error: `Unknown planId '${planId}'. Must be one of: ${VALID_PLAN_IDS.join(', ')}`
@@ -152,7 +169,7 @@ billingRouter.post('/subscribe', async (req: Request, res: Response) => {
 
     const origin = req.header('origin') || process.env.CLIENT_URL || 'http://localhost:3000';
     const checkout = await stripeService.createCheckoutSession({
-      tenantId: clientId,
+      tenantId: checkoutTenant,
       plan: {
         id: plan.id,
         name: plan.name,
@@ -162,9 +179,9 @@ billingRouter.post('/subscribe', async (req: Request, res: Response) => {
         minutesLimit: plan.voiceMinutesMonthly
       },
       billingCycle: cycle,
-      successUrl: `${origin}/?checkout=success&plan=${planId}`,
-      cancelUrl: `${origin}/?checkout=cancelled`,
-      customerEmail: typeof email === 'string' ? email : undefined
+      successUrl: `${origin}/console?checkout=success&plan=${planId}`,
+      cancelUrl: `${origin}/console?checkout=cancelled`,
+      customerEmail: authed.user?.email ?? (typeof email === 'string' ? email : undefined)
     });
 
     if (!checkout.checkoutUrl) {

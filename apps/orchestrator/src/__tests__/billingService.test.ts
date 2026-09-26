@@ -2,11 +2,14 @@ import { BillingService, SUBSCRIPTION_PLANS, COST_PER_VOICE_MINUTE_USD } from '.
 import catalog from '@voice-os/shared/plans.json';
 
 const resolveTenantId = jest.fn();
+const upsertSubscription = jest.fn();
+let dbConfigured = true;
+jest.mock('../db/client', () => ({ isDatabaseConfigured: () => dbConfigured }));
 const getSubscription = jest.fn();
 const getUsageAggregate = jest.fn();
 jest.mock('../db/repository', () => ({
   resolveTenantId: (...a: any[]) => resolveTenantId(...a),
-  upsertSubscription: jest.fn(),
+  upsertSubscription: (...a: any[]) => upsertSubscription(...a),
   getSubscription: (...a: any[]) => getSubscription(...a),
   getUsageAggregate: (...a: any[]) => getUsageAggregate(...a),
   finalizeCallUsage: jest.fn(),
@@ -221,6 +224,44 @@ describe('BillingService — pricing, usage and ROI', () => {
     it('reads plans and voice cost from the shared catalog', () => {
       expect(SUBSCRIPTION_PLANS).toEqual(catalog.plans);
       expect(COST_PER_VOICE_MINUTE_USD).toBe(catalog.costPerVoiceMinuteUsd);
+    });
+  });
+
+  describe('webhook tenant resolution', () => {
+    const state = (tenantId: string) => ({
+      tenantId,
+      planId: 'starter',
+      billingCycle: 'annual',
+      status: 'active',
+      stripeCustomerId: 'cus_1',
+      stripeSubscriptionId: 'sub_1',
+      currentPeriodStart: null,
+      currentPeriodEnd: null
+    });
+    let service: BillingService;
+    beforeEach(() => {
+      service = new BillingService();
+      resolveTenantId.mockReset().mockResolvedValue('name-resolved-id');
+      upsertSubscription.mockReset();
+      dbConfigured = true;
+    });
+
+    it('writes a workspace checkout straight to that workspace, without a name lookup', async () => {
+      await service.applySubscriptionState(state('ws:org-123') as any);
+      expect(resolveTenantId).not.toHaveBeenCalled();
+      expect(upsertSubscription).toHaveBeenCalledWith('org-123', expect.objectContaining({ planId: 'starter', status: 'active', minutesLimit: 500 }));
+    });
+
+    it('keeps resolving an anonymous company-name checkout by name', async () => {
+      await service.applySubscriptionState(state('Demo Studio') as any);
+      expect(resolveTenantId).toHaveBeenCalledWith('Demo Studio');
+      expect(upsertSubscription).toHaveBeenCalledWith('name-resolved-id', expect.any(Object));
+    });
+
+    it('does not persist a workspace checkout when no database is configured', async () => {
+      dbConfigured = false;
+      await service.applySubscriptionState(state('ws:org-123') as any);
+      expect(upsertSubscription).not.toHaveBeenCalled();
     });
   });
 });

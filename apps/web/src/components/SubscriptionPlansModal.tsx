@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Check, Sparkles, X, ArrowRight, Calculator, ShieldCheck, Loader2, AlertTriangle } from 'lucide-react';
 import type { SubscriptionPlan, SubscriptionTierId, ROICalculationResult } from '@voice-os/shared';
 import { apiUrl } from '../config/api';
+import { bestEffortAuthFetch } from '../auth/authorizedFetch';
 
 /**
  * Pricing and ROI.
@@ -17,7 +18,7 @@ import { apiUrl } from '../config/api';
 interface SubscriptionPlansModalProps {
   isOpen: boolean;
   onClose: () => void;
-  /** Tenant the subscription is for. There is no login yet, so this is the company. */
+  /** Company name for an anonymous visitor. A signed-in buyer's checkout is bound to their own workspace by the server and this is ignored. */
   clientId: string;
   onOpenEmbedModal?: () => void;
   isGlass?: boolean;
@@ -84,7 +85,7 @@ export const SubscriptionPlansModal: React.FC<SubscriptionPlansModalProps> = ({
     setCheckoutPlan(planId);
     setCheckoutError(null);
     try {
-      const res = await fetch(apiUrl('/api/billing/subscribe'), {
+      const res = await bestEffortAuthFetch('/api/billing/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ clientId, planId, billingCycle })

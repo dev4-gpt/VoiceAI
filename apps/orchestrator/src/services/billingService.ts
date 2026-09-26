@@ -1,4 +1,5 @@
 import { resolveTenantId, upsertSubscription, getSubscription, getUsageAggregate } from '../db/repository';
+import { isDatabaseConfigured } from '../db/client';
 import { billingPeriodStart, computeBilledMinutes } from './usageService';
 import type {
   SubscriptionPlan,
@@ -36,6 +37,14 @@ export const SUBSCRIPTION_PLANS: SubscriptionPlan[] = catalog.plans as Subscript
 
 const MEMORY_MEASURED_FROM = 'in-memory only (no DATABASE_URL); not persisted and not measured from calls';
 const DB_MEASURED_FROM = 'usage_records: billable, finalized calls in the current billing period';
+
+/**
+ * Marks a checkout tenant that the server itself resolved from a verified session
+ * (`ws:<organizations.id>`). Anything else is a company name from the anonymous
+ * demo and goes through resolveTenantId, which never lands in a signed-in
+ * workspace. Only the checkout route may mint this prefix.
+ */
+export const WORKSPACE_TENANT_PREFIX = 'ws:';
 
 export class BillingService {
   /**
@@ -270,7 +279,11 @@ export class BillingService {
     // Persist. A payment confirmation that only reaches memory is worse than
     // useless: the customer is charged and the entitlement disappears on the
     // next restart. Failing to write must therefore be loud, not swallowed.
-    const tenantId = await resolveTenantId(state.tenantId);
+    const tenantId = state.tenantId.startsWith(WORKSPACE_TENANT_PREFIX)
+      ? isDatabaseConfigured()
+        ? state.tenantId.slice(WORKSPACE_TENANT_PREFIX.length)
+        : null
+      : await resolveTenantId(state.tenantId);
     if (tenantId) {
       await upsertSubscription(tenantId, {
         planId,
