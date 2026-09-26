@@ -43,21 +43,3 @@ export function requireOwnerKey(req: Request, res: Response, next: NextFunction)
   }
   return checkBearer(req, res, next, expected);
 }
-
-/**
- * Shared-secret bearer auth for routes the public demo depends on: the live
- * voice agent's CRM tool calls (`/api/crm/tools/execute` and the rest of
- * crmRouter), and public checkout (`/api/billing/subscribe`). These must
- * keep working even when no operator key is configured and the browser
- * sends no header, so — unlike `requireOwnerKey` — this stays open in every
- * environment, including production, when ORCHESTRATOR_API_KEY is unset.
- * Once a key is set, every request must present it via
- * `Authorization: Bearer <key>`, the same as `requireOwnerKey`.
- */
-export function requireApiKey(req: Request, res: Response, next: NextFunction) {
-  const expected = process.env.ORCHESTRATOR_API_KEY;
-  if (!expected) {
-    return next();
-  }
-  return checkBearer(req, res, next, expected);
-}

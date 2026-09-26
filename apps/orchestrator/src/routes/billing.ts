@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { billingService } from '../services/billingService';
-import { requireApiKey, requireOwnerKey } from '../middleware/auth';
+import { requireOwnerKey } from '../middleware/auth';
 import { stripeService } from '../services/stripeService';
 import { finalizeStaleCalls } from '../services/usageService';
 import { createRequireUser, AuthedRequest } from '../middleware/requireUser';
@@ -121,7 +121,7 @@ billingRouter.post('/calculate-roi', (req: Request, res: Response) => {
 });
 
 // POST /api/billing/subscribe
-billingRouter.post('/subscribe', requireApiKey, async (req: Request, res: Response) => {
+billingRouter.post('/subscribe', async (req: Request, res: Response) => {
   try {
     const { clientId, planId, billingCycle, email } = req.body;
     if (!clientId || !planId) {

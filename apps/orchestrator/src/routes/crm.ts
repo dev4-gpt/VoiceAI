@@ -4,14 +4,16 @@ import * as path from 'path';
 import { crmStore } from '../services/crmStore';
 import { toolDispatcher } from '../tools/dispatcher';
 import { websiteScraperService } from '../services/websiteScraperService';
-import { requireApiKey } from '../middleware/auth';
+import { requireOwnerKey } from '../middleware/auth';
 
 export const crmRouter = Router();
 
-// Every CRM route reads or writes tenant business data — leads, telemetry, vault
-// files — or dispatches arbitrary tools. All of it is gated. No-ops in local demo
-// mode (ORCHESTRATOR_API_KEY unset), same as the credentials router.
-crmRouter.use(requireApiKey);
+// The browser calls most of these routes directly (the voice agent's tool calls,
+// the CRM board, members, local profile, dossier export), and a browser cannot hold
+// ORCHESTRATOR_API_KEY, so they are public demo routes. Gating them with the owner
+// key made every call 401 the moment the key was set in production. Only the routes
+// the browser never calls are owner-only (telemetry, and the scraper, which fetches
+// arbitrary URLs). Per-workspace scoping of leads is a separate, later change.
 
 crmRouter.get('/local-profile', (_req: Request, res: Response) => {
   const profilePath = path.resolve(process.cwd(), 'data', 'local_profile.json');
@@ -67,11 +69,11 @@ crmRouter.get('/members', async (_req: Request, res: Response) => {
   res.json({ members: crmStore.getMembers() });
 });
 
-crmRouter.get('/telemetry', (_req: Request, res: Response) => {
+crmRouter.get('/telemetry', requireOwnerKey, (_req: Request, res: Response) => {
   res.json({ telemetry: crmStore.getTelemetry() });
 });
 
-crmRouter.post('/scrape', async (req: Request, res: Response) => {
+crmRouter.post('/scrape', requireOwnerKey, async (req: Request, res: Response) => {
   const { url, companyName } = req.body;
   if (!url) {
     return res.status(400).json({ error: 'URL is required' });
