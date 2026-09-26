@@ -3440,7 +3440,13 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
             1-Click Embed Widget (embed.js)
           </button>
         </div>
-        <div>lablab.ai Voice Agent Hackathon Submission • StratosGTM</div>
+        <div className="flex flex-wrap items-center justify-center gap-x-3">
+          <span>lablab.ai Voice Agent Hackathon Submission • StratosGTM</span>
+          <span>•</span>
+          <a href="/privacy.html" className="hover:underline">Privacy</a>
+          <span>•</span>
+          <a href="/terms.html" className="hover:underline">Terms</a>
+        </div>
       </footer>
     </div>
   );
