@@ -1,5 +1,7 @@
 # AI Growth Operator Voice OS — Master Technical Architecture
 
+> **Read this as design intent, not current status.** It was written before the product was renamed StratosGTM and before several capabilities were measured. Some statements describe goals: "sub-second barge-in" and the latency observability are not measured yet, and knowledge lookup is a keyword search over four documents, not hybrid retrieval with re-ranking. For what is real today, see [CLAUDE.md](CLAUDE.md) and [docs/gtm/architecture-and-use-cases.md](docs/gtm/architecture-and-use-cases.md).
+
 ## 1. System Overview
 
 **AI Growth Operator Voice OS** is an enterprise-grade, voice-first revenue engine engineered for online creators, educators, and digital product agencies. It automates high-stakes inbound SDR qualification, outbound reactivation campaigns, customer churn intervention, and autonomous content generation using real-time voice interactions.

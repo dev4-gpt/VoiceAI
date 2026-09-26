@@ -4,7 +4,7 @@
 
 Built on the [AssemblyAI Voice Agent API](https://www.assemblyai.com/products/voice-agent-api) for the AssemblyAI Voice Agent Hackathon.
 
-**[Live demo](https://stratosgtm.vercel.app)** · **[Embeddable widget](https://stratosgtm.vercel.app/widget-preview)** · [Pitch deck](docs/submission/StratosGTM-Pitch-Deck.pdf) · [Submission notes](docs/submission/SUBMISSION.md)
+**[Live demo](https://stratosgtm.vercel.app)** · **[Embeddable widget](https://stratosgtm.vercel.app/widget-preview)** · [Pitch deck](docs/submission/GrowthVoice-OS-Pitch-Deck.pdf) (made under the earlier name) · [Submission notes](docs/submission/SUBMISSION.md) · [Architecture, use cases and go-to-market](docs/gtm/)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -95,17 +95,18 @@ Because the agent transcribes visitors on third-party websites, it is built arou
 | Real | Not built yet |
 | :--- | :--- |
 | Browser voice calls on the AssemblyAI Voice Agent API | Metering and billing for embedded-widget calls (the widget is not instrumented) |
-| Tool calls that create and qualify CRM leads | Per-platform credential verification |
+| Tool calls that create and qualify CRM leads | A credential test for X (its API charges for reads, so it is never called) |
 | Embeddable widget running real voice sessions, with the same tool set as the console | Calendar integration (bookings are recorded on the lead) |
 | AI disclosure and consent gating, with persisted records | Any quoted latency figure (it is measured from real calls, but none are recorded yet, so none is claimed) |
 | Postgres persistence and encrypted credentials | Embedding-based retrieval (knowledge lookup is keyword-based) |
 | Google sign-in with a private workspace and encrypted BYOK keys | A measured eval run against a live model (only the offline harness check has run) |
 | A signed-in user's own AssemblyAI and DeepSeek keys used for voice and drafts | YouTube publishing |
-| X and LinkedIn publishing when enabled and connected; Substack via webhook | |
+| X and LinkedIn publishing when enabled and connected; Substack via webhook; Bluesky through a self-hosted TryPost (proven live 2026-09-26; other networks need their own app registration) | |
 | Stripe Checkout with webhook-driven activation (test mode) | |
 | Usage metering for console voice calls: a used-up allowance is refused when the call starts, and the session length is capped | |
 | Client-side latency measurement (caller's voice ends to the agent's first audio), with no figure shown until 20 turns are measured | |
 | An eval harness that runs the real agent and tools, graded by deterministic checks | |
+| Buyer Lab: simulated buyer panels whose claims must quote the page they read (hypotheses, not measurements), with chat and re-test | |
 
 Every publish receipt carries `isSimulated`, which is true unless a real API call succeeded. The full capability matrix, including what each feature falls back to, is in [CLAUDE.md](CLAUDE.md).
 
