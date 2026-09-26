@@ -233,7 +233,7 @@ export const App: React.FC = () => {
 
   // 1-Click Creator Revenue Dossier Export (Obsidian Markdown + JSON Package)
   const handleExportRevenueDossier = () => {
-    const totalPipelineValue = leads.reduce((acc, l) => acc + ((l as any).dealValue || 10000), 0);
+    const totalPipelineValue = leads.reduce((acc, l) => acc + (Number((l as any).dealValue) || 0), 0);
     const mdContent = `---
 title: "StratosGTM — Creator Revenue & Voice Dossier"
 client: "${prospectName}"
@@ -258,17 +258,10 @@ eval_pass_rate: "100%"
 * **Strictly Banned Terms**: ${customBannedTerms.split(',').map((s) => `~~${s.trim()}~~`).join(', ')}
 
 ## 📊 Live CRM Pipeline & Inbound Deal Flow ($${totalPipelineValue.toLocaleString()})
-${leads.map((l) => `* **${l.fullName}** (${l.email || 'N/A'}) — Status: \`${l.status}\` | Deal Value: **$${((l as any).dealValue || 10000).toLocaleString()}** | BANT Score: **${(l as any).bantScore || l.qualificationScore || 85}/100**`).join('\n')}
+${leads.map((l) => `* **${l.fullName}** (${l.email || 'N/A'}) — Status: \`${l.status}\` | Deal Value: **${(l as any).dealValue ? '$' + Number((l as any).dealValue).toLocaleString() : 'not set'}** | BANT Score: **${(() => { const v = (l as any).bantScore ?? l.qualificationScore; return v != null ? `${v}/100` : 'not scored'; })()}**`).join('\n')}
 
 ## 🛡️ Churn Risk & Retention Guardrails
-${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRiskScore || 35}%** | MRR: **$${m.monthlyFee || (m as any).mrr || 2997}** | Guardrail: Max 15% discount clamp applied`).join('\n')}
-
-## 🔬 Anthropic Automated Eval Benchmark
-* **pass@5**: 100%
-* **pass^5**: 92%
-* **TTFA (Time-To-First-Audio)**: 410ms
-* **p95 Latency**: 1,450ms
-* **Model Engine**: AssemblyAI Voice Agent API (24,000 Hz PCM16)
+${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRiskScore != null ? `${(m as any).churnRiskScore}%` : 'not scored'}** | MRR: **${(m.monthlyFee || (m as any).mrr) ? '$' + (m.monthlyFee || (m as any).mrr) : 'not set'}** | Guardrail: Max 15% discount clamp applied`).join('\n')}
 `;
 
     const jsonContent = JSON.stringify(
@@ -2336,7 +2329,7 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
                         </span>
                       </div>
                       <p className={`text-[11px] ${isGlass ? 'text-slate-600' : 'text-slate-400'}`}>
-                        Simulates founder inquiring about $2,997 sprint + $10k agency retainer. Anna qualifies budget &amp; books call.
+                        Simulates founder inquiring about $2,997 sprint + $10k agency retainer. Anna qualifies budget and records a consultation request.
                       </p>
                       <div className={`h-1 w-full rounded-full overflow-hidden ${isGlass ? 'bg-slate-200' : 'bg-slate-800'}`}>
                         <div
@@ -2441,10 +2434,6 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
                     <div className="flex justify-between">
                       <span>PII Redaction Engine:</span>
                       <span className={isGlass ? 'text-emerald-700 font-semibold' : 'text-emerald-400'}>Active</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Interruption Abort Delay:</span>
-                      <span className={isGlass ? 'text-cyan-700 font-semibold' : 'text-cyan-400'}>&lt;50ms</span>
                     </div>
                   </div>
                 </div>

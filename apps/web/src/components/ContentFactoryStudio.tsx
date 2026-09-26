@@ -646,26 +646,6 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
                   </div>
                 </div>
 
-                {/* 3. Response Time Latency Meter */}
-                <div className={`p-3.5 rounded-xl border space-y-2 shadow-lg ${
-                  isGlass
-                    ? 'bg-sky-50 border-sky-200 text-sky-950 shadow-xs'
-                    : 'bg-gradient-to-br from-cyan-950/40 via-slate-900 to-slate-950 border-cyan-500/40'
-                }`}>
-                  <div className={`flex items-center justify-between text-xs font-mono ${isGlass ? 'text-sky-800' : 'text-cyan-400'}`}>
-                    <div className="flex items-center space-x-1.5">
-                      <Clock className="w-4 h-4" />
-                      <span>Response Latency</span>
-                    </div>
-                    <span className={`text-[10px] font-mono ${isGlass ? 'text-slate-500' : 'text-slate-400'}`}>Target: &lt;5m</span>
-                  </div>
-                  <div className={`text-2xl font-bold font-mono tracking-tight ${isGlass ? 'text-sky-800' : 'text-cyan-200'}`}>&gt; 14 Hours</div>
-                  <div className={`flex items-center space-x-1.5 text-[10px] font-mono px-2 py-0.5 rounded border ${
-                    isGlass ? 'text-emerald-800 bg-emerald-100 border-emerald-200' : 'text-emerald-400 bg-emerald-950/40 border-emerald-500/20'
-                  }`}>
-                    <span>Anna Voice: Instant &lt;410ms</span>
-                  </div>
-                </div>
               </div>
 
               {/* Social Footprint & Audience Analysis Box */}
