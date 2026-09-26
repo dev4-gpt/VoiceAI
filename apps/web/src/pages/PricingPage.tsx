@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { Check } from 'lucide-react';
-import { PLANS, usd, perMinute } from './plans';
+import { PLANS, COST_PER_VOICE_MINUTE_USD, usd, perMinute } from './plans';
 import { SiteHeader, SiteFooter, FaqList, focusRing, type FaqItem } from './SiteChrome';
 import { useRevealMotion } from './motion';
 
@@ -15,7 +15,7 @@ export const PRICING_FAQ: FaqItem[] = [
     question: 'What happens if I use more voice minutes than my plan includes?',
     answer: `Calls keep working. Minutes beyond your plan's allowance are billed at its overage rate: ${PLANS.map(
       (p) => `${perMinute(p.overageRatePerMinUsd)} on ${p.name}`
-    ).join(', ')}.`
+    ).join(', ')}. Every overage rate is above the ${perMinute(COST_PER_VOICE_MINUTE_USD)} the voice API costs, so extra minutes never sell below cost.`
   },
   {
     question: 'How much does annual billing save?',
