@@ -70,6 +70,18 @@ export const SiteFooter: React.FC = () => (
         >
           Source code
         </a>
+        <a
+          href="/privacy.html"
+          className={`cursor-pointer rounded transition-colors duration-200 hover:text-slate-900 ${focusRing}`}
+        >
+          Privacy
+        </a>
+        <a
+          href="/terms.html"
+          className={`cursor-pointer rounded transition-colors duration-200 hover:text-slate-900 ${focusRing}`}
+        >
+          Terms
+        </a>
       </nav>
     </div>
   </footer>
