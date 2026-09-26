@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { Check } from 'lucide-react';
-import { PLANS, COST_PER_VOICE_MINUTE_USD, usd, perMinute } from './plans';
+import { PLANS, usd, perMinute } from './plans';
 import { SiteHeader, SiteFooter, FaqList, focusRing, type FaqItem } from './SiteChrome';
 import { useRevealMotion } from './motion';
 
@@ -15,7 +15,7 @@ export const PRICING_FAQ: FaqItem[] = [
     question: 'What happens if I use more voice minutes than my plan includes?',
     answer: `Calls keep working. Minutes beyond your plan's allowance are billed at its overage rate: ${PLANS.map(
       (p) => `${perMinute(p.overageRatePerMinUsd)} on ${p.name}`
-    ).join(', ')}. Every overage rate is above the ${perMinute(COST_PER_VOICE_MINUTE_USD)} the voice API costs, so extra minutes never sell below cost.`
+    ).join(', ')}.`
   },
   {
     question: 'How much does annual billing save?',
@@ -123,15 +123,6 @@ export const PricingPage: React.FC = () => {
               </article>
             );
           })}
-        </section>
-
-        <section className="mx-auto mt-20 max-w-3xl">
-          <h2 data-reveal="text" className="text-2xl font-bold text-slate-900">
-            What a voice minute costs
-          </h2>
-          <p className="mt-4 leading-relaxed text-slate-600">
-            {`Conversations run on the AssemblyAI Voice Agent API, which costs ${perMinute(COST_PER_VOICE_MINUTE_USD)} all-in. After Stripe's fees, every plan keeps about 72% gross margin on monthly billing (66% on annual) even if every included minute is used, and a test in the codebase fails if a price change breaks that floor. Typical usage is lower, so real margins run higher.`}
-          </p>
         </section>
 
         <section className="mx-auto mt-20 max-w-3xl">

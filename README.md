@@ -86,8 +86,6 @@ Because the agent transcribes visitors on third-party websites, it is built arou
 | **Pro** | $449 | $359 | 1,500 | $0.25 / min |
 | **Enterprise** | $1,497 | $1,197 | 5,000 | $0.20 / min |
 
-**Unit economics.** The Voice Agent API costs **$4.50/hour ($0.075/min), all-in**. After Stripe's fees, every tier keeps about **72% gross margin on monthly billing (66% annual) even if the customer uses every included minute** — typical usage is lower, so real margins run higher. Overage never sells below cost, and a test in the suite fails if a price change breaks these floors.
-
 **Break-even.** At a $3,500 average contract value, **one additional closed deal every 7.8 months pays for Pro.** That depends only on price and deal size, not on any conversion assumption. The in-app calculator models the rest from inputs the prospect sets (visitor volume, voice conversion, close rate); nothing in it is a measured result.
 
 ## What is real today
