@@ -54,11 +54,16 @@ describe('publish', () => {
       .mockResolvedValueOnce(res(201, { data: { id: 'p1', status: 'publishing' } }))
       .mockResolvedValueOnce(res(200, { data: { id: 'p1', status: 'publishing', platforms: [] } }))
       .mockResolvedValueOnce(res(200, { data: { id: 'p1', status: 'published', platforms: [{ platform_url: 'https://bsky.app/x' }] } }));
-    const out = await publish(TOKEN, input, opts(f));
+    const out = await publish(TOKEN, input, { ...opts(f), now: () => Date.parse('2026-09-26T02:00:00Z') });
     expect(out).toMatchObject({ attemptedRealCall: true, succeeded: true, state: 'published', postId: 'p1', postUrl: 'https://bsky.app/x' });
     const [url, init] = f.mock.calls[0];
     expect(url).toBe(`${BASE}/api/posts`);
-    expect(JSON.parse(init.body)).toEqual({ content: 'hello', platforms: [{ social_account_id: 'acc-1', content_type: 'bluesky_post' }] });
+    // TryPost stores a post with no schedule as a draft (verified live), so a future time is required to publish.
+    expect(JSON.parse(init.body)).toEqual({
+      content: 'hello',
+      platforms: [{ social_account_id: 'acc-1', content_type: 'bluesky_post' }],
+      scheduled_at: '2026-09-26T02:01:00.000Z'
+    });
     expect(f.mock.calls[1][0]).toBe(`${BASE}/api/posts/p1`);
   });
 

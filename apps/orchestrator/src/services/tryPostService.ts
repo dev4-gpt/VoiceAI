@@ -4,8 +4,9 @@
  * a workspace-scoped API token:
  *   GET  {TRYPOST_BASE_URL}/api/social-accounts  -> {data:[{id, platform, display_name, username, is_active, status}]}
  *   POST {TRYPOST_BASE_URL}/api/posts            -> 201 {data:{id, status, ...}}
- *        body {content, platforms:[{social_account_id, content_type}]}  (no scheduled_at: whether
- *        this publishes immediately is UNVERIFIED, so a 2xx is only "accepted")
+ *        body {content, platforms:[{social_account_id, content_type}], scheduled_at}. VERIFIED LIVE:
+ *        without scheduled_at the post is stored as a draft and never published, so we send a
+ *        time just ahead and TryPost's scheduler publishes it; a 2xx is only "accepted"
  *   GET  {TRYPOST_BASE_URL}/api/posts/{id}       -> {data:{id, status, platforms:[{platform_url, status, ...}]}}
  *        status in draft|scheduled|publishing|published|partially_published|failed
  * (GET /api/workspace is used by keyTesters.) Resources may or may not be wrapped in
@@ -42,6 +43,9 @@ export interface TryPostOptions {
   sleep?: (ms: number) => Promise<unknown>;
   maxPolls?: number;
   pollIntervalMs?: number;
+  /** Clock and lead time for the scheduled_at we send (defaults: Date.now, 60s ahead). */
+  now?: () => number;
+  leadMs?: number;
 }
 
 const TIMEOUT_MS = 8000;
@@ -136,11 +140,19 @@ export async function publish(
   const maxPolls = opts.maxPolls ?? 8;
   const interval = opts.pollIntervalMs ?? 1500;
 
+  // A post with no scheduled_at is stored as a draft (verified live) and never published, and TryPost's API has
+  // no publish-now endpoint, so we ask for a moment just ahead; TryPost's scheduler then publishes it.
+  const scheduledAt = new Date((opts.now ?? Date.now)() + (opts.leadMs ?? 60_000)).toISOString();
+
   let postId: string;
   try {
     const res = await request(`${base}/api/posts`, token, f, {
       method: 'POST',
-      body: JSON.stringify({ content: input.text, platforms: [{ social_account_id: input.accountId, content_type: input.contentType }] })
+      body: JSON.stringify({
+        content: input.text,
+        platforms: [{ social_account_id: input.accountId, content_type: input.contentType }],
+        scheduled_at: scheduledAt
+      })
     });
     if (!res.ok) {
       return { attemptedRealCall: true, succeeded: false, state: 'failed', details: `TryPost rejected the post (HTTP ${res.status}).` };
@@ -183,6 +195,6 @@ export async function publish(
     succeeded: false,
     state: 'pending',
     postId,
-    details: `TryPost accepted the post but it was not confirmed published (last status: ${lastStatus}).`
+    details: `TryPost accepted the post, scheduled for ${scheduledAt}, but it was not confirmed published yet (last status: ${lastStatus}). Check the account or TryPost shortly.`
   };
 }
