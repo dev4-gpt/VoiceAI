@@ -37,8 +37,11 @@ export function readCheckoutParams(search: string): { outcome: Outcome; plan: st
   return { outcome, plan: (q.get('plan') || '').toLowerCase() };
 }
 
-export const CheckoutBanner: React.FC<{ search?: string }> = ({ search = window.location.search }) => {
+export const CheckoutBanner: React.FC<{ search?: string }> = ({ search: searchProp }) => {
   const [view, setView] = useState<View>({ kind: 'hidden' });
+  // Read the URL once. The effect below strips the query, so re-reading it on a
+  // later render would see an empty string and cancel the poll mid-flight.
+  const [search] = useState(() => searchProp ?? window.location.search);
 
   useEffect(() => {
     const params = readCheckoutParams(search);

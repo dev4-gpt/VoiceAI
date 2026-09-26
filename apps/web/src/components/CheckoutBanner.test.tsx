@@ -55,4 +55,19 @@ describe('CheckoutBanner', () => {
     render(<CheckoutBanner search="?checkout=success&plan=pro" />);
     await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Sign in with the account'));
   });
+
+  it('keeps polling through a re-render after it has stripped the URL query', async () => {
+    window.history.pushState({}, '', '/console?checkout=success&plan=starter');
+    let calls = 0;
+    authorizedFetch.mockImplementation(() => {
+      calls += 1;
+      return calls < 2
+        ? usage({ planId: 'starter', subscriptionStatus: 'incomplete', minutesLimit: 0 })
+        : usage({ planId: 'starter', subscriptionStatus: 'active', minutesLimit: 500 });
+    });
+    const { rerender } = render(<CheckoutBanner />);
+    // The parent re-renders (the query is already gone from the URL by now).
+    rerender(<CheckoutBanner />);
+    await waitFor(() => expect(screen.getByRole('status')).toHaveTextContent('Your Starter plan is active'), { timeout: 5000 });
+  });
 });
