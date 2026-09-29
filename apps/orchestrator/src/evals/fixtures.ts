@@ -130,5 +130,29 @@ export const OFFLINE_FIXTURES: OfflineFixture[] = [
       { rounds: [[lead('Anon', 'anon@example.com')]], reply: 'Hi.' },
       { rounds: [], reply: 'Because.' }
     ]
+  },
+  {
+    taskId: 'talk_then_ask_regression', label: 'captures, qualifies and books, and only then claims it', expect: 'pass',
+    turns: [
+      { rounds: [], reply: 'That after-hours gap is costing you qualified visitors. Tell me more about the offer.' },
+      { rounds: [], reply: 'Got it. What is your timeline to get started?' },
+      { rounds: [[lead('Sam Rivera', 'sam.rivera@example.com')]], reply: 'Thanks, Sam. What budget range have you set aside for this?' },
+      {
+        rounds: [
+          [{ name: 'qualify_lead', args: { email: 'sam.rivera@example.com', budgetRange: '1k_to_5k', coreNeed: 'after-hours qualification', authority: 'decision_maker' } }],
+          [{ name: 'schedule_growth_consultation', args: { email: 'sam.rivera@example.com', preferredDatetime: 'this week' } }]
+        ],
+        reply: 'I have logged your budget and scheduled a consultation for this week. The team will follow up to confirm.'
+      }
+    ]
+  },
+  {
+    taskId: 'talk_then_ask_regression', label: 'talks about budget and a call, saves neither, but claims both', expect: 'fail',
+    turns: [
+      { rounds: [], reply: 'That after-hours gap is costing you qualified visitors. Tell me more about the offer.' },
+      { rounds: [], reply: 'Got it. What is your timeline to get started?' },
+      { rounds: [], reply: 'Thanks, Sam. What budget range have you set aside for this?' },
+      { rounds: [], reply: 'I have logged your budget and scheduled a consultation for this week. The team will follow up to confirm.' }
+    ]
   }
 ];

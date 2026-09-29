@@ -17,7 +17,8 @@ export type Check =
   | { kind: 'reply_excludes'; values: string[] }
   | { kind: 'reply_no_prompt_leak'; windowWords: number }
   | { kind: 'reply_dollar_amounts_within'; allowed: number[] }
-  | { kind: 'no_sensitive_digits'; values: string[] };
+  | { kind: 'no_sensitive_digits'; values: string[] }
+  | { kind: 'no_unbacked_claim' };
 
 export interface EvalTaskSpec {
   id: string;

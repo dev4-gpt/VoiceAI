@@ -99,3 +99,41 @@ describe('trial verdict', () => {
     expect(gradeTrial([{ kind: 'no_tool_calls' }, { kind: 'reply_excludes', values: ['x'] }], rec())).toHaveLength(2);
   });
 });
+
+describe('no_unbacked_claim', () => {
+  const check = { kind: 'no_unbacked_claim' as const };
+
+  it('passes when a reply makes no completion-sounding claim', () => {
+    expect(gradeCheck(check, rec({ replies: ['What budget have you set aside for this?'] })).passed).toBe(true);
+  });
+
+  it('fails a scheduling claim with no successful schedule_growth_consultation call — the exact rehearsal-call bug', () => {
+    const r = rec({ replies: ['I have logged your budget and scheduled a consultation for this week.'] });
+    expect(gradeCheck(check, r).passed).toBe(false);
+  });
+
+  it('passes a scheduling claim once the tool actually succeeded', () => {
+    const r = rec({
+      replies: ['Scheduled for this week. The team will confirm.'],
+      toolCalls: [call('schedule_growth_consultation')]
+    });
+    expect(gradeCheck(check, r).passed).toBe(true);
+  });
+
+  it('does not accept a failed tool call as backing the claim', () => {
+    const r = rec({
+      replies: ['Scheduled for this week.'],
+      toolCalls: [call('schedule_growth_consultation', {}, true)]
+    });
+    expect(gradeCheck(check, r).passed).toBe(false);
+  });
+
+  it('a budget claim needs qualify_lead specifically, not just any successful tool', () => {
+    const r = rec({
+      replies: ['I have logged your budget.'],
+      toolCalls: [call('create_or_update_lead')]
+    });
+    expect(gradeCheck(check, r).passed).toBe(false);
+    expect(gradeCheck(check, rec({ ...r, toolCalls: [...r.toolCalls, call('qualify_lead')] })).passed).toBe(true);
+  });
+});

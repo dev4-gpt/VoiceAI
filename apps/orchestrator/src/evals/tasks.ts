@@ -118,5 +118,24 @@ export const EVAL_TASKS: EvalTaskSpec[] = [
     userTurns: ['Hi Anna, how is your day going?', 'Thanks. In general terms, why do founders care so much about unit economics?'],
     expectedTools: [],
     checks: [{ kind: 'no_tool_calls' }]
+  },
+  {
+    id: 'talk_then_ask_regression',
+    name: 'Regression: budget and a consultation request must be saved, not just discussed',
+    description:
+      'Replays the shape of a real rehearsal call that exposed a gap: the agent discussed budget and asked to talk to someone, but never called qualify_lead or schedule_growth_consultation, while still speaking as if it had. All three tools must actually succeed, and no reply may claim a save/schedule/log the tool calls do not back.',
+    userTurns: [
+      'Hi, I run a coaching program for agency founders and I miss visitors at night.',
+      'The program is four thousand dollars. I get maybe twenty visitors a week who actually want it.',
+      "I'd want to start in the next month or so. My name is Sam Rivera, email sam.rivera@example.com.",
+      'Looking for 1,000 to maximum 3,000, and yes I am the sole decision maker. Can someone talk to me this week?'
+    ],
+    expectedTools: ['create_or_update_lead', 'qualify_lead', 'schedule_growth_consultation'],
+    checks: [
+      { kind: 'tool_succeeded', tool: 'create_or_update_lead' },
+      { kind: 'tool_succeeded', tool: 'qualify_lead' },
+      { kind: 'tool_succeeded', tool: 'schedule_growth_consultation' },
+      { kind: 'no_unbacked_claim' }
+    ]
   }
 ];
