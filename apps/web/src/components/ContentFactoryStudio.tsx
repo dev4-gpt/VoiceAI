@@ -57,7 +57,7 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
   onTriggerAudit,
   onApproveJob,
   theme = 'glass',
-  activeCompanyName = 'DesignAcademy Studio',
+  activeCompanyName = 'Acme Coaching Co.',
   onOpenCredentialsModal
 }) => {
   const [isPublishingSocial, setIsPublishingSocial] = useState(false);
@@ -139,16 +139,16 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
 
   // New SOP Audit Modal / Drawer State
   const [isAuditModalOpen, setIsAuditModalOpen] = useState(false);
-  const [auditCompany, setAuditCompany] = useState('DesignAcademy Studio');
-  const [auditWebsite, setAuditWebsite] = useState('https://designacademy.io');
+  const [auditCompany, setAuditCompany] = useState('Acme Coaching Co.');
+  const [auditWebsite, setAuditWebsite] = useState('https://acmecoaching.example');
   const [auditTrigger, setAuditTrigger] = useState('Launched $2,997 Pro Career Sprint + Hiring First SDR on LinkedIn');
-  const [auditTwitter, setAuditTwitter] = useState('https://x.com/jasonmiller_ui');
-  const [auditLinkedIn, setAuditLinkedIn] = useState('https://linkedin.com/in/jasonmiller-design');
-  const [auditYouTube, setAuditYouTube] = useState('https://youtube.com/@designacademy_io');
-  const [auditInstagram, setAuditInstagram] = useState('https://instagram.com/designacademy.studio');
-  const [auditSubstack, setAuditSubstack] = useState('https://jasonmiller.substack.com');
+  const [auditTwitter, setAuditTwitter] = useState('https://x.com/alexkim_coaching');
+  const [auditLinkedIn, setAuditLinkedIn] = useState('https://linkedin.com/in/alexkim-coaching');
+  const [auditYouTube, setAuditYouTube] = useState('https://youtube.com/@acmecoaching');
+  const [auditInstagram, setAuditInstagram] = useState('https://instagram.com/acmecoaching');
+  const [auditSubstack, setAuditSubstack] = useState('https://alexkim.substack.com');
   const [auditSocialBio, setAuditSocialBio] = useState(
-    'Founder of DesignAcademy.io (15k UI/UX designer community, 120k newsletter readers). Transitioning from $47 ebook sales into high-ticket $2,997 Pro Career Sprints and $10k/mo agency retainers. Needs 24/7 after-hours voice qualification to handle European and Asian inbound leads.'
+    'Founder of Acme Coaching Co. (15k UI/UX designer community, 120k newsletter readers). Transitioning from $47 ebook sales into high-ticket $2,997 Pro Career Sprints and $10k/mo agency retainers. Needs 24/7 after-hours voice qualification to handle European and Asian inbound leads.'
   );
 
   const selectedJob = jobs.find((j) => j.id === selectedJobId) || jobs[0];
@@ -1366,7 +1366,7 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
                     required
                     value={auditCompany}
                     onChange={(e) => setAuditCompany(e.target.value)}
-                    placeholder="E.g. DesignAcademy Studio"
+                    placeholder="E.g. Acme Coaching Co."
                     className={`w-full px-3 py-2 rounded-xl border focus:outline-none font-mono ${
                       isGlass ? 'bg-slate-50 border-slate-200 text-slate-800 focus:border-cyan-600' : 'bg-slate-950 border-slate-800 text-slate-200 focus:border-cyan-500'
                     }`}
@@ -1378,7 +1378,7 @@ export const ContentFactoryStudio: React.FC<ContentFactoryStudioProps> = ({
                     type="url"
                     value={auditWebsite}
                     onChange={(e) => setAuditWebsite(e.target.value)}
-                    placeholder="https://designacademy.io"
+                    placeholder="https://acmecoaching.example"
                     className={`w-full px-3 py-2 rounded-xl border focus:outline-none font-mono ${
                       isGlass ? 'bg-slate-50 border-slate-200 text-slate-800 focus:border-cyan-600' : 'bg-slate-950 border-slate-800 text-slate-200 focus:border-cyan-500'
                     }`}

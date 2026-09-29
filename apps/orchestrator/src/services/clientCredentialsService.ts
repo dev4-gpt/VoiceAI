@@ -117,8 +117,8 @@ export class ClientCredentialsService {
   }
 
   private seedInitialCredentials() {
-    // Seed default credentials for DesignAcademy Studio
-    this.saveCredentialsInternal('DesignAcademy Studio', 'lead_jm_901', 'Jason Miller', {
+    // Seed default credentials for Acme Coaching Co.
+    this.saveCredentialsInternal('Acme Coaching Co.', 'lead_ak_901', 'Alex Kim', {
       twitter: {
         secrets: {
           apiKey: 'xak_live_8917240182741029',
@@ -127,8 +127,8 @@ export class ClientCredentialsService {
           tokenSecret: 'xts_9182039182039182039182039182',
           bearerToken: 'Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs'
         },
-        accountHandle: '@designacademy_io',
-        profileName: 'DesignAcademy.io Official',
+        accountHandle: '@acmecoaching',
+        profileName: 'Acme Coaching Co. Official',
         environment: 'cloud_production',
         autoPublishEnabled: true,
         status: 'connected',
@@ -141,8 +141,8 @@ export class ClientCredentialsService {
           clientSecret: 'li_sec_kLmNoPqRsTuVwXyZ',
           accessToken: 'AQV9x8y7z6w5v4u3t2s1r0q-live-token'
         },
-        accountHandle: 'jasonmiller-design',
-        profileName: 'Jason Miller (Founder)',
+        accountHandle: 'alexkim-coaching',
+        profileName: 'Alex Kim (Founder)',
         environment: 'cloud_production',
         autoPublishEnabled: true,
         status: 'connected',
@@ -154,7 +154,7 @@ export class ClientCredentialsService {
           webhookUrl: 'https://api.substack.com/v1/publish/hook_da_901',
           bearerToken: 'sub_live_9928102938102938'
         },
-        accountHandle: 'jasonmiller.substack.com',
+        accountHandle: 'alexkim.substack.com',
         profileName: 'The High-Ticket Design Sprint',
         environment: 'cloud_production',
         autoPublishEnabled: false,
@@ -165,10 +165,10 @@ export class ClientCredentialsService {
       youtube: {
         secrets: {
           apiKey: 'AIzaSyA8_youtube_api_key_889210',
-          channelId: 'UC_designacademy_official_channel'
+          channelId: 'UC_acmecoaching_channel'
         },
-        accountHandle: '@designacademy_io',
-        profileName: 'DesignAcademy Studio Videos',
+        accountHandle: '@acmecoaching',
+        profileName: 'Acme Coaching Co. Videos',
         environment: 'cloud_sandbox',
         autoPublishEnabled: false,
         status: 'connected',

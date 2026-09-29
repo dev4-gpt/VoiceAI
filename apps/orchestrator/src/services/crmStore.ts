@@ -7,7 +7,7 @@ import { isDatabaseConfigured } from '../db/client';
 import { upsertLead, listAllLeads, upsertMember, listAllMembers } from '../db/repository';
 
 /** Demo records created in memory at boot. Never allowed to overwrite stored data. */
-const SEED_LEAD_IDS = new Set(['lead_jm_901']);
+const SEED_LEAD_IDS = new Set(['lead_ak_901']);
 const SEED_MEMBER_IDS = new Set(['mem_101', 'mem_102']);
 
 /**
@@ -148,22 +148,22 @@ class CRMStore {
     // Seed realistic archetype lead with social links and bio
     const now = new Date().toISOString();
     const demoLead: CRMLead = {
-      id: 'lead_jm_901',
-      fullName: 'Jason Miller',
-      email: 'jason.m@designacademy.io',
+      id: 'lead_ak_901',
+      fullName: 'Alex Kim',
+      email: 'alex.kim@acmecoaching.example',
       phone: '+1 (555) 438-9201',
-      website: 'https://designacademy.io',
-      linkedIn: 'https://linkedin.com/in/jasonmiller-design',
+      website: 'https://acmecoaching.example',
+      linkedIn: 'https://linkedin.com/in/alexkim-coaching',
       socialLinks: {
-        twitter: 'https://x.com/jasonmiller_ui',
-        linkedin: 'https://linkedin.com/in/jasonmiller-design',
-        youtube: 'https://youtube.com/@designacademy_io',
-        instagram: 'https://instagram.com/designacademy.studio',
-        substack: 'https://jasonmiller.substack.com'
+        twitter: 'https://x.com/alexkim_coaching',
+        linkedin: 'https://linkedin.com/in/alexkim-coaching',
+        youtube: 'https://youtube.com/@acmecoaching',
+        instagram: 'https://instagram.com/acmecoaching',
+        substack: 'https://alexkim.substack.com'
       },
       socialBioText:
-        'Founder of DesignAcademy.io (15k UI/UX designer community, 120k newsletter readers). Transitioning from $47 ebook sales into high-ticket $2,997 Pro Career Sprints and $10k/mo agency retainers. Needs 24/7 after-hours voice qualification to handle European and Asian inbound leads.',
-      companyName: 'DesignAcademy Studio',
+        'Founder of Acme Coaching Co. (15k UI/UX designer community, 120k newsletter readers). Transitioning from $47 ebook sales into high-ticket $2,997 Pro Career Sprints and $10k/mo agency retainers. Needs 24/7 after-hours voice qualification to handle European and Asian inbound leads.',
+      companyName: 'Acme Coaching Co.',
       businessSummary: '15k community members, $47-$2,997 product suite, expanding into enterprise design sprints',
       source: 'after_hours_inbound',
       budgetRange: '5k_to_15k',

@@ -23,8 +23,8 @@ interface EmbedWidgetModalProps {
 export const EmbedWidgetModal: React.FC<EmbedWidgetModalProps> = ({
   isOpen,
   onClose,
-  defaultCompany = 'DesignAcademy Studio',
-  defaultClientId = 'lead_jm_901',
+  defaultCompany = 'Acme Coaching Co.',
+  defaultClientId = 'lead_ak_901',
   isGlass = true
 }) => {
   const [company, setCompany] = useState<string>(defaultCompany);
@@ -104,7 +104,7 @@ export const EmbedWidgetModal: React.FC<EmbedWidgetModalProps> = ({
               value={clientId}
               onChange={(e) => setClientId(e.target.value)}
               className="w-full px-3.5 py-2.5 rounded-xl bg-black/40 border border-white/10 text-xs text-white focus:outline-none focus:border-sky-400/60 font-medium"
-              placeholder="e.g. lead_jm_901"
+              placeholder="e.g. lead_ak_901"
             />
           </div>
         </div>

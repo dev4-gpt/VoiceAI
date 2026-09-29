@@ -7,10 +7,10 @@ describe('InstaticService — Visual CMS & AI Web Builder', () => {
     service = new InstaticService();
   });
 
-  it('initializes with a default seeded page for DesignAcademy Studio', () => {
-    const pages = service.getPages('DesignAcademy Studio');
+  it('initializes with a default seeded page for Acme Coaching Co.', () => {
+    const pages = service.getPages('Acme Coaching Co.');
     expect(pages.length).toBeGreaterThanOrEqual(1);
-    expect(pages[0].companyName).toBe('DesignAcademy Studio');
+    expect(pages[0].companyName).toBe('Acme Coaching Co.');
     expect(pages[0].sections.length).toBe(3);
   });
 

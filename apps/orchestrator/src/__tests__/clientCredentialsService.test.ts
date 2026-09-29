@@ -4,8 +4,8 @@ describe('ClientCredentialsService masking', () => {
   const service = new ClientCredentialsService();
 
   it('never leaks raw secret values in getMaskedCredentials output', () => {
-    const masked = service.getMaskedCredentials('DesignAcademy Studio');
-    const raw = service.getRawPlatformSecrets('DesignAcademy Studio', 'twitter');
+    const masked = service.getMaskedCredentials('Acme Coaching Co.');
+    const raw = service.getRawPlatformSecrets('Acme Coaching Co.', 'twitter');
     expect(raw).not.toBeNull();
 
     const serialized = JSON.stringify(masked);
@@ -15,7 +15,7 @@ describe('ClientCredentialsService masking', () => {
   });
 
   it('masks each configured secret field for a platform', () => {
-    const masked = service.getMaskedCredentials('DesignAcademy Studio');
+    const masked = service.getMaskedCredentials('Acme Coaching Co.');
     const twitter = masked.platforms.find((p: any) => p.platform === 'twitter')!;
     expect(twitter).toBeDefined();
     expect(twitter.hasSecrets).toBe(true);

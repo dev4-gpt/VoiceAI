@@ -204,7 +204,7 @@ tokenRouter.post('/token', optionalUser, async (req: Request, res: Response) => 
     }
 
     const data = (await response.json()) as any;
-    const company = (req.body && req.body.company) || 'DesignAcademy Studio';
+    const company = (req.body && req.body.company) || 'Acme Coaching Co.';
     const bv = brandVoiceService.getProfileByCompany(company);
 
     if (req.body && Array.isArray(req.body.history) && req.body.history.length > 0) {

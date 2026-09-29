@@ -318,18 +318,18 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
 
 
 
-  // Prospect Enrichment State: Initialized to Generic Public Demo (Jason Miller / DesignAcademy Studio)
+  // Prospect Enrichment State: Initialized to Generic Public Demo (Alex Kim / Acme Coaching Co.)
   const [isEnrichModalOpen, setIsEnrichModalOpen] = useState(false);
-  const [prospectName, setProspectName] = useState('Jason Miller');
-  const [prospectEmail, setProspectEmail] = useState('jason.m@designacademy.io');
-  const [prospectWebsite, setProspectWebsite] = useState('https://designacademy.io');
-  const [prospectLinkedIn, setProspectLinkedIn] = useState('https://linkedin.com/in/jasonmiller-design');
-  const [prospectTwitter, setProspectTwitter] = useState('https://x.com/jasonmiller_ui');
-  const [prospectYouTube, setProspectYouTube] = useState('https://youtube.com/@designacademy_io');
-  const [prospectInstagram, setProspectInstagram] = useState('https://instagram.com/designacademy.studio');
-  const [prospectSubstack, setProspectSubstack] = useState('https://jasonmiller.substack.com');
-  const [prospectCompany, setProspectCompany] = useState('DesignAcademy Studio');
-  const [prospectBio, setProspectBio] = useState('Founder of DesignAcademy.io (15k UI/UX designer community, 120k newsletter readers). Transitioning from $47 ebook sales into high-ticket $2,997 Pro Career Sprints and $10k/mo agency retainers. Needs 24/7 after-hours voice qualification to handle European and Asian inbound leads.');
+  const [prospectName, setProspectName] = useState('Alex Kim');
+  const [prospectEmail, setProspectEmail] = useState('alex.kim@acmecoaching.example');
+  const [prospectWebsite, setProspectWebsite] = useState('https://acmecoaching.example');
+  const [prospectLinkedIn, setProspectLinkedIn] = useState('https://linkedin.com/in/alexkim-coaching');
+  const [prospectTwitter, setProspectTwitter] = useState('https://x.com/alexkim_coaching');
+  const [prospectYouTube, setProspectYouTube] = useState('https://youtube.com/@acmecoaching');
+  const [prospectInstagram, setProspectInstagram] = useState('https://instagram.com/acmecoaching');
+  const [prospectSubstack, setProspectSubstack] = useState('https://alexkim.substack.com');
+  const [prospectCompany, setProspectCompany] = useState('Acme Coaching Co.');
+  const [prospectBio, setProspectBio] = useState('Founder of Acme Coaching Co. (15k UI/UX designer community, 120k newsletter readers). Transitioning from $47 ebook sales into high-ticket $2,997 Pro Career Sprints and $10k/mo agency retainers. Needs 24/7 after-hours voice qualification to handle European and Asian inbound leads.');
   const [selectedToneArchetype, setSelectedToneArchetype] = useState<'tactical_operator' | 'empathetic_mentor' | 'visionary_founder' | 'enterprise_advisor'>('tactical_operator');
   const [customLexicon, setCustomLexicon] = useState('growth sprint, funnel velocity, high-ticket, cohort');
   const [customBannedTerms, setCustomBannedTerms] = useState('cheap, guru, synergy, hard sell, magic bullet');
@@ -392,15 +392,15 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
           setJudgeTourStep(1);
           setJudgeTourBanner('🎬 [2/5 • 12-24s] Stratum 1: Logic Stream • Live CRM Deal Flow & 85/100 BANT Gauge');
           speakTurnIfEnabled(
-            "Warping forward along the Z-axis to Stratum 1. Jason Miller's lead has been qualified and moved to the BANT Qualified column with an 85 out of 100 score."
+            "Warping forward along the Z-axis to Stratum 1. Alex Kim's lead has been qualified and moved to the BANT Qualified column with an 85 out of 100 score."
           );
         } else if (next === 24) {
           setOdysseyRequestedZ(3600);
           setJudgeTourStep(2);
           setJudgeTourBanner('🎬 [3/5 • 24-36s] Stratum 2: Synthesizer Reactor • Hermes Studio & DSPy Self-Healing Loop');
           handleTriggerAuditJob({
-            companyOrCreator: prospectCompany || 'DesignAcademy Studio',
-            website: prospectWebsite || 'https://designacademy.io',
+            companyOrCreator: prospectCompany || 'Acme Coaching Co.',
+            website: prospectWebsite || 'https://acmecoaching.example',
             triggerEvent: 'judge_auto_audit'
           });
           speakTurnIfEnabled(
@@ -470,7 +470,7 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
     const targetId = presetId || selectedPresetId;
     const current = allPresets.find((p) => p.id === targetId);
     if (!current || !current.isCustom) {
-      alert('The default test client (Jason Miller / DesignAcademy Studio) is a built-in template and cannot be deleted.');
+      alert('The default test client (Alex Kim / Acme Coaching Co.) is a built-in template and cannot be deleted.');
       return;
     }
     if (!window.confirm(`Delete client "${current.name}"? This will remove it from your local saved clients.`)) return;
@@ -488,7 +488,7 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
       {
         id: `del_client_${Date.now()}`,
         speaker: 'system',
-        text: `➖ Deleted client "${current.name}". Switched back to default test client (DesignAcademy Studio).`,
+        text: `➖ Deleted client "${current.name}". Switched back to default test client (Acme Coaching Co.).`,
         timestamp: new Date().toLocaleTimeString()
       }
     ]);
@@ -804,7 +804,7 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
 
   // System Prompts & Greetings Infused with Dynamic Client Brand Voice
   const getPersonaConfig = (persona: OperatingPersona) => {
-    const comp = prospectCompany || 'DesignAcademy Studio';
+    const comp = prospectCompany || 'Acme Coaching Co.';
     const toneLabel =
       selectedToneArchetype === 'empathetic_mentor'
         ? 'Empathetic Mentor'
@@ -1637,9 +1637,9 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
         body: JSON.stringify({
           name: 'create_or_update_lead',
           arguments: {
-            fullName: prospectName || 'Jason Miller',
-            email: prospectEmail || 'jason.m@designacademy.io',
-            website: prospectWebsite || 'https://designacademy.io',
+            fullName: prospectName || 'Alex Kim',
+            email: prospectEmail || 'alex.kim@acmecoaching.example',
+            website: prospectWebsite || 'https://acmecoaching.example',
             source: 'after_hours_inbound'
           }
         })
@@ -1651,7 +1651,7 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
         body: JSON.stringify({
           name: 'qualify_lead',
           arguments: {
-            email: prospectEmail || 'jason.m@designacademy.io',
+            email: prospectEmail || 'alex.kim@acmecoaching.example',
             budgetRange: '5k_to_15k',
             coreNeed: 'Launch high-ticket digital mastermind',
             timelineWeeks: 3
@@ -1665,7 +1665,7 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
         body: JSON.stringify({
           name: 'schedule_growth_consultation',
           arguments: {
-            email: prospectEmail || 'jason.m@designacademy.io',
+            email: prospectEmail || 'alex.kim@acmecoaching.example',
             preferredDatetime: 'Tomorrow at 2:00 PM EST',
             topic: 'Mastermind Funnel Architecture'
           }
@@ -2013,7 +2013,7 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
                   <span className={`font-mono font-semibold px-2 py-0.5 rounded border ${
                     isGlass ? 'bg-[#f5f0e6] border-[#e0d8ca] text-indigo-900' : 'bg-indigo-900/50 border-indigo-700/50 text-indigo-300'
                   }`}>
-                    {prospectCompany || 'DesignAcademy Studio'}
+                    {prospectCompany || 'Acme Coaching Co.'}
                   </span>
                 </div>
                 <span className={`text-[11px] font-mono hidden sm:inline ${isGlass ? 'text-slate-500' : 'text-slate-400'}`}>
@@ -2273,7 +2273,7 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
                   onSendMessage={handleSendTextMessage}
                   isSendingMessage={isSendingMessage}
                   activeBrandVoice={{
-                    companyName: prospectCompany || 'DesignAcademy Studio',
+                    companyName: prospectCompany || 'Acme Coaching Co.',
                     toneLabel:
                       selectedToneArchetype === 'empathetic_mentor'
                         ? 'Empathetic Mentor'
@@ -2798,7 +2798,7 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
               onTriggerJob={handleTriggerContentJob}
               onTriggerAudit={handleTriggerAuditJob}
               onApproveJob={handleApproveContentJob}
-              activeCompanyName={prospectCompany || 'DesignAcademy Studio'}
+              activeCompanyName={prospectCompany || 'Acme Coaching Co.'}
               onOpenCredentialsModal={() => setIsCredentialsModalOpen(true)}
             />
           }
@@ -2838,7 +2838,7 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
               onTriggerJob={handleTriggerContentJob}
               onTriggerAudit={handleTriggerAuditJob}
               onApproveJob={handleApproveContentJob}
-              activeCompanyName={prospectCompany || 'DesignAcademy Studio'}
+              activeCompanyName={prospectCompany || 'Acme Coaching Co.'}
               onOpenCredentialsModal={() => setIsCredentialsModalOpen(true)}
             />
           )}
@@ -2973,7 +2973,7 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
                   <button
                     type="button"
                     onClick={handleResetToGenericDemo}
-                    title="Reset to default test demo (Jason Miller / DesignAcademy Studio)"
+                    title="Reset to default test demo (Alex Kim / Acme Coaching Co.)"
                     className="p-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 transition-all"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
@@ -3019,7 +3019,7 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
                   type="url"
                   value={prospectWebsite}
                   onChange={(e) => setProspectWebsite(e.target.value)}
-                  placeholder="https://designacademy.io"
+                  placeholder="https://acmecoaching.example"
                   className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 focus:outline-none focus:border-cyan-500"
                 />
               </div>
@@ -3169,7 +3169,7 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
                   type="text"
                   value={prospectCompany}
                   onChange={(e) => setProspectCompany(e.target.value)}
-                  placeholder="DesignAcademy Studio"
+                  placeholder="Acme Coaching Co."
                   className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 focus:outline-none focus:border-cyan-500"
                 />
               </div>
@@ -3390,7 +3390,7 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
       <SubscriptionPlansModal
         isOpen={isPlansModalOpen}
         onClose={() => { setIsPlansModalOpen(false); setHighlightPlanId(undefined); }}
-        clientId={prospectCompany || 'DesignAcademy Studio'}
+        clientId={prospectCompany || 'Acme Coaching Co.'}
         onOpenEmbedModal={() => setIsEmbedModalOpen(true)}
         isGlass={isGlass}
         highlightPlanId={highlightPlanId}
@@ -3400,8 +3400,8 @@ ${members.map((m) => `* **${m.fullName}** — Risk Score: **${(m as any).churnRi
       <EmbedWidgetModal
         isOpen={isEmbedModalOpen}
         onClose={() => setIsEmbedModalOpen(false)}
-        defaultCompany={prospectCompany || 'DesignAcademy Studio'}
-        defaultClientId="lead_jm_901"
+        defaultCompany={prospectCompany || 'Acme Coaching Co.'}
+        defaultClientId="lead_ak_901"
         isGlass={isGlass}
       />
 

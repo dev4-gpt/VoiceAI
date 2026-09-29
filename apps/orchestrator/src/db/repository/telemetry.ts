@@ -15,7 +15,7 @@ import type { ValidatedCall } from '../../services/telemetryService';
  * from them would be wrong in a way nobody would notice.
  */
 
-const DEFAULT_TENANT_NAME = process.env.DEFAULT_TENANT_NAME || 'DesignAcademy Studio';
+const DEFAULT_TENANT_NAME = process.env.DEFAULT_TENANT_NAME || 'Acme Coaching Co.';
 
 export interface PersistResult {
   persisted: boolean;

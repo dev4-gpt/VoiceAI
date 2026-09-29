@@ -105,11 +105,11 @@ export class InstaticService {
 
   private seedDefaultPage() {
     const demoPage = this.generatePageFromContentPack(
-      'DesignAcademy Studio',
+      'Acme Coaching Co.',
       'Lead Generation & High-Ticket Sprints',
       {
         thesis: 'Transforming freelance UI designers into $10k/mo strategic agency partners with 24/7 autonomous voice qualification.',
-        hook: 'How DesignAcademy scaled from $47 ebooks to $10k enterprise retainers without hiring a human SDR army.',
+        hook: 'How Acme Coaching Co. scaled from $47 ebooks to $10k enterprise retainers without hiring a human SDR army.',
         coreProblem: 'Design studios lose 60% of high-intent international traffic because after-hours visitors bounce on static contact forms.',
         tacticalFramework: [
           'Replace static form with Anna Spoken Voice Operator',
@@ -293,7 +293,7 @@ export class InstaticService {
           name: 'StratosGTM Script Embed',
           props: {
             company: companyName,
-            clientId: 'lead_jm_901',
+            clientId: 'lead_ak_901',
             accent: '#d4af37',
             scriptUrl: 'http://localhost:4000/embed.js'
           },
@@ -517,7 +517,7 @@ Refinement Request: "${prompt}"`;
 
       if (node.type === 'embed') {
         const company = escapeHtml(node.props.company || page.companyName);
-        const clientId = escapeHtml(node.props.clientId || 'lead_jm_901');
+        const clientId = escapeHtml(node.props.clientId || 'lead_ak_901');
         const accent = escapeHtml(node.props.accent || '#d4af37');
         // A rejected scriptUrl falls back to the first-party widget rather than
         // emitting an attacker-supplied <script src>.

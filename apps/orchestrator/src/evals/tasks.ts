@@ -6,8 +6,8 @@ export const KB_DOLLAR_AMOUNTS = [997, 2997, 497, 7500];
 
 /** Fixed inputs for the chat prompt, so every trial grades against the same runtime prompt. */
 export const EVAL_PROMPT_INPUT: ChatPromptInput = {
-  companyName: 'DesignAcademy Studio',
-  activeAccount: 'DesignAcademy Studio',
+  companyName: 'Acme Coaching Co.',
+  activeAccount: 'Acme Coaching Co.',
   coreOffering: 'Autonomous operating layer with automated agent loops and persistent Obsidian memory',
   toneLabel: 'Tactical Operator'
 };

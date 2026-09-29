@@ -14,7 +14,7 @@ describe('SocialPublishingService', () => {
     const service = new SocialPublishingService();
 
     const result = await service.publishToConnectedPlatforms({
-      companyName: 'DesignAcademy Studio',
+      companyName: 'Acme Coaching Co.',
       platforms: ['twitter', 'linkedin'],
       content: { thesis: 'Test thesis for simulated publishing' }
     });
@@ -30,7 +30,7 @@ describe('SocialPublishingService', () => {
     const service = new SocialPublishingService();
 
     const result = await service.publishToConnectedPlatforms({
-      companyName: 'DesignAcademy Studio',
+      companyName: 'Acme Coaching Co.',
       platforms: ['substack'],
       content: { thesis: 'Test thesis for substack failure path' }
     });
@@ -51,7 +51,7 @@ describe('SocialPublishingService', () => {
   it('labels youtube as stub_unsupported rather than pretending to publish', async () => {
     const service = new SocialPublishingService();
     const result = await service.publishToConnectedPlatforms({
-      companyName: 'DesignAcademy Studio',
+      companyName: 'Acme Coaching Co.',
       platforms: ['youtube'],
       content: { thesis: 'Test thesis for youtube stub' }
     });

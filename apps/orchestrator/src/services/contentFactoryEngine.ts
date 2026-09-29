@@ -147,14 +147,14 @@ export class ContentFactoryEngine {
 
     const auditDemoJob: ContentFactoryJob = {
       id: 'job_audit_201',
-      topic: 'SOP Inbound Conversion & Revenue Leakage Audit: DesignAcademy Studio',
+      topic: 'SOP Inbound Conversion & Revenue Leakage Audit: Acme Coaching Co.',
       jobType: 'lead_magnet_audit',
       requestedBySpeaker: 'sdr_outbound',
       status: 'needs_approval',
       researchLanes: [
         {
           lane: 'creator_rag',
-          title: 'DesignAcademy Product & Pricing Intelligence',
+          title: 'Acme Coaching Co. Product & Pricing Intelligence',
           status: 'completed',
           snippets: [
             {
@@ -207,14 +207,14 @@ export class ContentFactoryEngine {
         }
       ],
       leadMagnetAudit: {
-        companyOrCreator: 'DesignAcademy Studio',
-        website: 'https://designacademy.io',
+        companyOrCreator: 'Acme Coaching Co.',
+        website: 'https://acmecoaching.example',
         socialLinks: {
-          twitter: 'https://x.com/jasonmiller_ui',
-          linkedin: 'https://linkedin.com/in/jasonmiller-design',
-          youtube: 'https://youtube.com/@designacademy_io',
-          instagram: 'https://instagram.com/designacademy.studio',
-          substack: 'https://jasonmiller.substack.com'
+          twitter: 'https://x.com/alexkim_coaching',
+          linkedin: 'https://linkedin.com/in/alexkim-coaching',
+          youtube: 'https://youtube.com/@acmecoaching',
+          instagram: 'https://instagram.com/acmecoaching',
+          substack: 'https://alexkim.substack.com'
         },
         socialBioAnalysis: {
           identifiedNiche: 'High-End Product Design & UI/UX Career Accelerator',
@@ -230,7 +230,7 @@ export class ContentFactoryEngine {
         triggerEvent: 'Launched $2,997 Pro Career Sprint + Hiring First SDR (TheOrg / LinkedIn)',
         leadMagnetTitle: 'The 24/7 After-Hours Inbound Blueprint & $114,000 Revenue Leakage Teardown',
         executiveSummary:
-          'DesignAcademy has captured strong organic design mindshare across Substack and X, but is losing an estimated $114,000 annually due to a 14-hour average response delay on international inbound inquiries and lack of automated after-hours qualification.',
+          'Acme Coaching Co. has captured strong organic design mindshare across Substack and X, but is losing an estimated $114,000 annually due to a 14-hour average response delay on international inbound inquiries and lack of automated after-hours qualification.',
         auditScore: 42,
         estimatedAnnualRevenueLeakageUsd: 114000,
         pillars: [
@@ -247,7 +247,7 @@ export class ContentFactoryEngine {
             pillarName: '2. After-Hours & Weekend Lead Capture',
             scoreOutOf10: 2,
             finding:
-              '38% of DesignAcademy traffic originates from Europe and APAC, arriving when the human sales team is offline.',
+              '38% of Acme Coaching Co. traffic originates from Europe and APAC, arriving when the human sales team is offline.',
             recommendation:
               'Activate 24/7 autonomous voice intake to qualify and book consultations directly onto Google Calendar.',
             impactLevel: 'critical'
@@ -282,29 +282,29 @@ export class ContentFactoryEngine {
         ],
         outreachSequence: {
           coldEmail: {
-            subject: 'Quick audit for DesignAcademy: $114k after-hours inbound leakage',
-            bodyMarkdown: `Hi Jason,\n\nSaw you recently launched the $2,997 Pro Career Sprint on Substack and mentioned you are bringing on your first SDR on LinkedIn—huge congrats on the momentum!\n\nWe noticed that roughly 38% of design inquiries land outside US business hours (European and Asian time zones) and sit in your inbox for an average of 14 hours before receiving a response. According to HBR benchmarks, responding within 5 minutes yields 21x higher qualification than waiting even 30 minutes.\n\nWe ran a quick 5-point conversion audit on DesignAcademy's inbound funnel and calculated that delayed response times are leaking approximately $114,000 in pipeline annually.\n\nI put together a 2-page teardown showing how an autonomous voice operator can qualify international leads 24/7 and route them straight to your calendar.\n\nWould it be helpful if I sent the 2-page audit over? No pitch, just actionable data.\n\nBest,\nAlex & The StratosGTM Team`
+            subject: 'Quick audit for Acme Coaching Co.: $114k after-hours inbound leakage',
+            bodyMarkdown: `Hi Alex,\n\nSaw you recently launched the $2,997 Pro Career Sprint on Substack and mentioned you are bringing on your first SDR on LinkedIn—huge congrats on the momentum!\n\nWe noticed that roughly 38% of design inquiries land outside US business hours (European and Asian time zones) and sit in your inbox for an average of 14 hours before receiving a response. According to HBR benchmarks, responding within 5 minutes yields 21x higher qualification than waiting even 30 minutes.\n\nWe ran a quick 5-point conversion audit on Acme Coaching Co.'s inbound funnel and calculated that delayed response times are leaking approximately $114,000 in pipeline annually.\n\nI put together a 2-page teardown showing how an autonomous voice operator can qualify international leads 24/7 and route them straight to your calendar.\n\nWould it be helpful if I sent the 2-page audit over? No pitch, just actionable data.\n\nBest,\nAlex & The StratosGTM Team`
           },
           linkedInMessage: {
             hook: 'Congrats on the $2,997 Pro Sprint cohort launch, Jason!',
-            body: 'Hey Jason—noticed you are expanding the Pro Career Sprint cohort. We ran a quick 5-point conversion audit on DesignAcademy\'s inbound funnel. Because European designers are waiting ~14 hours for response, you\'re losing an estimated $114k in annual high-ticket pipeline. Created a free 2-page teardown on how to plug it with 24/7 autonomous voice qualification. Want me to send the PDF over?'
+            body: 'Hey Alex—noticed you are expanding the Pro Career Sprint cohort. We ran a quick 5-point conversion audit on Acme Coaching Co.\'s inbound funnel. Because European designers are waiting ~14 hours for response, you\'re losing an estimated $114k in annual high-ticket pipeline. Created a free 2-page teardown on how to plug it with 24/7 autonomous voice qualification. Want me to send the PDF over?'
           },
           spokenAudioScript: {
-            intro: 'Hey Jason, Anna here from StratosGTM.',
+            intro: 'Hey Alex, Anna here from StratosGTM.',
             triggerHook: 'I was following your Substack post on the $2,997 Pro Career Sprint and saw you are hiring an SDR on LinkedIn—congratulations on scaling the studio!',
             valueDrop: 'I audited your inbound funnel and noticed that about 38% of your designer inquiries land outside US business hours and wait 14 hours for a reply. In creator economics, that delay leaks roughly $114,000 in lost high-ticket enrollments each year.',
             frictionlessCallToAction: 'I recorded a 90-second voice breakdown of how to capture and qualify those leads 24/7 with zero extra SDR headcount. Mind if I send the audio note over?'
           }
         },
         freeAssetPreviewMarkdown: `# The 24/7 After-Hours Inbound Blueprint
-### Prepared for: DesignAcademy Studio (Jason Miller)
+### Prepared for: Acme Coaching Co. (Alex Kim)
 **Audience Footprint:** 120k Substack Subscribers • 15k Design Community • 5 Platform Channels
 **Core Challenge:** International Timezone Latency & $114,000 Pipeline Dropoff
 
 ---
 
 ### Executive Summary
-When high-ticket prospects visit https://designacademy.io from Europe or Asia, their intent is highest in the first 5 minutes. Every hour of delay degrades conversion probability exponentially.
+When high-ticket prospects visit https://acmecoaching.example from Europe or Asia, their intent is highest in the first 5 minutes. Every hour of delay degrades conversion probability exponentially.
 
 ### The 3-Step Remediation Plan:
 1. **Instant Voice Discovery Call:** When a prospect submits their portfolio or email, offer an instant 2-minute voice discovery call with Anna.

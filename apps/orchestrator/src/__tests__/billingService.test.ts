@@ -77,7 +77,7 @@ describe('BillingService — pricing, usage and ROI', () => {
   });
 
   it('reports no-database usage as in-memory with persisted:false and no fabricated fields', async () => {
-    const usage = await service.getClientUsage('lead_jm_901');
+    const usage = await service.getClientUsage('lead_ak_901');
     expect(usage.persisted).toBe(false);
     expect(usage.source).toBe('memory');
     expect(usage.minutesUsed).toBe(0);
@@ -120,7 +120,7 @@ describe('BillingService — pricing, usage and ROI', () => {
   });
 
   it('records in-memory call minutes, and defaults deal value to 0', () => {
-    const updated = service.recordCallUsage('lead_jm_901', 180, true, true);
+    const updated = service.recordCallUsage('lead_ak_901', 180, true, true);
     expect(updated.minutesUsed).toBe(3);
     expect(updated.leadsCaptured).toBe(1);
     expect(updated.pipelineGeneratedUsd).toBe(0);

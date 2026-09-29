@@ -9,7 +9,7 @@ import { resolveTenantId } from './tenant';
  * captured without a company name). Multi-tenant auth will replace this with the
  * authenticated organization; until then it is the operator's own org.
  */
-const DEFAULT_TENANT_NAME = process.env.DEFAULT_TENANT_NAME || 'DesignAcademy Studio';
+const DEFAULT_TENANT_NAME = process.env.DEFAULT_TENANT_NAME || 'Acme Coaching Co.';
 
 /**
  * Parses to a Date only when the value genuinely is one. The app stores

@@ -33,7 +33,7 @@ interface InstaticVisualEditorProps {
 }
 
 export const InstaticVisualEditor: React.FC<InstaticVisualEditorProps> = ({
-  companyName = 'DesignAcademy Studio',
+  companyName = 'Acme Coaching Co.',
   initialTopic = 'Lead Generation & High-Ticket Sprints',
   contentSummary,
   isGlass = true

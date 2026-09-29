@@ -202,7 +202,7 @@ export class GraphDatabaseService {
     // Voice Sessions
     this.addNode({
       id: 'session_inbound_jason',
-      label: 'Voice Call: Jason Miller (After-Hours Inbound)',
+      label: 'Voice Call: Alex Kim (After-Hours Inbound)',
       type: 'VoiceSession',
       properties: {
         persona: 'inbound_sdr',
@@ -225,11 +225,11 @@ export class GraphDatabaseService {
 
     // Leads & Members
     this.addNode({
-      id: 'lead_jason_miller',
-      label: 'Lead: Jason Miller',
+      id: 'lead_alex_kim',
+      label: 'Lead: Alex Kim',
       type: 'Lead',
       properties: {
-        email: 'jason.m@designacademy.io',
+        email: 'alex.kim@acmecoaching.example',
         budget: '5k_to_15k',
         bantScore: 85,
         stage: 'call_scheduled',
@@ -367,13 +367,13 @@ export class GraphDatabaseService {
     this.addEdge({
       id: 'edge_sess_jason_lead',
       source: 'session_inbound_jason',
-      target: 'lead_jason_miller',
+      target: 'lead_alex_kim',
       type: 'QUALIFIED_AS',
       label: 'BANT Score 85'
     });
     this.addEdge({
       id: 'edge_lead_jason_offer',
-      source: 'lead_jason_miller',
+      source: 'lead_alex_kim',
       target: 'offer_pro_mentorship',
       type: 'ASSOCIATED_WITH',
       label: 'Matched Tier'
@@ -503,7 +503,7 @@ Welcome to the **StratosGTM** persistent vault. This vault connects real-time **
 
 \`\`\`mermaid
 graph TD
-    VS["🎙️ Voice Session (AssemblyAI)"] -->|QUALIFIED_AS| L["👤 Lead: Jason Miller ($10k)"]
+    VS["🎙️ Voice Session (AssemblyAI)"] -->|QUALIFIED_AS| L["👤 Lead: Alex Kim ($10k)"]
     VS -->|RAISED_OBJECTION| O["⚠️ Objection: Cash Flow Tight"]
     VS -->|TRIGGERED_POLICY| P["🛡️ Guardrail: 15% Max Discount"]
     O -->|RESEARCHED_IN| RL["🔬 3 Parallel Research Lanes"]
@@ -516,7 +516,7 @@ graph TD
 
 ## 🗂️ Knowledge Vault Sections
 
-- [[Leads/lead_jason_miller|Lead: Jason Miller]] — Score 85, $5k-$15k budget, booked for consultation.
+- [[Leads/lead_alex_kim|Lead: Alex Kim]] — Score 85, $5k-$15k budget, booked for consultation.
 - [[Members/member_sarah_jenkins|Member: Sarah Jenkins]] — Retained mastermind member, 15% clamped discount applied.
 - [[Voice-Sessions/session_inbound_jason|Voice Session: Inbound Jason]] — AssemblyAI 24kHz stream transcript & telemetry.
 - [[Objections/obj_cashflow_tight|Objection: Cash Flow Tight]] — Churn risk objection and policy resolution.

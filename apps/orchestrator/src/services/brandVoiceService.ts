@@ -42,12 +42,12 @@ export class BrandVoiceService {
   }
 
   private initPreloadedProfiles() {
-    // Default profile for Alex's Growth Accelerator / DesignAcademy
+    // Default profile for Alex's Growth Accelerator / Acme Coaching Co.
     const designProfile: BrandVoiceProfile = {
       id: 'bv_design_academy',
-      clientId: 'lead_jm_901',
-      clientName: 'Jason Miller',
-      companyName: 'DesignAcademy Studio',
+      clientId: 'lead_ak_901',
+      clientName: 'Alex Kim',
+      companyName: 'Acme Coaching Co.',
       toneArchetype: 'tactical_operator',
       toneLabel: 'Tactical Operator',
       toneDescription: 'Direct, metrics-driven, no-fluff practitioner who values speed of implementation and concrete proof.',
@@ -61,13 +61,13 @@ export class BrandVoiceService {
       bannedTerms: ['cheap', 'guru', 'synergy', 'passive income', 'magic bullet', 'hard sell'],
       coreValueProposition: 'Transform digital courses and designer communities into high-ticket $3k-$10k monthly recurring sprints with 24/7 autonomous intake.',
       targetAudience: 'High-earning designers, studio heads, and course creators with existing audiences looking to scale.',
-      customGreeting: "Welcome to GrowthOS Advisory for DesignAcademy Studio. I'm Anna, Senior Growth Operating Architect. What is the primary revenue or acquisition bottleneck you are looking to solve today?",
+      customGreeting: "Welcome to GrowthOS Advisory for Acme Coaching Co.. I'm Anna, Senior Growth Operating Architect. What is the primary revenue or acquisition bottleneck you are looking to solve today?",
       systemPromptModifier: 'Speak with decisive, practitioner confidence. Emphasize operational leverage and concrete numbers. Never offer unauthorized discounts.',
       objectionHandlingStrategy: 'Acknowledge hesitation immediately. Deploy the 14-day action-based refund guarantee to eliminate perceived risk without eroding margin.',
-      vaultPath: 'vault/Clients/DesignAcademy_Studio/BrandVoice.md',
+      vaultPath: 'vault/Clients/Acme_Coaching_Co/BrandVoice.md',
       updatedAt: new Date().toISOString()
     };
-    this.profiles.set('designacademy_studio', designProfile);
+    this.profiles.set('acmecoaching', designProfile);
   }
 
   public analyzeAndSynthesizeBrandVoice(lead: CRMLead, toneOverride?: ToneArchetype): BrandVoiceProfile {
