@@ -88,14 +88,13 @@ export const LiveTranscriptHUD: React.FC<LiveTranscriptHUDProps> = ({
 
 ---
 
-## 📅 Scheduled Strategy Consultation Card
-* **Status:** ${hasConsultation ? '✅ Confirmed & Reserved' : 'Pending Scheduling'}
-* **Target Session:** September 7, 2026 at 5:00 PM EST
+## 📅 Consultation Request
+* **Status:** ${
+      hasConsultation
+        ? 'Requested on this call — not yet confirmed by the team. See the transcript below for the exact date, time and details discussed.'
+        : 'Not requested on this call.'
+    }
 * **Format:** 1-on-1 Strategic Architecture & Model Routing Consultation
-* **Key Consultation Agenda Items:**
-  1. Audit free-tier resource architecture to ensure stability during traffic spikes.
-  2. Blueprint persistent Obsidian knowledge memory and local model routing.
-  3. Formulate monetization tiers to transition free-tier users into paid high-ticket retainers.
 
 ---
 
