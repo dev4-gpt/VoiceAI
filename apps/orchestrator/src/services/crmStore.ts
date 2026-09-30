@@ -6,6 +6,9 @@ import { brandVoiceService, ToneArchetype } from './brandVoiceService';
 import { isDatabaseConfigured } from '../db/client';
 import { upsertLead, listAllLeads, upsertMember, listAllMembers } from '../db/repository';
 
+/** Below this gap, a repeat tool call with no new fields is treated as a no-op, not a fresh update. */
+const REDUNDANT_UPDATE_WINDOW_SECONDS = 30;
+
 /** Demo records created in memory at boot. Never allowed to overwrite stored data. */
 const SEED_LEAD_IDS = new Set(['lead_ak_901']);
 const SEED_MEMBER_IDS = new Set(['mem_101', 'mem_102']);
@@ -246,6 +249,26 @@ class CRMStore {
     const now = new Date().toISOString();
 
     if (existing) {
+      // The model sometimes re-issues this exact tool call seconds later with no new
+      // information (observed in a real measured eval run: two calls a moment apart,
+      // same lead, same fields). A no-op repeat like that shouldn't write another row or
+      // clutter the notes with a duplicate "Updated" entry; a genuine change, or the same
+      // call resurfacing after a real gap, still records normally.
+      const changed =
+        (!!data.fullName && data.fullName !== existing.fullName) ||
+        (!!data.phone && data.phone !== existing.phone) ||
+        (!!data.website && data.website !== existing.website) ||
+        (!!data.linkedIn && data.linkedIn !== existing.linkedIn) ||
+        (!!data.socialLinks && Object.entries(data.socialLinks).some(([k, v]) => !!v && (existing.socialLinks as any)?.[k] !== v)) ||
+        (!!data.socialBioText && data.socialBioText !== existing.socialBioText) ||
+        (!!data.companyName && data.companyName !== existing.companyName) ||
+        (!!data.businessSummary && data.businessSummary !== existing.businessSummary) ||
+        (!!data.source && data.source !== existing.source);
+      const secondsSincePreviousUpdate = (Date.parse(now) - Date.parse(existing.updatedAt)) / 1000;
+      if (!changed && secondsSincePreviousUpdate <= REDUNDANT_UPDATE_WINDOW_SECONDS) {
+        return existing;
+      }
+
       existing.fullName = data.fullName || existing.fullName;
       existing.phone = data.phone || existing.phone;
       existing.website = data.website || existing.website;
@@ -295,6 +318,18 @@ class CRMStore {
   }): { lead: CRMLead | null; calculatedScore: number } {
     const lead = Array.from(this.leads.values()).find((l) => l.email.toLowerCase() === data.email.toLowerCase());
     if (!lead) return { lead: null, calculatedScore: 0 };
+
+    // Same reasoning as createOrUpdateLead: a repeat call moments later with an identical
+    // budget/authority/timeline produces the identical score and note text, so skip writing
+    // it again rather than stacking duplicate "BANT Qualified" notes.
+    const unchanged =
+      lead.budgetRange === data.budgetRange &&
+      (lead.authority || 'decision_maker') === (data.authority || 'decision_maker') &&
+      (lead.timelineWeeks || 2) === (data.timelineWeeks || 2);
+    const secondsSincePreviousQualifyLeadUpdate = (Date.now() - Date.parse(lead.updatedAt)) / 1000;
+    if (unchanged && secondsSincePreviousQualifyLeadUpdate <= REDUNDANT_UPDATE_WINDOW_SECONDS) {
+      return { lead, calculatedScore: lead.qualificationScore };
+    }
 
     lead.budgetRange = data.budgetRange;
     lead.coreNeed = data.coreNeed;
